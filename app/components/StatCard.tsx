@@ -1,41 +1,46 @@
 type StatCardProps = {
   title: string;
-  value: number;
-  unit: string;
-  onIncrease: () => void;
-  onDecrease: () => void;
+  value: string | number;
+  unit?: string;
+  icon: string;
 };
 
 export default function StatCard({
   title,
   value,
   unit,
-  onIncrease,
-  onDecrease,
+  icon,
 }: StatCardProps) {
   return (
-    <div className="mt-4">
-      <h3 className="font-semibold">{title}</h3>
+    <div className="bg-white rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 p-6">
 
-      <div className="mt-2 flex items-center gap-4">
-        <button
-          onClick={onDecrease}
-          className="rounded bg-red-500 px-3 py-1 text-white"
-        >
-          -
-        </button>
+      <div className="flex items-center justify-between">
 
-        <span className="text-xl font-bold">
-          {value} {unit}
-        </span>
+        <div>
 
-        <button
-          onClick={onIncrease}
-          className="rounded bg-green-500 px-3 py-1 text-white"
-        >
-          +
-        </button>
+          <p className="text-gray-500 text-sm font-medium uppercase tracking-wide">
+            {title}
+          </p>
+
+          <h2 className="text-4xl font-bold mt-3 text-gray-800">
+            {value}
+
+            {unit && (
+              <span className="text-lg text-gray-500 ml-2">
+                {unit}
+              </span>
+            )}
+
+          </h2>
+
+        </div>
+
+        <div className="text-5xl">
+          {icon}
+        </div>
+
       </div>
+
     </div>
   );
 }
