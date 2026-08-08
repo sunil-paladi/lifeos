@@ -10,6 +10,7 @@ import TodaysMission from "./components/mission/TodaysMission";
 import { health } from "./data/health";
 import ProgramBuilder from "./components/planner/ProgramBuilder";
 import ExerciseLibrary from "./components/planner/ExerciseLibrary";
+import TodaysWorkout from "@/app/components/workout/TodaysWorkout";
 
 export default function Home() {
   return (
@@ -76,6 +77,10 @@ export default function Home() {
  <div className="mt-8">
    <ExerciseLibrary />
 </div>
+ <div className="mt-8">
+   <TodaysWorkout  />
+</div>
+
       </main>
     </div>
  
