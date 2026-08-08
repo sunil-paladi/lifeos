@@ -1,19 +1,25 @@
-export type Exercise = {
+export interface Exercise {
   id: number;
+
   bodyPart: string;
+
   name: string;
+
   image: string;
 
-  completed: boolean;
-
   primaryMuscle: string;
+
   secondaryMuscles: string[];
 
   equipment: string;
-  difficulty: string;
+
+  difficulty: "Beginner" | "Intermediate" | "Advanced";
 
   sets: number;
+
   reps: number;
 
+  completed: boolean;
+
   instructions: string[];
-};
+}

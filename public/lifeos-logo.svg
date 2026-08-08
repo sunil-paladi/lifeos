@@ -1,0 +1,102 @@
+<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="pink" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ff3b8d"/>
+      <stop offset="100%" stop-color="#ff7f50"/>
+    </linearGradient>
+
+    <linearGradient id="purple" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#7c3aed"/>
+      <stop offset="100%" stop-color="#c026d3"/>
+    </linearGradient>
+
+    <linearGradient id="blue" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00c6ff"/>
+      <stop offset="100%" stop-color="#2563eb"/>
+    </linearGradient>
+
+    <linearGradient id="green" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#22c55e"/>
+      <stop offset="100%" stop-color="#14b8a6"/>
+    </linearGradient>
+
+    <filter id="shadow">
+      <feDropShadow dx="0" dy="8" stdDeviation="8" flood-opacity="0.15"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect
+    x="18"
+    y="18"
+    width="220"
+    height="220"
+    rx="52"
+    fill="white"
+    filter="url(#shadow)"
+  />
+
+  <!-- Pink Orbit -->
+  <path
+    d="M70 130
+       C70 80 105 60 145 60
+       C175 60 195 72 205 98"
+    stroke="url(#pink)"
+    stroke-width="18"
+    fill="none"
+    stroke-linecap="round"
+  />
+
+  <!-- Purple Orbit -->
+  <path
+    d="M60 150
+       C75 185 110 200 145 195
+       C175 190 195 170 205 145"
+    stroke="url(#purple)"
+    stroke-width="18"
+    fill="none"
+    stroke-linecap="round"
+  />
+
+  <!-- Blue Orbit -->
+  <path
+    d="M185 55
+       C220 80 220 170 175 205"
+    stroke="url(#blue)"
+    stroke-width="16"
+    fill="none"
+    stroke-linecap="round"
+  />
+
+  <!-- Green Orbit -->
+  <path
+    d="M55 95
+       C45 135 55 170 82 198"
+    stroke="url(#green)"
+    stroke-width="16"
+    fill="none"
+    stroke-linecap="round"
+  />
+
+  <!-- Center Circle -->
+  <circle
+    cx="128"
+    cy="128"
+    r="24"
+    fill="url(#purple)"
+  />
+
+  <!-- Growth Arrow -->
+  <path
+    d="M118 138
+       L138 118
+       M138 118
+       L138 132
+       M138 118
+       L124 118"
+    stroke="white"
+    stroke-width="6"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+</svg>
