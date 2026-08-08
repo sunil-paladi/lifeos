@@ -68,7 +68,7 @@ const WORKOUT_HISTORY_KEY =
  * Six hours of inactivity will automatically
  * finalize the workout.
  */
-const AUTO_FINALIZE_HOURS = 0.01;
+const AUTO_FINALIZE_HOURS = 6;
 
 export default function TodaysWorkout() {
   const { workout } = useProgram();

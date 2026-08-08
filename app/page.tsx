@@ -11,6 +11,7 @@ import { health } from "./data/health";
 import ProgramBuilder from "./components/planner/ProgramBuilder";
 import ExerciseLibrary from "./components/planner/ExerciseLibrary";
 import TodaysWorkout from "@/app/components/workout/TodaysWorkout";
+import WorkoutHistory from "@/app/components/workout/WorkoutHistory";
 
 export default function Home() {
   return (
@@ -79,6 +80,9 @@ export default function Home() {
 </div>
  <div className="mt-8">
    <TodaysWorkout  />
+</div>
+<div className="mt-8">
+   <WorkoutHistory   />
 </div>
 
       </main>
