@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import {
   BarChart3,
   BookOpen,
@@ -10,31 +11,38 @@ import {
   Settings,
   Utensils,
 } from "lucide-react";
+import { usePathname } from "next/navigation";
 
 const mainMenu = [
   {
     label: "Dashboard",
     icon: LayoutDashboard,
+    path: "/",
   },
   {
     label: "Workout",
     icon: Dumbbell,
+    path: "/workout",
   },
   {
     label: "Nutrition",
     icon: Utensils,
+    path: "/nutrition",
   },
   {
     label: "Water",
     icon: Droplets,
+    path: "/water",
   },
   {
     label: "Habits",
     icon: CheckSquare,
+    path: "/habits",
   },
   {
     label: "Journal",
     icon: BookOpen,
+    path: "/journal",
   },
 ];
 
@@ -42,6 +50,7 @@ const insightMenu = [
   {
     label: "Analytics",
     icon: BarChart3,
+    path: "/analytics",
   },
 ];
 
@@ -54,6 +63,19 @@ export default function Sidebar({
   mobile = false,
   onNavigate,
 }: SidebarProps) {
+  const pathname = usePathname();
+
+  function isActive(path: string) {
+    if (path === "/") {
+      return pathname === "/";
+    }
+
+    return (
+      pathname === path ||
+      pathname.startsWith(`${path}/`)
+    );
+  }
+
   return (
     <aside
       className={
@@ -62,13 +84,11 @@ export default function Sidebar({
           : "fixed inset-y-0 left-0 z-40 hidden w-64 flex-col border-r border-slate-800 bg-slate-950 text-white lg:flex"
       }
     >
-
       {/* ========================================= */}
       {/* BRAND */}
       {/* ========================================= */}
 
       <div className="flex h-20 shrink-0 items-center border-b border-slate-800 px-6">
-
         <div className="flex items-center gap-3">
 
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-xl shadow-sm">
@@ -86,7 +106,6 @@ export default function Sidebar({
           </div>
 
         </div>
-
       </div>
 
       {/* ========================================= */}
@@ -104,48 +123,38 @@ export default function Sidebar({
 
           <div className="space-y-1">
 
-            {mainMenu.map(
-              (item, index) => {
-                const Icon = item.icon;
+            {mainMenu.map((item) => {
+              const Icon = item.icon;
+              const active = isActive(item.path);
 
-                const isActive =
-                  index === 0;
+              return (
+                <Link
+                  key={item.label}
+                  href={item.path}
+                  //onClick={() => alert(`Clicked ${item.label}`)}
+                   onClick={onNavigate}
+                  className={`group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
+                    active
+                      ? "bg-green-600 text-white shadow-sm"
+                      : "text-slate-300 hover:bg-slate-800 hover:text-white"
+                  }`}
+                >
+                  <Icon
+                    size={18}
+                    strokeWidth={active ? 2.2 : 1.8}
+                    className={
+                      active
+                        ? "text-white"
+                        : "text-slate-400 transition-colors group-hover:text-white"
+                    }
+                  />
 
-                return (
-                  <button
-                    key={item.label}
-                    type="button"
-                    onClick={onNavigate}
-                    className={`group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
-                      isActive
-                        ? "bg-green-600 text-white shadow-sm"
-                        : "text-slate-300 hover:bg-slate-800 hover:text-white"
-                    }`}
-                  >
-
-                    <Icon
-                      size={18}
-                      strokeWidth={
-                        isActive ? 2.2 : 1.8
-                      }
-                      className={
-                        isActive
-                          ? "text-white"
-                          : "text-slate-400 transition-colors group-hover:text-white"
-                      }
-                    />
-
-                    <span>
-                      {item.label}
-                    </span>
-
-                  </button>
-                );
-              }
-            )}
+                  <span>{item.label}</span>
+                </Link>
+              );
+            })}
 
           </div>
-
         </div>
 
         {/* Insights */}
@@ -157,35 +166,37 @@ export default function Sidebar({
 
           <div className="space-y-1">
 
-            {insightMenu.map(
-              (item) => {
-                const Icon = item.icon;
+            {insightMenu.map((item) => {
+              const Icon = item.icon;
+              const active = isActive(item.path);
 
-                return (
-                  <button
-                    key={item.label}
-                    type="button"
-                    onClick={onNavigate}
-                    className="group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-300 transition-all duration-150 hover:bg-slate-800 hover:text-white"
-                  >
+              return (
+                <Link
+                  key={item.label}
+                  href={item.path}
+                  onClick={onNavigate}
+                  className={`group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
+                    active
+                      ? "bg-green-600 text-white shadow-sm"
+                      : "text-slate-300 hover:bg-slate-800 hover:text-white"
+                  }`}
+                >
+                  <Icon
+                    size={18}
+                    strokeWidth={active ? 2.2 : 1.8}
+                    className={
+                      active
+                        ? "text-white"
+                        : "text-slate-400 transition-colors group-hover:text-white"
+                    }
+                  />
 
-                    <Icon
-                      size={18}
-                      strokeWidth={1.8}
-                      className="text-slate-400 transition-colors group-hover:text-white"
-                    />
-
-                    <span>
-                      {item.label}
-                    </span>
-
-                  </button>
-                );
-              }
-            )}
+                  <span>{item.label}</span>
+                </Link>
+              );
+            })}
 
           </div>
-
         </div>
 
         {/* Settings */}
@@ -195,26 +206,31 @@ export default function Sidebar({
             System
           </p>
 
-          <button
-            type="button"
+          <Link
+            href="/settings"
             onClick={onNavigate}
-            className="group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-300 transition-all duration-150 hover:bg-slate-800 hover:text-white"
+            className={`group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
+              isActive("/settings")
+                ? "bg-green-600 text-white shadow-sm"
+                : "text-slate-300 hover:bg-slate-800 hover:text-white"
+            }`}
           >
-
             <Settings
               size={18}
-              strokeWidth={1.8}
-              className="text-slate-400 transition-colors group-hover:text-white"
+              strokeWidth={
+                isActive("/settings") ? 2.2 : 1.8
+              }
+              className={
+                isActive("/settings")
+                  ? "text-white"
+                  : "text-slate-400 transition-colors group-hover:text-white"
+              }
             />
 
-            <span>
-              Settings
-            </span>
-
-          </button>
+            <span>Settings</span>
+          </Link>
 
         </div>
-
       </nav>
 
       {/* ========================================= */}
@@ -234,13 +250,11 @@ export default function Sidebar({
             <div className="min-w-0 flex-1">
 
               <div className="flex items-center gap-1.5">
-
                 <span className="h-2 w-2 rounded-full bg-green-500" />
 
                 <p className="truncate text-sm font-semibold text-white">
                   Sunil Kumar
                 </p>
-
               </div>
 
               <p className="mt-0.5 text-xs text-slate-400">
@@ -248,7 +262,6 @@ export default function Sidebar({
               </p>
 
             </div>
-
           </div>
 
           <div className="mt-3 grid grid-cols-2 gap-2 border-t border-slate-800 pt-3">
@@ -278,11 +291,8 @@ export default function Sidebar({
             </div>
 
           </div>
-
         </div>
-
       </div>
-
     </aside>
   );
 }

@@ -11,24 +11,28 @@ export default function ExerciseLibrary() {
   const filteredExercises = exercises[selectedMuscle] || [];
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+    <section>
+      {/* Header */}
+      <div>
+        <h2 className="text-lg font-bold text-slate-900">
+          Exercise Library
+        </h2>
 
-      <h2 className="text-2xl font-bold text-slate-800">
-        Exercise Library
-      </h2>
+        <p className="mt-0.5 text-xs font-medium text-slate-600">
+          Browse exercises by muscle group
+        </p>
+      </div>
 
-      <p className="mt-2 text-slate-500">
-        Browse exercises by muscle group
-      </p>
-
-      <div className="mt-6">
+      {/* Muscle Groups */}
+      <div className="mt-4">
         <MuscleGroupList
           selected={selectedMuscle}
           onSelect={setSelectedMuscle}
         />
       </div>
 
-      <div className="mt-6 grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
+      {/* Exercise Cards */}
+      <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
         {filteredExercises.map((exercise) => (
           <LibraryExerciseCard
             key={exercise.id}
@@ -36,7 +40,19 @@ export default function ExerciseLibrary() {
           />
         ))}
       </div>
-      
-    </div>
+
+      {/* Empty State */}
+      {filteredExercises.length === 0 && (
+        <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 px-4 py-8 text-center">
+          <p className="text-sm font-semibold text-slate-700">
+            No exercises found
+          </p>
+
+          <p className="mt-1 text-xs text-slate-500">
+            Try selecting another muscle group.
+          </p>
+        </div>
+      )}
+    </section>
   );
 }

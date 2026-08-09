@@ -35,23 +35,22 @@ export default function ExerciseSelector({
   }
 
   return (
-    <div className="fixed inset-0 z-[9999]">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+      onClick={onClose}
+    >
       <div
-        className="absolute inset-0 bg-black/40"
-        onClick={onClose}
-      />
-
-      <div
-        className="absolute right-0 top-0 flex h-full w-full max-w-md flex-col bg-white shadow-2xl"
+        className="flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
         onClick={(event) => event.stopPropagation()}
       >
-        <div className="flex items-center justify-between border-b p-6">
+        {/* Header */}
+        <div className="flex items-center justify-between border-b px-6 py-5">
           <div>
-            <h2 className="text-xl font-bold">
+            <h2 className="text-xl font-bold text-slate-900">
               Select Exercises
             </h2>
 
-            <p className="text-sm text-slate-500">
+            <p className="mt-1 text-sm text-slate-500">
               {muscle}
             </p>
           </div>
@@ -59,34 +58,33 @@ export default function ExerciseSelector({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg p-2 hover:bg-slate-100"
+            className="rounded-lg p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-800"
+            aria-label="Close"
           >
             ✕
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6">
+        {/* Exercise List */}
+        <div className="flex-1 overflow-y-auto px-6 py-5">
           <div className="space-y-3">
             {muscleExercises.map((exercise) => {
-              const isSelected =
-                selected.includes(exercise.id);
+              const isSelected = selected.includes(exercise.id);
 
               return (
                 <button
                   key={exercise.id}
                   type="button"
-                  onClick={() =>
-                    toggleExercise(exercise.id)
-                  }
-                  className={`w-full rounded-xl border p-4 text-left ${
+                  onClick={() => toggleExercise(exercise.id)}
+                  className={`w-full rounded-xl border p-4 text-left transition ${
                     isSelected
                       ? "border-green-500 bg-green-50"
-                      : "border-slate-200 hover:bg-slate-50"
+                      : "border-slate-200 bg-white hover:bg-slate-50"
                   }`}
                 >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-semibold">
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="min-w-0">
+                      <p className="font-semibold text-slate-900">
                         {exercise.name}
                       </p>
 
@@ -98,13 +96,13 @@ export default function ExerciseSelector({
                     </div>
 
                     <span
-                      className={`flex h-6 w-6 items-center justify-center rounded-md border ${
+                      className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-md border text-sm font-bold ${
                         isSelected
                           ? "border-green-600 bg-green-600 text-white"
-                          : "border-slate-300"
+                          : "border-slate-300 bg-white text-transparent"
                       }`}
                     >
-                      {isSelected ? "✓" : ""}
+                      ✓
                     </span>
                   </div>
                 </button>
@@ -113,11 +111,23 @@ export default function ExerciseSelector({
           </div>
         </div>
 
-        <div className="border-t p-6">
+        {/* Footer */}
+        <div className="border-t bg-white px-6 py-4">
+          <div className="mb-3 flex items-center justify-between text-sm">
+            <span className="text-slate-500">
+              Selected
+            </span>
+
+            <span className="font-semibold text-slate-800">
+              {selected.length} exercise
+              {selected.length !== 1 ? "s" : ""}
+            </span>
+          </div>
+
           <button
             type="button"
             onClick={handleSave}
-            className="w-full rounded-xl bg-green-600 py-3 font-semibold text-white hover:bg-green-700"
+            className="w-full rounded-xl bg-green-600 py-3 font-semibold text-white transition hover:bg-green-700"
           >
             Save Exercises
           </button>

@@ -12,15 +12,23 @@ export default function AppShell({
   children,
 }: AppShellProps) {
   return (
-    <div className="min-h-screen bg-slate-100 text-slate-900">
+    <div className="min-h-screen bg-slate-100">
 
-      <Sidebar />
+      {/* Desktop / Mobile Sidebar */}
+      <div className="relative z-50">
+        <Sidebar />
+      </div>
 
-      <div className="min-h-screen lg:ml-64">
+      {/* Main Application Area */}
+      <div className="relative min-h-screen lg:ml-64">
 
-        <TopBar />
+        {/* Top Bar */}
+        <div className="relative z-30">
+          <TopBar />
+        </div>
 
-        <main className="px-4 py-5 sm:px-6 lg:px-8">
+        {/* Page Content */}
+        <main className="relative z-0 px-4 py-5 sm:px-6 lg:px-8">
           <div className="mx-auto w-full max-w-[1600px]">
             {children}
           </div>

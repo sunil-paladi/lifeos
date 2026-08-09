@@ -39,7 +39,6 @@ type SaveStatus =
 
 interface ProgramContextType {
   workout: DayWorkout;
-
   saveStatus: SaveStatus;
 
   addMuscleGroup: (
@@ -103,17 +102,13 @@ export function ProgramProvider({
   const [saveStatus, setSaveStatus] =
     useState<SaveStatus>("loading");
 
-  /*
-   * Load saved program when the application starts.
-   */
   useEffect(() => {
     try {
       const saved =
         localStorage.getItem(STORAGE_KEY);
 
       if (saved) {
-        const parsed =
-          JSON.parse(saved);
+        const parsed = JSON.parse(saved);
 
         setWorkout(parsed);
       }
@@ -121,7 +116,7 @@ export function ProgramProvider({
       setSaveStatus("saved");
     } catch (error) {
       console.error(
-        "❌ Failed to load workout program:",
+        "Failed to load workout program:",
         error
       );
 
@@ -131,19 +126,6 @@ export function ProgramProvider({
     }
   }, []);
 
-  /*
-   * AUTO-SAVE
-   *
-   * Whenever the workout changes:
-   *
-   * 1. Show "Saving..."
-   * 2. Wait 300ms
-   * 3. Save to localStorage
-   * 4. Show "Saved"
-   *
-   * The small delay prevents excessive saves when
-   * the user is quickly changing values.
-   */
   useEffect(() => {
     if (!loaded) {
       return;
@@ -158,14 +140,10 @@ export function ProgramProvider({
           JSON.stringify(workout)
         );
 
-        console.log(
-          "✅ Workout program auto-saved"
-        );
-
         setSaveStatus("saved");
       } catch (error) {
         console.error(
-          "❌ Failed to auto-save workout program:",
+          "Failed to save workout program:",
           error
         );
 
@@ -178,12 +156,6 @@ export function ProgramProvider({
     };
   }, [workout, loaded]);
 
-  /*
-   * Manual save is kept for compatibility.
-   *
-   * The application no longer needs a Save Program
-   * button because automatic saving is enabled.
-   */
   function saveProgram() {
     try {
       localStorage.setItem(
@@ -192,13 +164,9 @@ export function ProgramProvider({
       );
 
       setSaveStatus("saved");
-
-      console.log(
-        "✅ Workout program saved"
-      );
     } catch (error) {
       console.error(
-        "❌ Failed to save workout program:",
+        "Failed to save workout program:",
         error
       );
 
@@ -206,16 +174,12 @@ export function ProgramProvider({
     }
   }
 
-  /*
-   * Add a muscle group to a day.
-   */
   function addMuscleGroup(
     day: keyof DayWorkout,
     muscle: MuscleGroup
   ) {
     setWorkout((prev) => ({
       ...prev,
-
       [day]: [
         ...(prev[day] || []),
         muscle,
@@ -223,9 +187,6 @@ export function ProgramProvider({
     }));
   }
 
-  /*
-   * Add exercises to a muscle group.
-   */
   function addExercisesToMuscle(
     day: keyof DayWorkout,
     muscleName: string,
@@ -233,12 +194,9 @@ export function ProgramProvider({
   ) {
     setWorkout((prev) => ({
       ...prev,
-
       [day]: (prev[day] || []).map(
         (muscle) => {
-          if (
-            muscle.name !== muscleName
-          ) {
+          if (muscle.name !== muscleName) {
             return muscle;
           }
 
@@ -267,17 +225,13 @@ export function ProgramProvider({
 
           return {
             ...muscle,
-            exercises:
-              updatedExercises,
+            exercises: updatedExercises,
           };
         }
       ),
     }));
   }
 
-  /*
-   * Update sets, reps and rest.
-   */
   function updateExerciseSettings(
     day: keyof DayWorkout,
     muscleName: string,
@@ -290,23 +244,18 @@ export function ProgramProvider({
   ) {
     setWorkout((prev) => ({
       ...prev,
-
       [day]: (prev[day] || []).map(
         (muscle) => {
-          if (
-            muscle.name !== muscleName
-          ) {
+          if (muscle.name !== muscleName) {
             return muscle;
           }
 
           return {
             ...muscle,
-
             exercises:
               muscle.exercises.map(
                 (exercise) =>
-                  exercise.id ===
-                  exerciseId
+                  exercise.id === exerciseId
                     ? {
                         ...exercise,
                         ...settings,
@@ -319,9 +268,6 @@ export function ProgramProvider({
     }));
   }
 
-  /*
-   * Move an exercise up or down.
-   */
   function reorderExercise(
     day: keyof DayWorkout,
     muscleName: string,
@@ -330,12 +276,9 @@ export function ProgramProvider({
   ) {
     setWorkout((prev) => ({
       ...prev,
-
       [day]: (prev[day] || []).map(
         (muscle) => {
-          if (
-            muscle.name !== muscleName
-          ) {
+          if (muscle.name !== muscleName) {
             return muscle;
           }
 
@@ -380,8 +323,7 @@ export function ProgramProvider({
 
           return {
             ...muscle,
-            exercises:
-              updatedExercises,
+            exercises: updatedExercises,
           };
         }
       ),

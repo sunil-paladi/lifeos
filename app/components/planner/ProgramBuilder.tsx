@@ -22,38 +22,34 @@ const weeks = [
 ];
 
 export default function ProgramBuilder() {
-  const [selectedWeek, setSelectedWeek] =
-    useState(0);
+  const [selectedWeek, setSelectedWeek] = useState(0);
 
   const { saveStatus } = useProgram();
 
   return (
     <section>
-
       {/* Header */}
-      <div className="flex items-start justify-between">
-
-        <div>
-          <h2 className="text-xl font-bold text-slate-800">
+      <div className="flex items-center justify-between gap-4">
+        <div className="min-w-0">
+          <h2 className="text-lg font-bold text-slate-900">
             📅 Program Builder
           </h2>
 
-          <p className="text-sm text-slate-500">
+          <p className="mt-0.5 text-xs font-medium text-slate-600">
             Build a complete 12-week workout program
           </p>
         </div>
 
         {/* Auto-save Status */}
-        <div className="flex items-center gap-2 text-sm">
-
+        <div className="flex shrink-0 items-center gap-1.5 text-xs">
           {saveStatus === "loading" && (
             <>
               <Loader2
-                size={15}
-                className="animate-spin text-slate-400"
+                size={14}
+                className="animate-spin text-slate-500"
               />
 
-              <span className="text-slate-400">
+              <span className="font-medium text-slate-600">
                 Loading...
               </span>
             </>
@@ -62,11 +58,11 @@ export default function ProgramBuilder() {
           {saveStatus === "saving" && (
             <>
               <Cloud
-                size={15}
-                className="text-slate-500"
+                size={14}
+                className="text-slate-600"
               />
 
-              <span className="text-slate-500">
+              <span className="font-medium text-slate-600">
                 Saving...
               </span>
             </>
@@ -75,59 +71,56 @@ export default function ProgramBuilder() {
           {saveStatus === "saved" && (
             <>
               <Check
-                size={15}
+                size={14}
                 className="text-green-600"
               />
 
-              <span className="text-green-600">
+              <span className="font-semibold text-green-600">
                 Saved
               </span>
             </>
           )}
 
           {saveStatus === "error" && (
-            <span className="text-red-600">
+            <span className="font-semibold text-red-600">
               Save failed
             </span>
           )}
-
         </div>
-
       </div>
 
       {/* Weeks */}
-      <div className="mt-6 flex flex-wrap gap-2">
-
+      <div className="mt-4 flex flex-wrap gap-1.5">
         {weeks.map((week, index) => (
           <button
             key={week}
             type="button"
-            onClick={() =>
-              setSelectedWeek(index)
-            }
-            className={`rounded-lg px-3 py-2 text-sm transition ${
+            onClick={() => setSelectedWeek(index)}
+            className={`rounded-md px-3 py-1.5 text-xs font-medium transition ${
               selectedWeek === index
-                ? "bg-green-600 text-white"
+                ? "bg-green-600 text-white shadow-sm"
                 : "bg-slate-100 text-slate-700 hover:bg-slate-200"
             }`}
           >
             {week}
           </button>
         ))}
-
       </div>
 
       {/* Current Week */}
-      <div className="mt-6">
+      <div className="mt-4">
+        <div className="mb-3 flex items-center justify-between">
+          <h3 className="text-base font-bold text-slate-900">
+            {weeks[selectedWeek]}
+          </h3>
 
-        <h3 className="mb-4 text-lg font-bold text-slate-800">
-          {weeks[selectedWeek]}
-        </h3>
+          <span className="text-[11px] font-medium text-slate-500">
+            12-week program
+          </span>
+        </div>
 
         <WeekPlanner />
-
       </div>
-
     </section>
   );
 }
