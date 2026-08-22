@@ -15,9 +15,15 @@ export interface Exercise {
 
   difficulty: "Beginner" | "Intermediate" | "Advanced";
 
-  sets: number;
+  // Exercise type
+  type?: "strength" | "cardio";
 
-  reps: number;
+  // Strength / resistance exercises
+  sets?: number;
+  reps?: number;
+
+  // Cardio exercises
+  duration?: number;
 
   completed: boolean;
 

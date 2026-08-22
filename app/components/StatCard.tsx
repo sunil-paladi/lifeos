@@ -47,45 +47,45 @@ export default function StatCard({
   progress = Math.max(0, Math.min(progress, 100));
 
   // Remaining
-// Remaining
-let remainingText = "";
+  let remainingText = "";
 
-if (!isWorkout) {
-  const current = stat.current ?? 0;
-  const goal = stat.goal ?? 0;
-  const unit = stat.unit ?? "";
+  if (!isWorkout) {
+    const current = stat.current ?? 0;
+    const goal = stat.goal ?? 0;
+    const unit = stat.unit ?? "";
 
-  if (current > goal) {
-    remainingText = `⬇ ${(current - goal).toFixed(1)} ${unit} Remaining`;
-  } else if (current < goal) {
-    remainingText = `⬆ ${(goal - current).toFixed(1)} ${unit} To Gain`;
-  } else {
-    remainingText = "🎉 Goal Achieved";
+    if (current > goal) {
+      remainingText = `⬇ ${(current - goal).toFixed(1)} ${unit} Remaining`;
+    } else if (current < goal) {
+      remainingText = `⬆ ${(goal - current).toFixed(1)} ${unit} To Gain`;
+    } else {
+      remainingText = "🎉 Goal Achieved";
+    }
   }
-}
 
-// 👇 ADD THIS HERE
-let status = "";
-let statusColor = "";
-let progressColor = "";
+  // Status
+  let status = "";
+  let statusColor = "";
+  let progressColor = "";
 
-if (progress >= 80) {
-  status = "🟢 Excellent";
-  statusColor = "text-green-600";
-  progressColor = "bg-green-500";
-} else if (progress >= 50) {
-  status = "🟡 Keep Going";
-  statusColor = "text-yellow-600";
-  progressColor = "bg-yellow-500";
-} else {
-  status = "🔴 Let's Push";
-  statusColor = "text-red-600";
-  progressColor = "bg-red-500";
-}
-
+  if (progress >= 80) {
+    status = "🟢 Excellent";
+    statusColor = "text-green-600";
+    progressColor = "bg-green-500";
+  } else if (progress >= 50) {
+    status = "🟡 Keep Going";
+    statusColor = "text-yellow-600";
+    progressColor = "bg-yellow-500";
+  } else {
+    status = "🔴 Let's Push";
+    statusColor = "text-red-600";
+    progressColor = "bg-red-500";
+  }
 
   return (
-<div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">    {/* Header */}
+    <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-shadow duration-200 hover:shadow-md">
+
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <p className="text-sm font-medium uppercase tracking-wide text-slate-500">
@@ -102,6 +102,7 @@ if (progress >= 80) {
           ) : (
             <h2 className="mt-2 text-4xl font-bold text-slate-900">
               {stat.current}
+
               {stat.unit && (
                 <span className="ml-2 text-lg font-medium text-slate-500">
                   {stat.unit}
@@ -111,11 +112,13 @@ if (progress >= 80) {
           )}
         </div>
 
-        <div className="text-5xl">{icon}</div>
+        <div className="text-5xl">
+          {icon}
+        </div>
       </div>
 
       {/* Divider */}
-      <div className="my-5 border-t border-slate-200"></div>
+      <div className="my-5 border-t border-slate-200" />
 
       {isWorkout ? (
         <>
@@ -126,9 +129,10 @@ if (progress >= 80) {
 
             <span className="font-semibold text-orange-600">
               🔥 {stat.streak} Days
+
               <p className={`mt-2 text-sm font-semibold ${statusColor}`}>
-  {status}
-</p>
+                {status}
+              </p>
             </span>
           </div>
 
@@ -159,8 +163,9 @@ if (progress >= 80) {
           </div>
 
           <p className={`mt-2 text-sm font-semibold ${statusColor}`}>
-  {status}
-</p>
+            {status}
+          </p>
+
           <div className="mt-4">
             <div className="mb-1 flex justify-between text-xs text-slate-500">
               <span>Progress</span>

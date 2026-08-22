@@ -9,15 +9,30 @@ import { useProgram } from "@/app/context/ProgramContext";
 
 interface Props {
   day: string;
+  weekIndex: number;
 }
 
-export default function DayCard({ day }: Props) {
-  const [drawerOpen, setDrawerOpen] = useState(false);
+export default function DayCard({
+  day,
+  weekIndex,
+}: Props) {
+  const [drawerOpen, setDrawerOpen] =
+    useState(false);
 
-  const { workout } = useProgram();
+  const { getWorkoutForWeek } =
+    useProgram();
+
+  /*
+   * Get the workout for the exact week
+   * currently selected in Program Builder.
+   */
+  const workout =
+    getWorkoutForWeek(weekIndex);
 
   const muscleGroups =
-    workout[day as keyof typeof workout] || [];
+    workout[
+      day as keyof typeof workout
+    ] || [];
 
   function handleCloseDrawer() {
     setDrawerOpen(false);
@@ -25,9 +40,13 @@ export default function DayCard({ day }: Props) {
 
   return (
     <>
-      <div className="rounded-lg border border-slate-200 bg-white p-3 shadow-sm transition hover:border-slate-300">
+
+      {/* Day Card */}
+      <div className="rounded-lg border border-slate-200 bg-white p-3 shadow-sm">
+
         {/* Day Header */}
         <div className="flex items-center justify-between gap-2">
+
           <h3 className="text-sm font-bold text-slate-900">
             {day}
           </h3>
@@ -43,19 +62,25 @@ export default function DayCard({ day }: Props) {
               ? `${muscleGroups.length} Muscle Groups`
               : "Rest"}
           </span>
+
         </div>
 
         {/* Muscle Groups */}
         {muscleGroups.length > 0 ? (
           <div className="mt-2 flex flex-wrap gap-1.5">
-            {muscleGroups.map((muscle) => (
-              <MuscleBadge
-                key={muscle.id}
-                day={day}
-                name={muscle.name}
-                exerciseIds={muscle.exercises}
-              />
-            ))}
+
+            {muscleGroups.map(
+              (muscle) => (
+                <MuscleBadge
+  key={muscle.id}
+  day={day}
+  weekIndex={weekIndex}
+  name={muscle.name}
+  exerciseIds={muscle.exercises}
+/>
+              )
+            )}
+
           </div>
         ) : (
           <p className="mt-3 text-[11px] font-medium text-slate-500">
@@ -63,10 +88,12 @@ export default function DayCard({ day }: Props) {
           </p>
         )}
 
-        {/* Add / Edit Button */}
+        {/* Add / Edit Muscle Groups */}
         <button
           type="button"
-          onClick={() => setDrawerOpen(true)}
+          onClick={() =>
+            setDrawerOpen(true)
+          }
           className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-md bg-green-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-green-700"
         >
           {muscleGroups.length > 0 ? (
@@ -81,15 +108,18 @@ export default function DayCard({ day }: Props) {
             </>
           )}
         </button>
+
       </div>
 
       {/* Muscle Drawer */}
       {drawerOpen && (
         <MuscleDrawer
           day={day}
+          weekIndex={weekIndex}
           onClose={handleCloseDrawer}
         />
       )}
+
     </>
   );
 }

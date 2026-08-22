@@ -8,11 +8,25 @@ import {
   useState,
 } from "react";
 
+import { exercises } from "@/app/data/exercises";
+
+/* =========================================================
+   TYPES
+   ========================================================= */
+
 export interface ProgramExercise {
   id: number;
-  sets: number;
-  reps: number;
-  rest: number;
+
+  // Exercise type
+  type?: "strength" | "cardio";
+
+  // Strength exercises
+  sets?: number;
+  reps?: number;
+  rest?: number;
+
+  // Cardio exercises
+  duration?: number;
 }
 
 export interface MuscleGroup {
@@ -31,76 +45,174 @@ export interface DayWorkout {
   Sunday: MuscleGroup[];
 }
 
+export type DayName = keyof DayWorkout;
+
 type SaveStatus =
   | "loading"
   | "saved"
   | "saving"
   | "error";
 
+/*
+ * Temporary default.
+ *
+ * The actual program duration is controlled
+ * by ProgramBuilder.
+ */
+const DEFAULT_PROGRAM_WEEKS = 12;
+
+/* =========================================================
+   INITIAL DATA
+   ========================================================= */
+
+function createEmptyWeek(): DayWorkout {
+  return {
+    Monday: [],
+    Tuesday: [],
+    Wednesday: [],
+    Thursday: [],
+    Friday: [],
+    Saturday: [],
+    Sunday: [],
+  };
+}
+
+function createInitialWeeks(
+  count: number = DEFAULT_PROGRAM_WEEKS
+): DayWorkout[] {
+  return Array.from(
+    { length: count },
+    () => createEmptyWeek()
+  );
+}
+
+/* =========================================================
+   STORAGE
+   ========================================================= */
+
+const STORAGE_KEY =
+  "lifeos-workout-program";
+
+interface StoredProgram {
+  weeks: DayWorkout[];
+}
+
+/* =========================================================
+   CONTEXT TYPE
+   ========================================================= */
+
 interface ProgramContextType {
+  /*
+   * Compatibility with existing components.
+   * Points to Week 1.
+   */
   workout: DayWorkout;
+
+  /*
+   * Complete week-based program.
+   */
+  weeks: DayWorkout[];
+
   saveStatus: SaveStatus;
 
+  /*
+   * Get a specific week's workout.
+   */
+  getWorkoutForWeek: (
+    weekIndex: number
+  ) => DayWorkout;
+
+  /*
+   * Add muscle group.
+   */
   addMuscleGroup: (
-    day: keyof DayWorkout,
-    muscle: MuscleGroup
+    day: DayName,
+    muscle: MuscleGroup,
+    weekIndex?: number
   ) => void;
 
-  addExercisesToMuscle: (
-    day: keyof DayWorkout,
+  /*
+   * Remove muscle group.
+   */
+  removeMuscleGroup: (
+    day: DayName,
     muscleName: string,
-    exerciseIds: number[]
+    weekIndex: number
   ) => void;
 
+  /*
+   * Add exercises inside a muscle group.
+   */
+  addExercisesToMuscle: (
+    day: DayName,
+    muscleName: string,
+    exerciseIds: number[],
+    weekIndex?: number
+  ) => void;
+
+  /*
+   * Update strength exercise settings.
+   */
   updateExerciseSettings: (
-    day: keyof DayWorkout,
+    day: DayName,
     muscleName: string,
     exerciseId: number,
     settings: {
       sets: number;
       reps: number;
       rest: number;
-    }
+    },
+    weekIndex?: number
   ) => void;
 
+  /*
+   * Move exercise up/down.
+   */
   reorderExercise: (
-    day: keyof DayWorkout,
+    day: DayName,
     muscleName: string,
     exerciseId: number,
-    direction: "up" | "down"
+    direction: "up" | "down",
+    weekIndex?: number
   ) => void;
 
+  /*
+   * Manual save.
+   */
   saveProgram: () => void;
 }
 
-const initialWorkout: DayWorkout = {
-  Monday: [],
-  Tuesday: [],
-  Wednesday: [],
-  Thursday: [],
-  Friday: [],
-  Saturday: [],
-  Sunday: [],
-};
-
-const STORAGE_KEY = "lifeos-workout-program";
+/* =========================================================
+   CONTEXT
+   ========================================================= */
 
 const ProgramContext =
-  createContext<ProgramContextType | null>(null);
+  createContext<ProgramContextType | null>(
+    null
+  );
+
+/* =========================================================
+   PROVIDER
+   ========================================================= */
 
 export function ProgramProvider({
   children,
 }: {
   children: ReactNode;
 }) {
-  const [workout, setWorkout] =
-    useState<DayWorkout>(initialWorkout);
+  const [weeks, setWeeks] = useState<
+    DayWorkout[]
+  >(() => createInitialWeeks());
 
   const [loaded, setLoaded] =
     useState(false);
 
   const [saveStatus, setSaveStatus] =
     useState<SaveStatus>("loading");
+
+  /* =======================================================
+     LOAD PROGRAM
+     ======================================================= */
 
   useEffect(() => {
     try {
@@ -110,7 +222,98 @@ export function ProgramProvider({
       if (saved) {
         const parsed = JSON.parse(saved);
 
-        setWorkout(parsed);
+        /*
+         * ---------------------------------------------------
+         * NEW FORMAT
+         * ---------------------------------------------------
+         */
+
+        if (
+          parsed &&
+          Array.isArray(parsed.weeks)
+        ) {
+          const loadedWeeks =
+            parsed.weeks.map(
+              (week: DayWorkout) => ({
+                Monday:
+                  week?.Monday || [],
+                Tuesday:
+                  week?.Tuesday || [],
+                Wednesday:
+                  week?.Wednesday || [],
+                Thursday:
+                  week?.Thursday || [],
+                Friday:
+                  week?.Friday || [],
+                Saturday:
+                  week?.Saturday || [],
+                Sunday:
+                  week?.Sunday || [],
+              })
+            );
+
+          if (loadedWeeks.length > 0) {
+            setWeeks(loadedWeeks);
+          }
+        }
+
+        /*
+         * ---------------------------------------------------
+         * OLD FORMAT
+         * ---------------------------------------------------
+         *
+         * Previous version stored:
+         *
+         * {
+         *   Monday: [],
+         *   Tuesday: [],
+         *   ...
+         * }
+         *
+         * Preserve that data in Week 1.
+         */
+
+        else if (
+          parsed &&
+          (
+            Array.isArray(parsed.Monday) ||
+            Array.isArray(parsed.Tuesday) ||
+            Array.isArray(parsed.Wednesday) ||
+            Array.isArray(parsed.Thursday) ||
+            Array.isArray(parsed.Friday) ||
+            Array.isArray(parsed.Saturday) ||
+            Array.isArray(parsed.Sunday)
+          )
+        ) {
+          const migratedWeek: DayWorkout = {
+            Monday:
+              parsed.Monday || [],
+            Tuesday:
+              parsed.Tuesday || [],
+            Wednesday:
+              parsed.Wednesday || [],
+            Thursday:
+              parsed.Thursday || [],
+            Friday:
+              parsed.Friday || [],
+            Saturday:
+              parsed.Saturday || [],
+            Sunday:
+              parsed.Sunday || [],
+          };
+
+          const migratedWeeks =
+            createInitialWeeks();
+
+          migratedWeeks[0] =
+            migratedWeek;
+
+          setWeeks(migratedWeeks);
+
+          console.log(
+            "✅ Existing workout program migrated to Week 1"
+          );
+        }
       }
 
       setSaveStatus("saved");
@@ -126,6 +329,10 @@ export function ProgramProvider({
     }
   }, []);
 
+  /* =======================================================
+     AUTO SAVE
+     ======================================================= */
+
   useEffect(() => {
     if (!loaded) {
       return;
@@ -135,9 +342,17 @@ export function ProgramProvider({
 
     const timeout = setTimeout(() => {
       try {
+        const dataToSave: StoredProgram = {
+          weeks,
+        };
+
         localStorage.setItem(
           STORAGE_KEY,
-          JSON.stringify(workout)
+          JSON.stringify(dataToSave)
+        );
+
+        console.log(
+          "✅ Workout program auto-saved"
         );
 
         setSaveStatus("saved");
@@ -154,16 +369,45 @@ export function ProgramProvider({
     return () => {
       clearTimeout(timeout);
     };
-  }, [workout, loaded]);
+  }, [weeks, loaded]);
+
+  /* =======================================================
+     GET WEEK
+     ======================================================= */
+
+  function getWorkoutForWeek(
+    weekIndex: number
+  ): DayWorkout {
+    if (
+      weekIndex < 0 ||
+      weekIndex >= weeks.length
+    ) {
+      return createEmptyWeek();
+    }
+
+    return weeks[weekIndex];
+  }
+
+  /* =======================================================
+     MANUAL SAVE
+     ======================================================= */
 
   function saveProgram() {
     try {
+      const dataToSave: StoredProgram = {
+        weeks,
+      };
+
       localStorage.setItem(
         STORAGE_KEY,
-        JSON.stringify(workout)
+        JSON.stringify(dataToSave)
       );
 
       setSaveStatus("saved");
+
+      console.log(
+        "✅ Workout program saved"
+      );
     } catch (error) {
       console.error(
         "Failed to save workout program:",
@@ -174,29 +418,135 @@ export function ProgramProvider({
     }
   }
 
+  /* =======================================================
+     ADD MUSCLE GROUP
+     ======================================================= */
+
   function addMuscleGroup(
-    day: keyof DayWorkout,
-    muscle: MuscleGroup
+    day: DayName,
+    muscle: MuscleGroup,
+    weekIndex: number = 0
   ) {
-    setWorkout((prev) => ({
-      ...prev,
-      [day]: [
-        ...(prev[day] || []),
-        muscle,
-      ],
-    }));
+    setWeeks((prev) => {
+      const updatedWeeks = [...prev];
+
+      while (
+        updatedWeeks.length <= weekIndex
+      ) {
+        updatedWeeks.push(
+          createEmptyWeek()
+        );
+      }
+
+      const currentWeek =
+        updatedWeeks[weekIndex];
+
+      updatedWeeks[weekIndex] = {
+        ...currentWeek,
+
+        [day]: [
+          ...(currentWeek[day] || []),
+          muscle,
+        ],
+      };
+
+      return updatedWeeks;
+    });
   }
 
-  function addExercisesToMuscle(
-    day: keyof DayWorkout,
+  /* =======================================================
+     REMOVE MUSCLE GROUP
+     ======================================================= */
+
+  function removeMuscleGroup(
+    day: DayName,
     muscleName: string,
-    exerciseIds: number[]
+    weekIndex: number
   ) {
-    setWorkout((prev) => ({
-      ...prev,
-      [day]: (prev[day] || []).map(
-        (muscle) => {
-          if (muscle.name !== muscleName) {
+    setWeeks((prev) => {
+      const updatedWeeks = [...prev];
+
+      if (
+        weekIndex < 0 ||
+        weekIndex >= updatedWeeks.length
+      ) {
+        return prev;
+      }
+
+      const currentWeek =
+        updatedWeeks[weekIndex];
+
+      updatedWeeks[weekIndex] = {
+        ...currentWeek,
+
+        [day]: (
+          currentWeek[day] || []
+        ).filter(
+          (muscle) =>
+            muscle.name !== muscleName
+        ),
+      };
+
+      return updatedWeeks;
+    });
+  }
+
+  /* =======================================================
+     FIND EXERCISE FROM LIBRARY
+     ======================================================= */
+
+  function findExerciseById(
+    exerciseId: number
+  ) {
+    for (const muscleExercises of Object.values(
+      exercises
+    )) {
+      const found =
+        muscleExercises.find(
+          (exercise) =>
+            exercise.id === exerciseId
+        );
+
+      if (found) {
+        return found;
+      }
+    }
+
+    return undefined;
+  }
+
+  /* =======================================================
+     ADD EXERCISES TO MUSCLE
+     ======================================================= */
+
+  function addExercisesToMuscle(
+    day: DayName,
+    muscleName: string,
+    exerciseIds: number[],
+    weekIndex: number = 0
+  ) {
+    setWeeks((prev) => {
+      const updatedWeeks = [...prev];
+
+      if (
+        weekIndex < 0 ||
+        weekIndex >= updatedWeeks.length
+      ) {
+        return prev;
+      }
+
+      const currentWeek =
+        updatedWeeks[weekIndex];
+
+      updatedWeeks[weekIndex] = {
+        ...currentWeek,
+
+        [day]: (
+          currentWeek[day] || []
+        ).map((muscle) => {
+          if (
+            muscle.name !== muscleName
+          ) {
             return muscle;
           }
 
@@ -211,12 +561,49 @@ export function ProgramProvider({
                     exercise.id === id
                 );
 
+              /*
+               * Keep existing settings when
+               * the exercise is already present.
+               */
               if (existing) {
                 return existing;
               }
 
+              /*
+               * Find the original exercise
+               * from the exercise library.
+               */
+              const libraryExercise =
+                findExerciseById(id);
+
+              /*
+               * CARDIO
+               *
+               * Cardio gets duration instead
+               * of fake sets/reps.
+               */
+              if (
+                libraryExercise?.type ===
+                "cardio"
+              ) {
+                return {
+                  id,
+                  type: "cardio" as const,
+                  duration:
+                    libraryExercise.duration ??
+                    20,
+                  rest: 0,
+                };
+              }
+
+              /*
+               * STRENGTH
+               *
+               * Normal default settings.
+               */
               return {
                 id,
+                type: "strength" as const,
                 sets: 3,
                 reps: 10,
                 rest: 60,
@@ -225,35 +612,61 @@ export function ProgramProvider({
 
           return {
             ...muscle,
-            exercises: updatedExercises,
+            exercises:
+              updatedExercises,
           };
-        }
-      ),
-    }));
+        }),
+      };
+
+      return updatedWeeks;
+    });
   }
 
+  /* =======================================================
+     UPDATE EXERCISE SETTINGS
+     ======================================================= */
+
   function updateExerciseSettings(
-    day: keyof DayWorkout,
+    day: DayName,
     muscleName: string,
     exerciseId: number,
     settings: {
       sets: number;
       reps: number;
       rest: number;
-    }
+    },
+    weekIndex: number = 0
   ) {
-    setWorkout((prev) => ({
-      ...prev,
-      [day]: (prev[day] || []).map(
-        (muscle) => {
-          if (muscle.name !== muscleName) {
+    setWeeks((prev) => {
+      const updatedWeeks = [...prev];
+
+      if (
+        weekIndex < 0 ||
+        weekIndex >= updatedWeeks.length
+      ) {
+        return prev;
+      }
+
+      const currentWeek =
+        updatedWeeks[weekIndex];
+
+      updatedWeeks[weekIndex] = {
+        ...currentWeek,
+
+        [day]: (
+          currentWeek[day] || []
+        ).map((muscle) => {
+          if (
+            muscle.name !== muscleName
+          ) {
             return muscle;
           }
 
           return {
             ...muscle,
+
             exercises:
-              muscle.exercises.map(
+              (muscle.exercises || []).map(
                 (exercise) =>
                   exercise.id === exerciseId
                     ? {
@@ -263,27 +676,51 @@ export function ProgramProvider({
                     : exercise
               ),
           };
-        }
-      ),
-    }));
+        }),
+      };
+
+      return updatedWeeks;
+    });
   }
 
+  /* =======================================================
+     REORDER EXERCISE
+     ======================================================= */
+
   function reorderExercise(
-    day: keyof DayWorkout,
+    day: DayName,
     muscleName: string,
     exerciseId: number,
-    direction: "up" | "down"
+    direction: "up" | "down",
+    weekIndex: number = 0
   ) {
-    setWorkout((prev) => ({
-      ...prev,
-      [day]: (prev[day] || []).map(
-        (muscle) => {
-          if (muscle.name !== muscleName) {
+    setWeeks((prev) => {
+      const updatedWeeks = [...prev];
+
+      if (
+        weekIndex < 0 ||
+        weekIndex >= updatedWeeks.length
+      ) {
+        return prev;
+      }
+
+      const currentWeek =
+        updatedWeeks[weekIndex];
+
+      updatedWeeks[weekIndex] = {
+        ...currentWeek,
+
+        [day]: (
+          currentWeek[day] || []
+        ).map((muscle) => {
+          if (
+            muscle.name !== muscleName
+          ) {
             return muscle;
           }
 
           const currentIndex =
-            muscle.exercises.findIndex(
+            (muscle.exercises || []).findIndex(
               (exercise) =>
                 exercise.id === exerciseId
             );
@@ -323,22 +760,42 @@ export function ProgramProvider({
 
           return {
             ...muscle,
-            exercises: updatedExercises,
+            exercises:
+              updatedExercises,
           };
-        }
-      ),
-    }));
+        }),
+      };
+
+      return updatedWeeks;
+    });
   }
+
+  /* =======================================================
+     WEEK 1 COMPATIBILITY
+     ======================================================= */
+
+  const workout =
+    weeks[0] || createEmptyWeek();
+
+  /* =======================================================
+     PROVIDER
+     ======================================================= */
 
   return (
     <ProgramContext.Provider
       value={{
         workout,
+        weeks,
         saveStatus,
+
+        getWorkoutForWeek,
+
         addMuscleGroup,
+        removeMuscleGroup,
         addExercisesToMuscle,
         updateExerciseSettings,
         reorderExercise,
+
         saveProgram,
       }}
     >
@@ -346,6 +803,10 @@ export function ProgramProvider({
     </ProgramContext.Provider>
   );
 }
+
+/* =========================================================
+   HOOK
+   ========================================================= */
 
 export function useProgram() {
   const context =

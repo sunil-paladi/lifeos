@@ -1,13 +1,19 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowLeft, Check, X } from "lucide-react";
+import {
+  ArrowLeft,
+  Check,
+  Trash2,
+  X,
+} from "lucide-react";
 
 import { useProgram } from "@/app/context/ProgramContext";
 import { exercises } from "@/app/data/exercises";
 
 interface Props {
   day: string;
+  weekIndex: number;
   onClose: () => void;
 }
 
@@ -25,15 +31,28 @@ const muscles = [
 
 export default function MuscleDrawer({
   day,
+  weekIndex,
   onClose,
 }: Props) {
   const {
-    workout,
+    getWorkoutForWeek,
     addMuscleGroup,
+    addExercisesToMuscle,
+    removeMuscleGroup,
   } = useProgram();
 
+  /*
+   * Get the exact workout for:
+   *
+   * Week + Day
+   */
+  const workout =
+    getWorkoutForWeek(weekIndex);
+
   const existing =
-    workout[day as keyof typeof workout] || [];
+    workout[
+      day as keyof typeof workout
+    ] || [];
 
   const [selectedMuscle, setSelectedMuscle] =
     useState<string | null>(null);
@@ -41,12 +60,66 @@ export default function MuscleDrawer({
   const [selectedExercises, setSelectedExercises] =
     useState<number[]>([]);
 
-  function handleMuscleSelect(muscle: string) {
+  /*
+   * Whether we are adding a completely
+   * new muscle group or editing an
+   * existing one.
+   */
+  const [isEditing, setIsEditing] =
+    useState(false);
+
+  /* =====================================================
+     SELECT MUSCLE
+     ===================================================== */
+
+  function handleMuscleSelect(
+    muscle: string
+  ) {
+    const existingMuscle =
+      existing.find(
+        (item) => item.name === muscle
+      );
+
     setSelectedMuscle(muscle);
-    setSelectedExercises([]);
+
+    /*
+     * If the muscle already exists,
+     * load its current exercises.
+     */
+    if (existingMuscle) {
+      setIsEditing(true);
+
+      setSelectedExercises(
+        (existingMuscle.exercises || []).map(
+          (exercise) => exercise.id
+        )
+      );
+    } else {
+      /*
+       * New muscle group.
+       */
+      setIsEditing(false);
+      setSelectedExercises([]);
+    }
   }
 
-  function toggleExercise(exerciseId: number) {
+  /* =====================================================
+     BACK TO MUSCLE LIST
+     ===================================================== */
+
+  function handleBack() {
+    setSelectedMuscle(null);
+    setSelectedExercises([]);
+    setIsEditing(false);
+  }
+
+  /* =====================================================
+     TOGGLE EXERCISE
+     ===================================================== */
+
+  function toggleExercise(
+    exerciseId: number
+  ) {
     setSelectedExercises((current) =>
       current.includes(exerciseId)
         ? current.filter(
@@ -56,30 +129,48 @@ export default function MuscleDrawer({
     );
   }
 
-  function handleAddExercises() {
+  /* =====================================================
+     SAVE EXERCISES
+     ===================================================== */
+
+  function handleSaveExercises() {
+    if (!selectedMuscle) {
+      return;
+    }
+
     if (
-      !selectedMuscle ||
       selectedExercises.length === 0
     ) {
       return;
     }
 
-    const alreadyExists = existing.some(
-      (item) =>
-        item.name === selectedMuscle
-    );
+    /*
+     * ---------------------------------------------------
+     * EDIT EXISTING MUSCLE
+     * ---------------------------------------------------
+     */
 
-    if (alreadyExists) {
+    if (isEditing) {
+      addExercisesToMuscle(
+        day as keyof typeof workout,
+        selectedMuscle,
+        selectedExercises,
+        weekIndex
+      );
+
+      handleBack();
       return;
     }
+
+    /*
+     * ---------------------------------------------------
+     * ADD NEW MUSCLE
+     * ---------------------------------------------------
+     */
 
     const selectedExerciseData =
       exercises[selectedMuscle] || [];
 
-    /*
-     * Convert selected exercise IDs into
-     * complete ProgramExercise objects.
-     */
     const programExercises =
       selectedExercises
         .map((exerciseId) => {
@@ -111,36 +202,70 @@ export default function MuscleDrawer({
           } => exercise !== null
         );
 
-    if (programExercises.length === 0) {
+    if (
+      programExercises.length === 0
+    ) {
       return;
     }
 
-    /*
-     * Create the muscle group and its
-     * exercises together.
-     */
     addMuscleGroup(
       day as keyof typeof workout,
       {
         id: Date.now(),
         name: selectedMuscle,
         exercises: programExercises,
-      }
+      },
+      weekIndex
+    );
+
+    handleBack();
+  }
+
+  /* =====================================================
+     DELETE MUSCLE GROUP
+     ===================================================== */
+
+  function handleDeleteMuscle(
+    muscleName: string
+  ) {
+    const confirmed =
+      window.confirm(
+        `Remove ${muscleName} from ${day}'s workout?`
+      );
+
+    if (!confirmed) {
+      return;
+    }
+
+    removeMuscleGroup(
+      day as keyof typeof workout,
+      muscleName,
+      weekIndex
     );
 
     /*
-     * Close the drawer after saving.
+     * If the muscle being deleted is
+     * currently open, return to the list.
      */
-    setSelectedMuscle(null);
-    setSelectedExercises([]);
-
-    onClose();
+    if (
+      selectedMuscle === muscleName
+    ) {
+      handleBack();
+    }
   }
+
+  /* =====================================================
+     EXERCISES FOR SELECTED MUSCLE
+     ===================================================== */
 
   const muscleExercises =
     selectedMuscle
       ? exercises[selectedMuscle] || []
       : [];
+
+  /* =====================================================
+     RENDER
+     ===================================================== */
 
   return (
     <>
@@ -157,91 +282,212 @@ export default function MuscleDrawer({
           event.stopPropagation()
         }
       >
-        {/* Header */}
+
+        {/* =================================================
+            HEADER
+            ================================================= */}
+
         <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+
           <div className="flex items-center gap-3">
+
             {selectedMuscle && (
               <button
                 type="button"
-                onClick={() => {
-                  setSelectedMuscle(null);
-                  setSelectedExercises([]);
-                }}
-                className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-800"
+                onClick={handleBack}
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-800"
               >
                 <ArrowLeft size={17} />
               </button>
             )}
 
             <div>
+
               <h2 className="text-base font-bold text-slate-900">
                 {selectedMuscle
                   ? selectedMuscle
-                  : "Add Workout"}
+                  : "Edit Workout"}
               </h2>
 
               <p className="mt-0.5 text-[11px] text-slate-500">
                 {selectedMuscle
-                  ? `Choose exercises for ${day}`
-                  : `Build ${day}'s workout`}
+                  ? isEditing
+                    ? `Edit exercises for ${day}`
+                    : `Choose exercises for ${day}`
+                  : `Week ${
+                      weekIndex + 1
+                    } · ${day}`}
               </p>
+
             </div>
+
           </div>
 
           <button
             type="button"
             onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-800"
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-800"
           >
             <X size={18} />
           </button>
+
         </div>
 
-        {/* Content */}
+        {/* =================================================
+            CONTENT
+            ================================================= */}
+
         <div className="max-h-[60vh] overflow-y-auto p-4">
+
           {!selectedMuscle ? (
-            /* Muscle Groups */
-            <div className="grid grid-cols-2 gap-2">
-              {muscles.map((muscle) => {
-                const alreadyAdded =
-                  existing.some(
-                    (item) =>
-                      item.name === muscle
-                  );
 
-                return (
-                  <button
-                    key={muscle}
-                    type="button"
-                    disabled={alreadyAdded}
-                    onClick={() =>
-                      handleMuscleSelect(
-                        muscle
-                      )
-                    }
-                    className={`flex items-center justify-between rounded-lg border px-3 py-3 text-left text-sm font-semibold transition ${
-                      alreadyAdded
-                        ? "cursor-not-allowed border-green-100 bg-green-50 text-green-600"
-                        : "border-slate-200 bg-white text-slate-800 hover:border-green-400 hover:bg-green-50"
-                    }`}
-                  >
-                    <span>{muscle}</span>
+            /* =================================================
+               MUSCLE GROUP LIST
+               ================================================= */
 
-                    {alreadyAdded && (
-                      <Check
-                        size={15}
-                        className="text-green-600"
-                      />
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          ) : (
-            /* Exercises */
             <div>
-              {muscleExercises.length === 0 ? (
+
+              <div className="mb-3">
+
+                <p className="text-xs font-semibold text-slate-700">
+                  Muscle Groups
+                </p>
+
+                <p className="mt-0.5 text-[11px] text-slate-500">
+                  Select a muscle group to add or edit
+                  exercises.
+                </p>
+
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+
+                {muscles.map((muscle) => {
+
+                  const existingMuscle =
+                    existing.find(
+                      (item) =>
+                        item.name === muscle
+                    );
+
+                  const alreadyAdded =
+                    !!existingMuscle;
+
+                  return (
+                    <div
+                      key={muscle}
+                      className={`flex items-center gap-1 rounded-lg border transition ${
+                        alreadyAdded
+                          ? "border-green-200 bg-green-50"
+                          : "border-slate-200 bg-white hover:border-green-300 hover:bg-green-50"
+                      }`}
+                    >
+
+                      {/* Muscle Button */}
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleMuscleSelect(
+                            muscle
+                          )
+                        }
+                        className="flex min-w-0 flex-1 items-center justify-between px-3 py-3 text-left"
+                      >
+
+                        <div className="min-w-0">
+
+                          <p
+                            className={`truncate text-sm font-semibold ${
+                              alreadyAdded
+                                ? "text-green-700"
+                                : "text-slate-800"
+                            }`}
+                          >
+                            {muscle}
+                          </p>
+
+                          {alreadyAdded && (
+                            <p className="mt-0.5 text-[9px] font-medium text-green-600">
+                              {
+                                existingMuscle
+                                  ?.exercises
+                                  ?.length
+                              }{" "}
+                              exercise
+                              {(
+                                existingMuscle
+                                  ?.exercises
+                                  ?.length ||
+                                0
+                              ) !== 1
+                                ? "s"
+                                : ""}
+                            </p>
+                          )}
+
+                        </div>
+
+                        {alreadyAdded && (
+                          <Check
+                            size={15}
+                            className="shrink-0 text-green-600"
+                          />
+                        )}
+
+                      </button>
+
+                      {/* Delete Button */}
+                      {alreadyAdded && (
+                        <button
+                          type="button"
+                          title={`Delete ${muscle}`}
+                          onClick={() =>
+                            handleDeleteMuscle(
+                              muscle
+                            )
+                          }
+                          className="mr-1.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-slate-400 transition hover:bg-red-50 hover:text-red-600"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      )}
+
+                    </div>
+                  );
+                })}
+
+              </div>
+
+            </div>
+
+          ) : (
+
+            /* =================================================
+               EXERCISE SELECTION
+               ================================================= */
+
+            <div>
+
+              {isEditing && (
+                <div className="mb-3 rounded-lg border border-green-100 bg-green-50 px-3 py-2">
+
+                  <p className="text-[11px] font-semibold text-green-700">
+                    Editing {selectedMuscle}
+                  </p>
+
+                  <p className="mt-0.5 text-[10px] text-green-600">
+                    Select or remove exercises, then
+                    save your changes.
+                  </p>
+
+                </div>
+              )}
+
+              {muscleExercises.length ===
+              0 ? (
+
                 <div className="rounded-lg bg-slate-50 px-4 py-8 text-center">
+
                   <p className="text-sm font-semibold text-slate-700">
                     No exercises available
                   </p>
@@ -250,11 +496,16 @@ export default function MuscleDrawer({
                     No exercises are currently
                     listed for this muscle group.
                   </p>
+
                 </div>
+
               ) : (
+
                 <div className="space-y-2">
+
                   {muscleExercises.map(
                     (exercise) => {
+
                       const isSelected =
                         selectedExercises.includes(
                           exercise.id
@@ -275,7 +526,9 @@ export default function MuscleDrawer({
                               : "border-slate-200 bg-white hover:border-green-300 hover:bg-slate-50"
                           }`}
                         >
+
                           <div>
+
                             <p className="text-sm font-semibold text-slate-900">
                               {exercise.name}
                             </p>
@@ -285,6 +538,7 @@ export default function MuscleDrawer({
                               {exercise.sets} sets ×{" "}
                               {exercise.reps} reps
                             </p>
+
                           </div>
 
                           <div
@@ -298,41 +552,63 @@ export default function MuscleDrawer({
                               <Check size={14} />
                             )}
                           </div>
+
                         </button>
                       );
                     }
                   )}
+
                 </div>
+
               )}
+
             </div>
           )}
+
         </div>
 
-        {/* Footer */}
+        {/* =================================================
+            FOOTER
+            ================================================= */}
+
         {selectedMuscle && (
           <div className="border-t border-slate-200 bg-white px-4 py-3">
+
             <button
               type="button"
               disabled={
                 selectedExercises.length === 0
               }
-              onClick={handleAddExercises}
+              onClick={
+                handleSaveExercises
+              }
               className={`w-full rounded-lg py-2.5 text-sm font-semibold transition ${
                 selectedExercises.length > 0
                   ? "bg-green-600 text-white hover:bg-green-700"
                   : "cursor-not-allowed bg-slate-100 text-slate-400"
               }`}
             >
-              {selectedExercises.length > 0
-                ? `Add ${selectedExercises.length} Exercise${
-                    selectedExercises.length > 1
+              {isEditing
+                ? selectedExercises.length >
+                  0
+                  ? "Save Exercise Changes"
+                  : "Select Exercises"
+                : selectedExercises.length >
+                  0
+                ? `Add ${
+                    selectedExercises.length
+                  } Exercise${
+                    selectedExercises.length >
+                    1
                       ? "s"
                       : ""
                   }`
                 : "Select Exercises"}
             </button>
+
           </div>
         )}
+
       </div>
     </>
   );

@@ -89,10 +89,10 @@ export default function ExerciseSelector({
                       </p>
 
                       <p className="mt-1 text-sm text-slate-500">
-                        {exercise.equipment} •{" "}
-                        {exercise.sets} sets ×{" "}
-                        {exercise.reps} reps
-                      </p>
+  {exercise.type === "cardio"
+    ? `${exercise.equipment} • ${exercise.duration ?? 0} min`
+    : `${exercise.equipment} • ${exercise.sets} sets × ${exercise.reps} reps`}
+</p>
                     </div>
 
                     <span

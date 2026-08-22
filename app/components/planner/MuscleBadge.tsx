@@ -15,19 +15,27 @@ import { useProgram } from "@/app/context/ProgramContext";
 
 interface ProgramExercise {
   id: number;
-  sets: number;
-  reps: number;
-  rest: number;
+  type?: "strength" | "cardio";
+
+  // Strength
+  sets?: number;
+  reps?: number;
+  rest?: number;
+
+  // Cardio
+  duration?: number;
 }
 
 interface Props {
   day: string;
+  weekIndex: number;
   name: string;
   exerciseIds: ProgramExercise[];
 }
 
 export default function MuscleBadge({
   day,
+  weekIndex,
   name,
   exerciseIds,
 }: Props) {
@@ -43,13 +51,16 @@ export default function MuscleBadge({
     reorderExercise,
   } = useProgram();
 
-  const muscleExercises = exercises[name] || [];
+  const muscleExercises =
+    exercises[name] || [];
 
   const selectedExercises = exerciseIds
     .map((programExercise) => {
-      const exercise = muscleExercises.find(
-        (item) => item.id === programExercise.id
-      );
+      const exercise =
+        muscleExercises.find(
+          (item) =>
+            item.id === programExercise.id
+        );
 
       if (!exercise) {
         return null;
@@ -71,9 +82,12 @@ export default function MuscleBadge({
 
   function handleSave(ids: number[]) {
     addExercisesToMuscle(
-      day as keyof ReturnType<typeof useProgram>["workout"],
+      day as keyof ReturnType<
+        typeof useProgram
+      >["workout"],
       name,
-      ids
+      ids,
+      weekIndex
     );
 
     setExerciseOpen(false);
@@ -81,31 +95,50 @@ export default function MuscleBadge({
 
   function removeExercise(id: number) {
     const updatedIds = exerciseIds
-      .filter((exercise) => exercise.id !== id)
-      .map((exercise) => exercise.id);
+      .filter(
+        (exercise) =>
+          exercise.id !== id
+      )
+      .map(
+        (exercise) => exercise.id
+      );
 
     addExercisesToMuscle(
-      day as keyof ReturnType<typeof useProgram>["workout"],
+      day as keyof ReturnType<
+        typeof useProgram
+      >["workout"],
       name,
-      updatedIds
+      updatedIds,
+      weekIndex
     );
   }
 
+  /*
+   * Save exercise settings.
+   *
+   * Strength:
+   *   sets / reps / rest
+   *
+   * Cardio:
+   *   duration
+   */
   function updateSettings(
     exerciseId: number,
-    sets: number,
-    reps: number,
-    rest: number
+    settings: {
+      sets?: number;
+      reps?: number;
+      rest?: number;
+      duration?: number;
+    }
   ) {
     updateExerciseSettings(
-      day as keyof ReturnType<typeof useProgram>["workout"],
+      day as keyof ReturnType<
+        typeof useProgram
+      >["workout"],
       name,
       exerciseId,
-      {
-        sets,
-        reps,
-        rest,
-      }
+      settings,
+      weekIndex
     );
 
     setEditingExercise(null);
@@ -116,10 +149,13 @@ export default function MuscleBadge({
     direction: "up" | "down"
   ) {
     reorderExercise(
-      day as keyof ReturnType<typeof useProgram>["workout"],
+      day as keyof ReturnType<
+        typeof useProgram
+      >["workout"],
       name,
       exerciseId,
-      direction
+      direction,
+      weekIndex
     );
   }
 
@@ -135,7 +171,9 @@ export default function MuscleBadge({
 
           <button
             type="button"
-            onClick={() => setExerciseOpen(true)}
+            onClick={() =>
+              setExerciseOpen(true)
+            }
             className="flex items-center gap-1 rounded-lg bg-green-600 px-3 py-1.5 text-sm text-white hover:bg-green-700"
           >
             <Plus size={15} />
@@ -149,7 +187,10 @@ export default function MuscleBadge({
 
             {selectedExercises.map(
               (
-                { exercise, programExercise },
+                {
+                  exercise,
+                  programExercise,
+                },
                 index
               ) => (
                 <div
@@ -172,11 +213,32 @@ export default function MuscleBadge({
                         </p>
                       </div>
 
+                      {/* Exercise Summary */}
                       <p className="mt-1 text-xs text-slate-500">
-                        {programExercise.sets} sets ×{" "}
-                        {programExercise.reps} reps
-                        {" • "}
-                        Rest: {programExercise.rest}s
+
+                        {programExercise.type ===
+                        "cardio" ? (
+                          <>
+                            {programExercise.duration ??
+                              0}{" "}
+                            min
+                          </>
+                        ) : (
+                          <>
+                            {programExercise.sets ??
+                              0}{" "}
+                            sets ×{" "}
+                            {programExercise.reps ??
+                              0}{" "}
+                            reps
+                            {" • "}
+                            Rest:{" "}
+                            {programExercise.rest ??
+                              0}
+                            s
+                          </>
+                        )}
+
                       </p>
 
                       <p className="mt-1 text-xs text-slate-400">
@@ -191,7 +253,9 @@ export default function MuscleBadge({
                       {/* Move Up */}
                       <button
                         type="button"
-                        disabled={index === 0}
+                        disabled={
+                          index === 0
+                        }
                         onClick={() =>
                           moveExercise(
                             exercise.id,
@@ -201,7 +265,9 @@ export default function MuscleBadge({
                         className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-30"
                         title="Move up"
                       >
-                        <ChevronUp size={16} />
+                        <ChevronUp
+                          size={16}
+                        />
                       </button>
 
                       {/* Move Down */}
@@ -209,7 +275,8 @@ export default function MuscleBadge({
                         type="button"
                         disabled={
                           index ===
-                          selectedExercises.length - 1
+                          selectedExercises.length -
+                            1
                         }
                         onClick={() =>
                           moveExercise(
@@ -220,7 +287,9 @@ export default function MuscleBadge({
                         className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-30"
                         title="Move down"
                       >
-                        <ChevronDown size={16} />
+                        <ChevronDown
+                          size={16}
+                        />
                       </button>
 
                       {/* Settings */}
@@ -237,7 +306,9 @@ export default function MuscleBadge({
                         className="rounded-lg p-2 text-slate-500 hover:bg-slate-100"
                         title="Customize"
                       >
-                        <Settings size={16} />
+                        <Settings
+                          size={16}
+                        />
                       </button>
 
                       {/* Remove */}
@@ -251,7 +322,9 @@ export default function MuscleBadge({
                         className="rounded-lg p-2 text-red-500 hover:bg-red-50"
                         title="Remove exercise"
                       >
-                        <Trash2 size={16} />
+                        <Trash2
+                          size={16}
+                        />
                       </button>
 
                     </div>
@@ -263,6 +336,10 @@ export default function MuscleBadge({
                     <ExerciseSettings
                       exercise={
                         programExercise
+                      }
+                      isCardio={
+                        programExercise.type ===
+                        "cardio"
                       }
                       onSave={
                         updateSettings
@@ -284,7 +361,8 @@ export default function MuscleBadge({
         <ExerciseSelector
           muscle={name}
           initialSelected={exerciseIds.map(
-            (exercise) => exercise.id
+            (exercise) =>
+              exercise.id
           )}
           onSave={handleSave}
           onClose={() =>
@@ -296,97 +374,173 @@ export default function MuscleBadge({
   );
 }
 
+/* =========================================================
+   EXERCISE SETTINGS
+   ========================================================= */
+
 function ExerciseSettings({
   exercise,
+  isCardio,
   onSave,
 }: {
   exercise: ProgramExercise;
+  isCardio: boolean;
 
   onSave: (
     id: number,
-    sets: number,
-    reps: number,
-    rest: number
+    settings: {
+      sets?: number;
+      reps?: number;
+      rest?: number;
+      duration?: number;
+    }
   ) => void;
 }) {
+  /* Strength */
   const [sets, setSets] =
-    useState(exercise.sets);
+    useState(
+      exercise.sets ?? 3
+    );
 
   const [reps, setReps] =
-    useState(exercise.reps);
+    useState(
+      exercise.reps ?? 10
+    );
 
   const [rest, setRest] =
-    useState(exercise.rest);
+    useState(
+      exercise.rest ?? 60
+    );
+
+  /* Cardio */
+  const [duration, setDuration] =
+  useState(
+    String(exercise.duration ?? 20)
+  );
 
   return (
     <div className="mt-3 rounded-lg bg-slate-50 p-3">
 
-      <div className="grid grid-cols-3 gap-3">
+      {/* =================================================
+          CARDIO SETTINGS
+          ================================================= */}
+      {isCardio ? (
+        <>
+          <label className="block text-xs font-medium text-slate-700">
+            Time (minutes)
 
-        <label className="text-xs font-medium">
-          Sets
+            <input
+  type="number"
+  min="1"
+  value={duration}
+  onChange={(e) =>
+    setDuration(e.target.value)
+  }
+  className="mt-1 w-full rounded-lg border p-2"
+/>
+          </label>
 
-          <input
-            type="number"
-            min="1"
-            value={sets}
-            onChange={(e) =>
-              setSets(
-                Number(e.target.value)
+          <button
+            type="button"
+            onClick={() => {
+  const value = Number(duration);
+
+  if (value > 0) {
+    onSave(exercise.id, {
+      duration: value,
+    });
+  }
+}}
+            className="mt-3 w-full rounded-lg bg-green-600 py-2 text-sm font-semibold text-white hover:bg-green-700"
+          >
+            Save Settings
+          </button>
+        </>
+      ) : (
+
+        /* =================================================
+           STRENGTH SETTINGS
+           ================================================= */
+        <>
+          <div className="grid grid-cols-3 gap-3">
+
+            {/* Sets */}
+            <label className="text-xs font-medium">
+              Sets
+
+              <input
+                type="number"
+                min="1"
+                value={sets}
+                onChange={(e) =>
+                  setSets(
+                    Number(
+                      e.target.value
+                    )
+                  )
+                }
+                className="mt-1 w-full rounded-lg border p-2"
+              />
+            </label>
+
+            {/* Reps */}
+            <label className="text-xs font-medium">
+              Reps
+
+              <input
+                type="number"
+                min="1"
+                value={reps}
+                onChange={(e) =>
+                  setReps(
+                    Number(
+                      e.target.value
+                    )
+                  )
+                }
+                className="mt-1 w-full rounded-lg border p-2"
+              />
+            </label>
+
+            {/* Rest */}
+            <label className="text-xs font-medium">
+              Rest
+
+              <input
+                type="number"
+                min="0"
+                value={rest}
+                onChange={(e) =>
+                  setRest(
+                    Number(
+                      e.target.value
+                    )
+                  )
+                }
+                className="mt-1 w-full rounded-lg border p-2"
+              />
+            </label>
+
+          </div>
+
+          <button
+            type="button"
+            onClick={() =>
+              onSave(
+                exercise.id,
+                {
+                  sets,
+                  reps,
+                  rest,
+                }
               )
             }
-            className="mt-1 w-full rounded-lg border p-2"
-          />
-        </label>
-
-        <label className="text-xs font-medium">
-          Reps
-
-          <input
-            type="number"
-            min="1"
-            value={reps}
-            onChange={(e) =>
-              setReps(
-                Number(e.target.value)
-              )
-            }
-            className="mt-1 w-full rounded-lg border p-2"
-          />
-        </label>
-
-        <label className="text-xs font-medium">
-          Rest
-
-          <input
-            type="number"
-            min="0"
-            value={rest}
-            onChange={(e) =>
-              setRest(
-                Number(e.target.value)
-              )
-            }
-            className="mt-1 w-full rounded-lg border p-2"
-          />
-        </label>
-
-      </div>
-
-      <button
-        type="button"
-        onClick={() =>
-          onSave(
-            exercise.id,
-            sets,
-            reps,
-            rest
-          )
-        }
-        className="mt-3 w-full rounded-lg bg-green-600 py-2 text-sm font-semibold text-white hover:bg-green-700"
-      >
-        Save Settings
-      </button>
+            className="mt-3 w-full rounded-lg bg-green-600 py-2 text-sm font-semibold text-white hover:bg-green-700"
+          >
+            Save Settings
+          </button>
+        </>
+      )}
 
     </div>
   );

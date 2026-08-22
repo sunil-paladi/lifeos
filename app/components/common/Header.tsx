@@ -17,58 +17,77 @@ export default function Header() {
   const quote = quotes[today.getDate() % quotes.length];
 
   return (
-    <header className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
-      <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between">
-        {/* Left Section */}
-        <div className="flex-1">
-          <p className="text-sm font-medium text-slate-500">
+    <header className="rounded-2xl border border-slate-200 bg-white px-6 py-6 shadow-sm sm:px-7 sm:py-7">
+      <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+
+        {/* =====================================================
+            LEFT SECTION
+        ===================================================== */}
+
+        <div className="min-w-0 flex-1">
+
+          {/* Welcome */}
+          <p className="text-xs font-medium text-slate-500 sm:text-sm">
             👋 Welcome back, {profile.name}!
           </p>
 
-          <h1 className="mt-3 text-4xl font-bold leading-tight text-slate-900">
-            Are you ready for today's challenge!
+          {/* Main Heading */}
+          <h1 className="mt-2 text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-3xl lg:text-4xl">
+            Are you ready for today's challenge?
           </h1>
 
-          <p className="mt-4 flex items-center gap-2 text-slate-500">
+          {/* Date */}
+          <p className="mt-3 flex items-center gap-2 text-sm font-medium text-slate-500">
             📅 {formattedDate}
           </p>
 
-          <div className="mt-5 border-l-4 border-orange-400 pl-4">
-            <p className="italic text-slate-600 leading-relaxed">
+          {/* Quote */}
+          <div className="mt-4 border-l-4 border-orange-400 pl-3 sm:pl-4">
+            <p className="text-sm italic leading-relaxed text-slate-600">
               ❝ {quote} ❞
             </p>
           </div>
+
         </div>
 
-        {/* Right Section */}
-        <div className="flex items-start gap-4">
+        {/* =====================================================
+            RIGHT SECTION
+        ===================================================== */}
+
+        <div className="flex shrink-0 items-center gap-3">
+
           {/* Fire Streak */}
-          <div className="rounded-2xl border border-orange-200 bg-orange-50 px-5 py-3 shadow-sm">
-            <div className="flex items-center gap-3">
-              <span className="text-3xl">🔥</span>
+          <div className="rounded-xl border border-orange-200 bg-orange-50 px-4 py-2.5 shadow-sm">
+            <div className="flex items-center gap-2.5">
+
+              <span className="text-2xl">
+                🔥
+              </span>
 
               <div>
-                <p className="text-lg font-bold text-orange-700">
+                <p className="text-base font-bold leading-tight text-orange-700">
                   {profile.fireDays} Day Streak
                 </p>
 
-                <p className="text-sm text-orange-600">
+                <p className="mt-0.5 text-xs text-orange-600">
                   Stay Consistent
                 </p>
               </div>
+
             </div>
           </div>
 
           {/* Notification */}
-          <button className="flex h-11 w-11 items-center justify-center rounded-full bg-slate-100 transition-all duration-200 hover:bg-orange-100 hover:scale-105">
+          <button
+            type="button"
+            aria-label="Notifications"
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-base transition-all duration-200 hover:scale-105 hover:bg-orange-100"
+          >
             🔔
           </button>
 
-          {/* Avatar */}
-          <div className="flex h-11 w-11 items-center justify-center rounded-full bg-green-600 font-bold text-white shadow-sm">
-            {profile.name.charAt(0)}
-          </div>
         </div>
+
       </div>
     </header>
   );
