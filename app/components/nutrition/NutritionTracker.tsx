@@ -19,6 +19,11 @@ type MealForm = {
   fat: string;
 };
 
+type NutritionDay = {
+  date: string;
+  meals: Meal[];
+};
+
 const EMPTY_FORM: MealForm = {
   name: "",
   calories: "",
@@ -54,7 +59,14 @@ const INITIAL_MEALS: Meal[] = [
   },
 ];
 
-const TARGETS = {
+type NutritionTargets = {
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+};
+
+const DEFAULT_TARGETS: NutritionTargets = {
   calories: 2300,
   protein: 150,
   carbs: 250,
@@ -62,11 +74,34 @@ const TARGETS = {
 };
 
 const STORAGE_KEY = "lifeos-todays-meals";
+const NUTRITION_HISTORY_KEY = "lifeos-nutrition-history";
+const NUTRITION_TARGETS_KEY = "lifeos-nutrition-targets";
 
 export default function NutritionTracker() {
   // Start with the same data on server and browser to avoid a hydration mismatch.
   const [meals, setMeals] = useState<Meal[]>(INITIAL_MEALS);
   const [mealsLoaded, setMealsLoaded] = useState(false);
+  const [nutritionHistory, setNutritionHistory] =
+    useState<NutritionDay[]>([]);
+  const [nutritionHistoryLoaded, setNutritionHistoryLoaded] =
+    useState(false);
+  const [nutritionTracked, setNutritionTracked] =
+    useState(false);
+
+  const [targets, setTargets] =
+    useState<NutritionTargets>(DEFAULT_TARGETS);
+
+  const [targetsLoaded, setTargetsLoaded] =
+    useState(false);
+
+  const [showGoals, setShowGoals] =
+    useState(false);
+
+  const [goalsForm, setGoalsForm] =
+    useState<NutritionTargets>(DEFAULT_TARGETS);
+
+  const [goalsError, setGoalsError] =
+    useState("");
 
   // Load saved meals only after the component has mounted in the browser.
   useEffect(() => {
@@ -78,12 +113,59 @@ export default function NutritionTracker() {
 
         if (Array.isArray(parsedMeals)) {
           setMeals(parsedMeals);
+          setNutritionTracked(true);
+        }
+      }
+
+      const savedTargets = localStorage.getItem(
+        NUTRITION_TARGETS_KEY
+      );
+
+      if (savedTargets) {
+        const parsedTargets =
+          JSON.parse(savedTargets);
+
+        if (
+          parsedTargets &&
+          typeof parsedTargets === "object"
+        ) {
+          const loadedTargets: NutritionTargets = {
+            calories: Number(parsedTargets.calories),
+            protein: Number(parsedTargets.protein),
+            carbs: Number(parsedTargets.carbs),
+            fat: Number(parsedTargets.fat),
+          };
+
+          if (
+            Object.values(loadedTargets).every(
+              (value) =>
+                Number.isFinite(value) &&
+                value > 0
+            )
+          ) {
+            setTargets(loadedTargets);
+            setGoalsForm(loadedTargets);
+          }
+        }
+      }
+
+      const savedHistory = localStorage.getItem(
+        NUTRITION_HISTORY_KEY
+      );
+
+      if (savedHistory) {
+        const parsedHistory = JSON.parse(savedHistory);
+
+        if (Array.isArray(parsedHistory)) {
+          setNutritionHistory(parsedHistory);
         }
       }
     } catch (error) {
       console.error("Failed to load meals:", error);
     } finally {
       setMealsLoaded(true);
+      setNutritionHistoryLoaded(true);
+      setTargetsLoaded(true);
     }
   }, []);
 
@@ -102,6 +184,103 @@ export default function NutritionTracker() {
       console.error("Failed to save meals:", error);
     }
   }, [meals, mealsLoaded]);
+
+  /* =========================================================
+     SAVE TODAY'S NUTRITION TO ANALYTICS HISTORY
+  ========================================================= */
+
+  function saveNutritionHistoryForToday(
+    updatedMeals: Meal[]
+  ) {
+    const today = new Date()
+      .toISOString()
+      .split("T")[0];
+
+    setNutritionTracked(true);
+
+    setNutritionHistory((previousHistory) => {
+      const existingDay = previousHistory.find(
+        (item) => item.date === today
+      );
+
+      const updatedDay: NutritionDay = {
+        date: today,
+        meals: updatedMeals,
+      };
+
+      const updatedHistory = existingDay
+        ? previousHistory.map((item) =>
+            item.date === today
+              ? updatedDay
+              : item
+          )
+        : [...previousHistory, updatedDay];
+
+      try {
+        localStorage.setItem(
+          NUTRITION_HISTORY_KEY,
+          JSON.stringify(updatedHistory)
+        );
+      } catch (error) {
+        console.error(
+          "Failed to save nutrition history:",
+          error
+        );
+      }
+
+      return updatedHistory;
+    });
+  }
+
+  useEffect(() => {
+    if (
+      !mealsLoaded ||
+      !nutritionHistoryLoaded ||
+      !nutritionTracked
+    ) {
+      return;
+    }
+
+    const today = new Date()
+      .toISOString()
+      .split("T")[0];
+
+    const hasToday = nutritionHistory.some(
+      (item) => item.date === today
+    );
+
+    if (!hasToday) {
+      const todayEntry: NutritionDay = {
+        date: today,
+        meals,
+      };
+
+      const updatedHistory = [
+        ...nutritionHistory,
+        todayEntry,
+      ];
+
+      setNutritionHistory(updatedHistory);
+
+      try {
+        localStorage.setItem(
+          NUTRITION_HISTORY_KEY,
+          JSON.stringify(updatedHistory)
+        );
+      } catch (error) {
+        console.error(
+          "Failed to initialize nutrition history:",
+          error
+        );
+      }
+    }
+  }, [
+    mealsLoaded,
+    nutritionHistoryLoaded,
+    nutritionTracked,
+    nutritionHistory,
+    meals,
+  ]);
 
   /* =========================================================
      MEAL MODAL
@@ -347,15 +526,18 @@ export default function NutritionTracker() {
     /* EDIT */
 
     if (editingMealId !== null) {
-      setMeals((prev) =>
-        prev.map((meal) =>
-          meal.id === editingMealId
-            ? {
-                ...meal,
-                ...mealData,
-              }
-            : meal
-        )
+      const updatedMeals = meals.map((meal) =>
+        meal.id === editingMealId
+          ? {
+              ...meal,
+              ...mealData,
+            }
+          : meal
+      );
+
+      setMeals(updatedMeals);
+      saveNutritionHistoryForToday(
+        updatedMeals
       );
     }
 
@@ -367,10 +549,15 @@ export default function NutritionTracker() {
         ...mealData,
       };
 
-      setMeals((prev) => [
-        ...prev,
+      const updatedMeals = [
+        ...meals,
         newMeal,
-      ]);
+      ];
+
+      setMeals(updatedMeals);
+      saveNutritionHistoryForToday(
+        updatedMeals
+      );
     }
 
     closeMealModal();
@@ -395,10 +582,13 @@ export default function NutritionTracker() {
 
     if (!confirmed) return;
 
-    setMeals((prev) =>
-      prev.filter(
-        (meal) => meal.id !== id
-      )
+    const updatedMeals = meals.filter(
+      (meal) => meal.id !== id
+    );
+
+    setMeals(updatedMeals);
+    saveNutritionHistoryForToday(
+      updatedMeals
     );
   }
 
@@ -511,31 +701,113 @@ export default function NutritionTracker() {
   }
 
   /* =========================================================
+     NUTRITION GOALS
+  ========================================================= */
+
+  function openNutritionGoals() {
+    setGoalsForm(targets);
+    setGoalsError("");
+    setShowGoals(true);
+  }
+
+  function closeNutritionGoals() {
+    setShowGoals(false);
+    setGoalsError("");
+  }
+
+  function updateGoal(
+    field: keyof NutritionTargets,
+    value: string
+  ) {
+    setGoalsForm((previous) => ({
+      ...previous,
+      [field]: Number(value),
+    }));
+
+    setGoalsError("");
+  }
+
+  function saveNutritionGoals() {
+    const values = [
+      goalsForm.calories,
+      goalsForm.protein,
+      goalsForm.carbs,
+      goalsForm.fat,
+    ];
+
+    if (
+      values.some(
+        (value) =>
+          !Number.isFinite(value) ||
+          value <= 0
+      )
+    ) {
+      setGoalsError(
+        "Please enter a value greater than 0 for every goal."
+      );
+      return;
+    }
+
+    const updatedTargets: NutritionTargets = {
+      calories: Math.round(goalsForm.calories),
+      protein: Number(goalsForm.protein.toFixed(1)),
+      carbs: Number(goalsForm.carbs.toFixed(1)),
+      fat: Number(goalsForm.fat.toFixed(1)),
+    };
+
+    setTargets(updatedTargets);
+
+    try {
+      localStorage.setItem(
+        NUTRITION_TARGETS_KEY,
+        JSON.stringify(updatedTargets)
+      );
+    } catch (error) {
+      console.error(
+        "Failed to save nutrition goals:",
+        error
+      );
+    }
+
+    closeNutritionGoals();
+  }
+
+  /* =========================================================
      PROGRESS
   ========================================================= */
+
+  if (!targetsLoaded) {
+    return (
+      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <p className="text-sm text-slate-500">
+          Loading your nutrition goals...
+        </p>
+      </div>
+    );
+  }
 
   const caloriesPercentage =
     getPercentage(
       nutrition.calories,
-      TARGETS.calories
+      targets.calories
     );
 
   const proteinPercentage =
     getPercentage(
       nutrition.protein,
-      TARGETS.protein
+      targets.protein
     );
 
   const carbsPercentage =
     getPercentage(
       nutrition.carbs,
-      TARGETS.carbs
+      targets.carbs
     );
 
   const fatPercentage =
     getPercentage(
       nutrition.fat,
-      TARGETS.fat
+      targets.fat
     );
 
   const averageMacroPercentage =
@@ -664,13 +936,23 @@ export default function NutritionTracker() {
 
           </div>
 
-          <button
-            type="button"
-            onClick={openAddMeal}
-            className="shrink-0 rounded-lg bg-green-600 px-3 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-green-700 hover:shadow-md sm:px-4 sm:text-sm"
-          >
-            + Add Meal
-          </button>
+          <div className="flex shrink-0 items-center gap-2">
+            <button
+              type="button"
+              onClick={openNutritionGoals}
+              className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 sm:px-4 sm:text-sm"
+            >
+              🎯 Goals
+            </button>
+
+            <button
+              type="button"
+              onClick={openAddMeal}
+              className="rounded-lg bg-green-600 px-3 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-green-700 hover:shadow-md sm:px-4 sm:text-sm"
+            >
+              + Add Meal
+            </button>
+          </div>
 
         </div>
 
@@ -693,7 +975,7 @@ export default function NutritionTracker() {
                 </span>
 
                 <span className="text-sm font-medium text-slate-500">
-                  / {TARGETS.calories} kcal
+                  / {targets.calories} kcal
                 </span>
 
               </div>
@@ -734,7 +1016,7 @@ export default function NutritionTracker() {
             <span className="text-slate-400">
               {getRemaining(
                 nutrition.calories,
-                TARGETS.calories
+                targets.calories
               )}{" "}
               kcal remaining
             </span>
@@ -770,7 +1052,7 @@ export default function NutritionTracker() {
           <MacroProgress
             label="Protein"
             current={nutrition.protein}
-            target={TARGETS.protein}
+            target={targets.protein}
             unit="g"
             icon="💪"
           />
@@ -778,7 +1060,7 @@ export default function NutritionTracker() {
           <MacroProgress
             label="Carbohydrates"
             current={nutrition.carbs}
-            target={TARGETS.carbs}
+            target={targets.carbs}
             unit="g"
             icon="🌾"
           />
@@ -786,7 +1068,7 @@ export default function NutritionTracker() {
           <MacroProgress
             label="Fat"
             current={nutrition.fat}
-            target={TARGETS.fat}
+            target={targets.fat}
             unit="g"
             icon="🥑"
           />
@@ -912,7 +1194,7 @@ export default function NutritionTracker() {
           <span className="text-xs font-semibold text-slate-500">
             {getRemaining(
               nutrition.calories,
-              TARGETS.calories
+              targets.calories
             )}{" "}
             kcal left
           </span>
@@ -920,6 +1202,149 @@ export default function NutritionTracker() {
         </div>
 
       </div>
+
+      {/* =====================================================
+          NUTRITION GOALS MODAL
+      ===================================================== */}
+
+      {showGoals && (
+        <div
+          className="fixed inset-0 z-[110] flex items-center justify-center bg-slate-950/50 p-4"
+          onMouseDown={(event) => {
+            if (
+              event.target === event.currentTarget
+            ) {
+              closeNutritionGoals();
+            }
+          }}
+        >
+          <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl sm:p-6">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h3 className="text-lg font-bold text-slate-900">
+                  🎯 Daily Nutrition Goals
+                </h3>
+
+                <p className="mt-1 text-xs leading-relaxed text-slate-500">
+                  Enter the daily targets given by your trainer or nutrition plan.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={closeNutritionGoals}
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="mt-5 space-y-4">
+              <div>
+                <label className="text-xs font-semibold text-slate-600">
+                  Calories (kcal)
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  step="1"
+                  value={goalsForm.calories}
+                  onChange={(e) =>
+                    updateGoal(
+                      "calories",
+                      e.target.value
+                    )
+                  }
+                  className="mt-1.5 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-100"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                <div>
+                  <label className="text-xs font-semibold text-slate-600">
+                    Protein (g)
+                  </label>
+                  <input
+                    type="number"
+                    min="0.1"
+                    step="0.1"
+                    value={goalsForm.protein}
+                    onChange={(e) =>
+                      updateGoal(
+                        "protein",
+                        e.target.value
+                      )
+                    }
+                    className="mt-1.5 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-100"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold text-slate-600">
+                    Carbs (g)
+                  </label>
+                  <input
+                    type="number"
+                    min="0.1"
+                    step="0.1"
+                    value={goalsForm.carbs}
+                    onChange={(e) =>
+                      updateGoal(
+                        "carbs",
+                        e.target.value
+                      )
+                    }
+                    className="mt-1.5 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-100"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold text-slate-600">
+                    Fat (g)
+                  </label>
+                  <input
+                    type="number"
+                    min="0.1"
+                    step="0.1"
+                    value={goalsForm.fat}
+                    onChange={(e) =>
+                      updateGoal(
+                        "fat",
+                        e.target.value
+                      )
+                    }
+                    className="mt-1.5 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-100"
+                  />
+                </div>
+              </div>
+
+              {goalsError && (
+                <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 text-xs font-medium text-red-600">
+                  {goalsError}
+                </div>
+              )}
+            </div>
+
+            <div className="mt-6 flex gap-3">
+              <button
+                type="button"
+                onClick={closeNutritionGoals}
+                className="flex-1 rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                onClick={saveNutritionGoals}
+                className="flex-1 rounded-lg bg-green-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-green-700"
+              >
+                Save Goals
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* =====================================================
           ADD / EDIT MEAL MODAL

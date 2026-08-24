@@ -11,6 +11,7 @@ import {
   BookOpen,
   NotebookPen,
   BarChart3,
+  FileText,
   Settings,
 } from "lucide-react";
 
@@ -22,6 +23,7 @@ const menuItems = [
   { icon: BookOpen, title: "Habits" },
   { icon: NotebookPen, title: "Journal" },
   { icon: BarChart3, title: "Analytics" },
+  { icon: FileText, title: "Reports" },
   { icon: Settings, title: "Settings" },
 ];
 
@@ -139,18 +141,18 @@ export default function Sidebar() {
             </span>
 
             <span
-  className={`font-semibold ${
-    profile.fireDays >= 100
-      ? "text-purple-400"
-      : profile.fireDays >= 30
-      ? "text-blue-400"
-      : profile.fireDays >= 7
-      ? "text-green-400"
-      : "text-orange-400"
-  }`}
->
-  {profile.fireDays} Days
-</span>
+              className={`font-semibold ${
+                profile.fireDays >= 100
+                  ? "text-purple-400"
+                  : profile.fireDays >= 30
+                  ? "text-blue-400"
+                  : profile.fireDays >= 7
+                  ? "text-green-400"
+                  : "text-orange-400"
+              }`}
+            >
+              {profile.fireDays} Days
+            </span>
           </div>
 
           {/* Active Days */}

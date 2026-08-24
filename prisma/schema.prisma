@@ -1,0 +1,65 @@
+// LifeOS database schema
+// 1G-8 - First database model
+
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ========================================
+// USER ROLE
+// ========================================
+
+enum UserRole {
+  USER
+  TRAINER
+  OWNER
+}
+
+// ========================================
+// FITNESS GOAL
+// ========================================
+
+enum FitnessGoal {
+  LOSE_WEIGHT
+  BUILD_MUSCLE
+  MAINTAIN_WEIGHT
+  IMPROVE_FITNESS
+}
+
+// ========================================
+// USER
+// ========================================
+
+model User {
+  id String @id @default(cuid())
+
+  // Basic profile
+  name         String
+  email        String? @unique
+  profilePhoto String?
+
+  // Account
+  role UserRole @default(USER)
+
+  // Personal information
+  age    Int?
+  height Float?
+  weight Float?
+
+  // Fitness
+  fitnessGoal FitnessGoal?
+
+  // Trainer relationship
+  trainerId String?
+  trainer   User?   @relation("TrainerClients", fields: [trainerId], references: [id])
+  clients   User[]  @relation("TrainerClients")
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
