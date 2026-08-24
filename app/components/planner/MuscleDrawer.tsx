@@ -188,7 +188,7 @@ export default function MuscleDrawer({
             id: exercise.id,
             sets: exercise.sets,
             reps: exercise.reps,
-            rest: exercise.rest,
+            rest: 60, // Default rest time for a newly added exercise
           };
         })
         .filter(

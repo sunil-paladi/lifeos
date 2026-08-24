@@ -89,39 +89,32 @@ export default function TodaysWorkout() {
    * Convert ProgramContext exercises
    * into Today's Workout exercises.
    */
-  const todaysExercises: WorkoutExercise[] =
-    todaysMuscles
-      .flatMap((muscle) =>
-        muscle.exercises.map(
-          (programExercise) => {
-            const exerciseData =
-              exercises[muscle.name]?.find(
-                (exercise) =>
-                  exercise.id ===
-                  programExercise.id
-              );
+    const todaysExercises: WorkoutExercise[] =
+    todaysMuscles.flatMap((muscle) =>
+      muscle.exercises.flatMap((programExercise) => {
+        const exerciseData =
+          exercises[muscle.name]?.find(
+            (exercise) =>
+              exercise.id === programExercise.id
+          );
 
-            if (!exerciseData) {
-              return null;
-            }
+        // If the exercise is not present in the library,
+        // skip it instead of returning null.
+        if (!exerciseData) {
+          return [];
+        }
 
-            return {
-              ...exerciseData,
-              sets: programExercise.sets,
-              reps: programExercise.reps,
-              rest: programExercise.rest,
-              muscle: muscle.name,
-            };
-          }
-        )
-      )
-      .filter(
-        (
-          exercise
-        ): exercise is WorkoutExercise =>
-          exercise !== null
-      );
-
+        return [
+  {
+    ...exerciseData,
+    sets: programExercise.sets ?? 3,
+    reps: programExercise.reps ?? 10,
+    rest: programExercise.rest ?? 60,
+    muscle: muscle.name,
+  },
+];
+      })
+    );
   /*
    * ========================================
    * STATE

@@ -151,16 +151,17 @@ interface ProgramContextType {
   ) => void;
 
   /*
-   * Update strength exercise settings.
+   * Update exercise settings.
    */
   updateExerciseSettings: (
     day: DayName,
     muscleName: string,
     exerciseId: number,
     settings: {
-      sets: number;
-      reps: number;
-      rest: number;
+      sets?: number;
+      reps?: number;
+      rest?: number;
+      duration?: number;
     },
     weekIndex?: number
   ) => void;
@@ -631,9 +632,10 @@ export function ProgramProvider({
     muscleName: string,
     exerciseId: number,
     settings: {
-      sets: number;
-      reps: number;
-      rest: number;
+      sets?: number;
+      reps?: number;
+      rest?: number;
+      duration?: number;
     },
     weekIndex: number = 0
   ) {

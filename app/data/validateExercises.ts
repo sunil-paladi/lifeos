@@ -51,14 +51,20 @@ export function validateExerciseDatabase() {
       });
 
       // Check sets
-      if (exercise.sets <= 0) {
+      if (
+        exercise.sets !== undefined &&
+        exercise.sets <= 0
+      ) {
         errors.push(
           `${exercise.name}: Invalid sets`
         );
       }
 
       // Check reps
-      if (exercise.reps <= 0) {
+      if (
+        exercise.reps !== undefined &&
+        exercise.reps <= 0
+      ) {
         errors.push(
           `${exercise.name}: Invalid reps`
         );
