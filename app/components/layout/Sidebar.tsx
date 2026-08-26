@@ -10,9 +10,9 @@ import {
   FileText,
   LayoutDashboard,
   Settings,
-  Utensils,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
+import type { AppUser } from "./AppShell";
 
 const mainMenu = [
   {
@@ -27,7 +27,7 @@ const mainMenu = [
   },
   {
     label: "Nutrition",
-    icon: Utensils,
+    icon: "🍽️",
     path: "/nutrition",
   },
   {
@@ -63,11 +63,13 @@ const insightMenu = [
 interface SidebarProps {
   mobile?: boolean;
   onNavigate?: () => void;
+  user: AppUser;
 }
 
 export default function Sidebar({
   mobile = false,
   onNavigate,
+  user,
 }: SidebarProps) {
   const pathname = usePathname();
 
@@ -90,9 +92,9 @@ export default function Sidebar({
           : "fixed inset-y-0 left-0 z-40 hidden w-64 flex-col border-r border-slate-800 bg-slate-950 text-white lg:flex"
       }
     >
-      {/* ========================================= */}
+      {/* ======================================== */}
       {/* BRAND */}
-      {/* ========================================= */}
+      {/* ======================================== */}
 
       <div className="flex h-20 shrink-0 items-center border-b border-slate-800 px-6">
         <div className="flex items-center gap-3">
@@ -112,9 +114,9 @@ export default function Sidebar({
         </div>
       </div>
 
-      {/* ========================================= */}
+      {/* ======================================== */}
       {/* NAVIGATION */}
-      {/* ========================================= */}
+      {/* ======================================== */}
 
       <nav className="flex-1 overflow-y-auto px-3 py-5">
         {/* Main */}
@@ -139,15 +141,21 @@ export default function Sidebar({
                       : "text-slate-300 hover:bg-slate-800 hover:text-white"
                   }`}
                 >
-                  <Icon
-                    size={18}
-                    strokeWidth={active ? 2.2 : 1.8}
-                    className={
-                      active
-                        ? "text-white"
-                        : "text-slate-400 transition-colors group-hover:text-white"
-                    }
-                  />
+                  {typeof Icon === "string" ? (
+                    <span className="flex h-[18px] w-[18px] items-center justify-center text-base">
+                      {Icon}
+                    </span>
+                  ) : (
+                    <Icon
+                      size={18}
+                      strokeWidth={active ? 2.2 : 1.8}
+                      className={
+                        active
+                          ? "text-white"
+                          : "text-slate-400 transition-colors group-hover:text-white"
+                      }
+                    />
+                  )}
 
                   <span>{item.label}</span>
                 </Link>
@@ -227,24 +235,36 @@ export default function Sidebar({
         </div>
       </nav>
 
-      {/* ========================================= */}
+      {/* ======================================== */}
       {/* USER PROFILE */}
-      {/* ========================================= */}
+      {/* ======================================== */}
 
       <div className="shrink-0 border-t border-slate-800 p-3">
         <div className="rounded-xl border border-slate-800 bg-slate-900/80 p-3">
           <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-green-600 text-xs font-bold text-white">
+              {user.name
+                .split(" ")
+                .filter(Boolean)
+                .map((part) => part[0])
+                .join("")
+                .slice(0, 2)
+                .toUpperCase()}
+            </div>
+
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5">
                 <span className="h-2 w-2 rounded-full bg-green-500" />
 
                 <p className="truncate text-sm font-semibold text-white">
-                  Sunil Kumar
+                  {user.name}
                 </p>
               </div>
 
-              <p className="mt-0.5 text-xs text-slate-400">
-                Personal Account
+              <p className="mt-0.5 truncate text-xs text-slate-400">
+                {user.username
+                  ? `@${user.username}`
+                  : "Personal Account"}
               </p>
             </div>
           </div>
