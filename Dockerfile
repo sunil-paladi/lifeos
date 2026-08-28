@@ -8,7 +8,7 @@ RUN npm ci
 
 COPY . .
 
-RUN npm run build
+RUN DATABASE_URL="postgresql://build:build@localhost:5432/build" npm run build
 
 
 FROM node:22-alpine AS runner
