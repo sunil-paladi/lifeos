@@ -1,6 +1,7 @@
 "use client";
 
 import { ChangeEvent, useEffect, useState } from "react";
+import { authClient } from "@/app/lib/auth-client";
 
 type AccountRole = "User" | "Trainer" | "Owner";
 
@@ -69,106 +70,43 @@ export default function SettingsPage() {
   const [message, setMessage] = useState("");
 
   useEffect(() => {
-    try {
-      const savedSettings = localStorage.getItem(
-        SETTINGS_STORAGE_KEY
-      );
-
-      if (savedSettings) {
-        const parsed = JSON.parse(savedSettings);
-
-        setSettings({
-          ...DEFAULT_SETTINGS,
-          ...parsed,
-          age: String(
-            parsed.age ?? DEFAULT_SETTINGS.age
-          ),
-          height: String(
-            parsed.height ?? DEFAULT_SETTINGS.height
-          ),
-          weight: String(
-            parsed.weight ?? DEFAULT_SETTINGS.weight
-          ),
-          waterGoal: String(
-            parsed.waterGoal ??
-              DEFAULT_SETTINGS.waterGoal
-          ),
-        });
-      }
-
-      const savedTargets = localStorage.getItem(
-        NUTRITION_TARGETS_KEY
-      );
-
-      if (savedTargets) {
-        const parsed = JSON.parse(savedTargets);
-
-        setNutritionTargets({
-          calories: String(
-            parsed.calories ??
-              DEFAULT_NUTRITION_TARGETS.calories
-          ),
-          protein: String(
-            parsed.protein ??
-              DEFAULT_NUTRITION_TARGETS.protein
-          ),
-          carbs: String(
-            parsed.carbs ??
-              DEFAULT_NUTRITION_TARGETS.carbs
-          ),
-          fat: String(
-            parsed.fat ??
-              DEFAULT_NUTRITION_TARGETS.fat
-          ),
-        });
-      }
-
-      const savedWaterTarget = localStorage.getItem(
-        WATER_TARGET_KEY
-      );
-
-      if (savedWaterTarget) {
-        setSettings((previous) => ({
-          ...previous,
-          waterGoal: String(savedWaterTarget),
-        }));
-      }
-    } catch (error) {
-      console.error(
-        "Failed to load LifeOS settings:",
-        error
-      );
-    }
-  }, []);
-
-  // Keep settings synchronized if another LifeOS page updates
-  // the same browser storage keys.
-  useEffect(() => {
-    function refreshFromStorage() {
+    async function loadSettings() {
       try {
-        const savedSettings = localStorage.getItem(
-          SETTINGS_STORAGE_KEY
-        );
+        const session = await authClient.getSession();
 
-        if (savedSettings) {
-          const parsed = JSON.parse(savedSettings);
-
-          setSettings((previous) => ({
-            ...previous,
-            ...parsed,
-            age: String(parsed.age ?? previous.age),
-            height: String(
-              parsed.height ?? previous.height
-            ),
-            weight: String(
-              parsed.weight ?? previous.weight
-            ),
-            waterGoal: String(
-              parsed.waterGoal ?? previous.waterGoal
-            ),
-          }));
+        if (!session.data?.user) {
+          window.location.href = "/login";
+          return;
         }
 
+        const response = await fetch("/api/profile");
+
+        if (!response.ok) {
+          setMessage("Unable to load profile");
+          return;
+        }
+
+        const data = await response.json();
+        const user = data.user;
+        setSettings((previous) => ({
+          ...previous,
+          name: user.name ?? "",
+          age: user.age?.toString() ?? "",
+          height: user.height?.toString() ?? "",
+          weight: user.weight?.toString() ?? "",
+          fitnessGoal:
+            user.fitnessGoal === "LOSE_WEIGHT"
+              ? "Lose Weight"
+              : user.fitnessGoal === "BUILD_MUSCLE"
+                ? "Build Muscle"
+                : user.fitnessGoal === "MAINTAIN_WEIGHT"
+                  ? "Maintain Weight"
+                  : user.fitnessGoal === "IMPROVE_FITNESS"
+                    ? "Improve Fitness"
+                    : "Build Muscle",
+        }));
+
+        // Keep device-specific settings for now.
         const savedTargets = localStorage.getItem(
           NUTRITION_TARGETS_KEY
         );
@@ -176,45 +114,52 @@ export default function SettingsPage() {
         if (savedTargets) {
           const parsed = JSON.parse(savedTargets);
 
-          setNutritionTargets((previous) => ({
-            ...previous,
+          setNutritionTargets({
             calories: String(
-              parsed.calories ?? previous.calories
+              parsed.calories ??
+                DEFAULT_NUTRITION_TARGETS.calories
             ),
             protein: String(
-              parsed.protein ?? previous.protein
+              parsed.protein ??
+                DEFAULT_NUTRITION_TARGETS.protein
             ),
             carbs: String(
-              parsed.carbs ?? previous.carbs
+              parsed.carbs ??
+                DEFAULT_NUTRITION_TARGETS.carbs
             ),
-            fat: String(parsed.fat ?? previous.fat),
+            fat: String(
+              parsed.fat ??
+                DEFAULT_NUTRITION_TARGETS.fat
+            ),
+          });
+        }
+
+        const savedWaterTarget = localStorage.getItem(
+          WATER_TARGET_KEY
+        );
+
+        if (savedWaterTarget) {
+          setSettings((previous) => ({
+            ...previous,
+            waterGoal: String(savedWaterTarget),
           }));
         }
       } catch (error) {
         console.error(
-          "Failed to sync LifeOS settings:",
+          "Failed to load LifeOS settings:",
           error
         );
+        setMessage("Unable to load settings");
       }
     }
 
-    window.addEventListener(
-      "storage",
-      refreshFromStorage
-    );
-
-    return () => {
-      window.removeEventListener(
-        "storage",
-        refreshFromStorage
-      );
-    };
+    loadSettings();
   }, []);
 
-  function updateSetting(
-    field: keyof SettingsData,
-    value: string
-  ) {
+async function updateSetting(
+  field: keyof SettingsData,
+  value: string
+) {
     const nextSettings = {
       ...settings,
       [field]: value,
@@ -226,25 +171,62 @@ export default function SettingsPage() {
 
     // Persist the latest value immediately so refresh does not
     // bring back the default value.
-    try {
-      localStorage.setItem(
-        SETTINGS_STORAGE_KEY,
-        JSON.stringify(nextSettings)
-      );
+   try {
+  if (
+    field === "name" ||
+    field === "age" ||
+    field === "height" ||
+    field === "weight" ||
+    field === "fitnessGoal"
+  ) {
+    const fitnessGoal =
+      nextSettings.fitnessGoal === "Lose Weight"
+        ? "LOSE_WEIGHT"
+        : nextSettings.fitnessGoal === "Build Muscle"
+          ? "BUILD_MUSCLE"
+          : nextSettings.fitnessGoal === "Maintain Weight"
+            ? "MAINTAIN_WEIGHT"
+            : "IMPROVE_FITNESS";
 
-      if (field === "waterGoal") {
-        localStorage.setItem(
-          WATER_TARGET_KEY,
-          value
-        );
-      }
-    } catch (error) {
-      console.error(
-        "Failed to persist setting:",
-        error
-      );
+    const response = await fetch("/api/profile", {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        name: nextSettings.name,
+        age: nextSettings.age
+          ? Number(nextSettings.age)
+          : null,
+        height: nextSettings.height
+          ? Number(nextSettings.height)
+          : null,
+        weight: nextSettings.weight
+          ? Number(nextSettings.weight)
+          : null,
+        fitnessGoal,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to update profile");
     }
   }
+
+  if (field === "waterGoal") {
+    localStorage.setItem(
+      WATER_TARGET_KEY,
+      value
+    );
+  }
+} catch (error) {
+  console.error(
+    "Failed to persist setting:",
+    error
+  );
+  setMessage("Failed to save setting");
+}
+}
 
   function updateNutritionTarget(
     field: keyof NutritionTargets,
