@@ -12,13 +12,14 @@ datasource db {
 // ========================================
 
 model User {
-  id                    String             @id @default(cuid())
-  name                  String
-  username              String             @unique
-  email                 String?            @unique
-  phoneNumber           String?            @unique
-  profilePhoto          String?
-  role                  UserRole           @default(USER)
+  id           String   @id @default(cuid())
+  externalId   String   @unique
+  name         String
+  username     String   @unique
+  email        String?  @unique
+  phoneNumber  String?  @unique
+  profilePhoto String?
+  role         UserRole @default(USER)
 
   // Personal information
   age                   Int?
@@ -31,23 +32,26 @@ model User {
   preferredTrainingDays Int?
 
   // Trainer relationship
-  trainerId             String?
-  trainer               User?              @relation("TrainerClients", fields: [trainerId], references: [id])
-  clients               User[]             @relation("TrainerClients")
+  trainerId String?
+  trainer   User?   @relation("TrainerClients", fields: [trainerId], references: [id])
+  clients   User[]  @relation("TrainerClients")
 
   // Authentication
-  emailVerified         Boolean            @default(false)
-  image                 String?
-  sessions              Session[]
-  accounts              Account[]
+  emailVerified Boolean   @default(false)
+  image         String?
+  sessions      Session[]
+  accounts      Account[]
 
   // Fitness history
-  weightEntries         WeightEntry[]
-  bodyMeasurements      BodyMeasurement[]
+  weightEntries    WeightEntry[]
+  bodyMeasurements BodyMeasurement[]
 
   // Timestamps
-  createdAt             DateTime            @default(now())
-  updatedAt             DateTime            @updatedAt
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  createdExercises Exercise[]       @relation("ExerciseCreator")
+  trainingPlans    TrainingPlan[]
+  workoutSessions  WorkoutSession[]
 
   @@map("user")
 }
@@ -155,21 +159,21 @@ model Session {
 // ========================================
 
 model Account {
-  id                   String    @id
-  issuer               String
-  accountId            String
-  providerId           String
-  userId               String
+  id         String @id
+  issuer     String
+  accountId  String
+  providerId String
+  userId     String
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  accessToken          String?
-  refreshToken         String?
-  idToken              String?
-  accessTokenExpiresAt DateTime?
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
   refreshTokenExpiresAt DateTime?
-  scope                String?
-  password             String?
+  scope                 String?
+  password              String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -193,4 +197,235 @@ model Verification {
 
   @@index([identifier])
   @@map("verification")
+}
+
+// ========================================
+// EXERCISE LIBRARY
+// ========================================
+
+model Exercise {
+  id               String  @id @default(cuid())
+  name             String
+  description      String?
+  imageUrl         String?
+  primaryMuscle    String
+  secondaryMuscles String?
+  equipment        String?
+  instructions     String?
+
+  createdByUserId String?
+  visibility      ExerciseVisibility @default(GLOBAL)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  createdBy        User?             @relation("ExerciseCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  programExercises ProgramExercise[]
+
+  @@index([createdByUserId])
+  @@index([primaryMuscle])
+  @@map("exercise")
+}
+
+// ========================================
+// EXERCISE VISIBILITY
+// ========================================
+
+enum ExerciseVisibility {
+  GLOBAL
+  PRIVATE
+  TRAINER_CLIENTS
+  PUBLIC
+}
+
+// ========================================
+// TRAINING PLAN
+// ========================================
+
+model TrainingPlan {
+  id          String    @id @default(cuid())
+  userId      String
+  name        String
+  description String?
+  totalWeeks  Int
+  startDate   DateTime?
+  endDate     DateTime?
+  isActive    Boolean   @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user   User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  phases ProgramPhase[]
+
+  @@index([userId])
+  @@index([userId, isActive])
+  @@map("training_plan")
+}
+
+// ========================================
+// PROGRAM PHASE
+// ========================================
+
+model ProgramPhase {
+  id             String @id @default(cuid())
+  trainingPlanId String
+
+  name          String
+  description   String?
+  phaseOrder    Int
+  durationWeeks Int
+  startWeek     Int
+  endWeek       Int
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  trainingPlan TrainingPlan  @relation(fields: [trainingPlanId], references: [id], onDelete: Cascade)
+  weeks        ProgramWeek[]
+
+  @@unique([trainingPlanId, phaseOrder])
+  @@index([trainingPlanId])
+  @@map("program_phase")
+}
+
+// ========================================
+// PROGRAM WEEK
+// ========================================
+
+model ProgramWeek {
+  id         String @id @default(cuid())
+  phaseId    String
+  weekNumber Int
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  phase       ProgramPhase @relation(fields: [phaseId], references: [id], onDelete: Cascade)
+  workoutDays WorkoutDay[]
+
+  @@unique([phaseId, weekNumber])
+  @@index([phaseId])
+  @@map("program_week")
+}
+
+// ========================================
+// WORKOUT DAY
+// ========================================
+
+model WorkoutDay {
+  id          String  @id @default(cuid())
+  weekId      String
+  dayOfWeek   Int
+  name        String
+  description String?
+  isRestDay   Boolean @default(false)
+  dayOrder    Int
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  week             ProgramWeek       @relation(fields: [weekId], references: [id], onDelete: Cascade)
+  programExercises ProgramExercise[]
+  workoutSessions  WorkoutSession[]
+
+  @@unique([weekId, dayOfWeek])
+  @@index([weekId])
+  @@map("workout_day")
+}
+
+// ========================================
+// PROGRAM EXERCISE
+// ========================================
+
+model ProgramExercise {
+  id           String @id @default(cuid())
+  workoutDayId String
+  exerciseId   String
+
+  exerciseOrder Int
+  sets          Int
+  minReps       Int
+  maxReps       Int
+  restSeconds   Int?
+  targetWeight  Float?
+  notes         String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  workoutDay  WorkoutDay   @relation(fields: [workoutDayId], references: [id], onDelete: Cascade)
+  exercise    Exercise     @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  workoutSets WorkoutSet[]
+
+  @@unique([workoutDayId, exerciseOrder])
+  @@index([workoutDayId])
+  @@index([exerciseId])
+  @@map("program_exercise")
+}
+
+// ========================================
+// WORKOUT SESSION
+// ========================================
+
+model WorkoutSession {
+  id           String @id @default(cuid())
+  userId       String
+  workoutDayId String
+
+  startedAt       DateTime             @default(now())
+  completedAt     DateTime?
+  status          WorkoutSessionStatus @default(IN_PROGRESS)
+  durationSeconds Int?
+  notes           String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workoutDay  WorkoutDay   @relation(fields: [workoutDayId], references: [id], onDelete: Cascade)
+  workoutSets WorkoutSet[]
+
+  @@index([userId])
+  @@index([workoutDayId])
+  @@index([userId, startedAt])
+  @@map("workout_session")
+}
+
+// ========================================
+// WORKOUT SESSION STATUS
+// ========================================
+
+enum WorkoutSessionStatus {
+  IN_PROGRESS
+  COMPLETED
+  ABANDONED
+}
+
+// ========================================
+// WORKOUT SET
+// ========================================
+
+model WorkoutSet {
+  id                String @id @default(cuid())
+  workoutSessionId  String
+  programExerciseId String
+
+  setNumber   Int
+  weight      Float?
+  reps        Int?
+  completed   Boolean  @default(false)
+  performedAt DateTime @default(now())
+  notes       String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  workoutSession  WorkoutSession  @relation(fields: [workoutSessionId], references: [id], onDelete: Cascade)
+  programExercise ProgramExercise @relation(fields: [programExerciseId], references: [id], onDelete: Cascade)
+
+  @@unique([workoutSessionId, programExerciseId, setNumber])
+  @@index([workoutSessionId])
+  @@index([programExerciseId])
+  @@map("workout_set")
 }
