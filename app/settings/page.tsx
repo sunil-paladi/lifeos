@@ -38,7 +38,7 @@ const WATER_TARGET_KEY = "lifeos-water-target";
 
 const DEFAULT_SETTINGS: SettingsData = {
   name: "Sunil Kumar",
-  age: "40",
+  age: "25",
   height: "175",
   weight: "73",
   fitnessGoal: "Build Muscle",
