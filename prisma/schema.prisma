@@ -13,7 +13,6 @@ datasource db {
 
 model User {
   id           String   @id @default(cuid())
-  externalId   String   @unique
   name         String
   username     String   @unique
   email        String?  @unique
@@ -52,6 +51,8 @@ model User {
   createdExercises Exercise[]       @relation("ExerciseCreator")
   trainingPlans    TrainingPlan[]
   workoutSessions  WorkoutSession[]
+  nutritionTargets NutritionTarget[]
+  nutritionDays   NutritionDay[]
 
   @@map("user")
 }
@@ -428,4 +429,69 @@ model WorkoutSet {
   @@index([workoutSessionId])
   @@index([programExerciseId])
   @@map("workout_set")
+}
+
+// ========================================
+// NUTRITION TARGET
+// ========================================
+
+model NutritionTarget {
+  id       String @id @default(cuid())
+  userId   String
+
+  calories Int
+  protein  Float
+  carbs    Float
+  fat      Float
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("nutrition_target")
+}
+
+// ========================================
+// NUTRITION DAY
+// ========================================
+
+model NutritionDay {
+  id     String   @id @default(cuid())
+  userId String
+  date   DateTime
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user  User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  meals NutritionMeal[]
+
+  @@unique([userId, date])
+  @@index([userId])
+  @@map("nutrition_day")
+}
+
+// ========================================
+// NUTRITION MEAL
+// ========================================
+
+model NutritionMeal {
+  id             String @id @default(cuid())
+  nutritionDayId String
+
+  name     String
+  calories Int
+  protein  Float
+  carbs    Float
+  fat      Float
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  nutritionDay NutritionDay @relation(fields: [nutritionDayId], references: [id], onDelete: Cascade)
+
+  @@index([nutritionDayId])
+  @@map("nutrition_meal")
 }

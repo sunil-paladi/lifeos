@@ -61,10 +61,10 @@ export default function SettingsPage() {
   const [settings, setSettings] =
     useState<SettingsData>(DEFAULT_SETTINGS);
 
+  const [loading, setLoading] = useState(true);
+
   const [nutritionTargets, setNutritionTargets] =
-    useState<NutritionTargets>(
-      DEFAULT_NUTRITION_TARGETS
-    );
+    useState<NutritionTargets>(DEFAULT_NUTRITION_TARGETS);
 
   const [saved, setSaved] = useState(false);
   const [message, setMessage] = useState("");
@@ -83,6 +83,7 @@ export default function SettingsPage() {
 
         if (!response.ok) {
           setMessage("Unable to load profile");
+          setLoading(false);
           return;
         }
 
@@ -106,32 +107,34 @@ export default function SettingsPage() {
                     : "Build Muscle",
         }));
 
-        // Keep device-specific settings for now.
-        const savedTargets = localStorage.getItem(
-          NUTRITION_TARGETS_KEY
+        // Load nutrition targets from the database.
+        const nutritionResponse = await fetch(
+          "/api/nutrition/targets",
+          {
+            cache: "no-store",
+          }
         );
 
-        if (savedTargets) {
-          const parsed = JSON.parse(savedTargets);
+        if (nutritionResponse.ok) {
+          const nutritionData =
+            await nutritionResponse.json();
 
-          setNutritionTargets({
-            calories: String(
-              parsed.calories ??
-                DEFAULT_NUTRITION_TARGETS.calories
-            ),
-            protein: String(
-              parsed.protein ??
-                DEFAULT_NUTRITION_TARGETS.protein
-            ),
-            carbs: String(
-              parsed.carbs ??
-                DEFAULT_NUTRITION_TARGETS.carbs
-            ),
-            fat: String(
-              parsed.fat ??
-                DEFAULT_NUTRITION_TARGETS.fat
-            ),
-          });
+          if (nutritionData.target) {
+            setNutritionTargets({
+              calories: String(
+                nutritionData.target.calories
+              ),
+              protein: String(
+                nutritionData.target.protein
+              ),
+              carbs: String(
+                nutritionData.target.carbs
+              ),
+              fat: String(
+                nutritionData.target.fat
+              ),
+            });
+          }
         }
 
         const savedWaterTarget = localStorage.getItem(
@@ -144,12 +147,15 @@ export default function SettingsPage() {
             waterGoal: String(savedWaterTarget),
           }));
         }
+
+        setLoading(false);
       } catch (error) {
         console.error(
           "Failed to load LifeOS settings:",
           error
         );
         setMessage("Unable to load settings");
+        setLoading(false);
       }
     }
 
@@ -241,18 +247,6 @@ async function updateSetting(
     setSaved(false);
     setMessage("");
 
-    // Persist the latest nutrition target immediately.
-    try {
-      localStorage.setItem(
-        NUTRITION_TARGETS_KEY,
-        JSON.stringify(nextTargets)
-      );
-    } catch (error) {
-      console.error(
-        "Failed to persist nutrition target:",
-        error
-      );
-    }
   }
 
   function isPositiveNumber(value: string) {
@@ -264,7 +258,7 @@ async function updateSetting(
     );
   }
 
-  function saveSettings() {
+  async function saveSettings() {
     if (!settings.name.trim()) {
       setMessage("Please enter your name.");
       setSaved(false);
@@ -353,10 +347,31 @@ async function updateSetting(
         JSON.stringify(cleanedSettings)
       );
 
-      localStorage.setItem(
-        NUTRITION_TARGETS_KEY,
-        JSON.stringify(cleanedTargets)
+      const nutritionResponse = await fetch(
+        "/api/nutrition/targets",
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            calories: Number(cleanedTargets.calories),
+            protein: Number(cleanedTargets.protein),
+            carbs: Number(cleanedTargets.carbs),
+            fat: Number(cleanedTargets.fat),
+          }),
+        }
       );
+
+      if (!nutritionResponse.ok) {
+        const nutritionData =
+          await nutritionResponse.json();
+
+        throw new Error(
+          nutritionData.error ||
+            "Failed to save nutrition targets."
+        );
+      }
 
       localStorage.setItem(
         WATER_TARGET_KEY,
@@ -460,6 +475,16 @@ async function updateSetting(
     );
   }
 
+  if (loading) {
+    return (
+      <main className="flex min-h-[60vh] items-center justify-center">
+        <p className="text-sm text-slate-500">
+          Loading your settings...
+        </p>
+      </main>
+    );
+  }
+
   return (
     <main className="space-y-6">
       {/* HEADER */}
@@ -537,7 +562,7 @@ async function updateSetting(
           <div className="grid flex-1 grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <label className="text-sm font-semibold text-slate-700">
-                Name
+                Name <span className="text-red-500">*</span>
               </label>
 
               <input
@@ -556,7 +581,7 @@ async function updateSetting(
 
             <div>
               <label className="text-sm font-semibold text-slate-700">
-                Age
+                Age <span className="text-red-500">*</span>
               </label>
 
               <input
@@ -581,7 +606,7 @@ async function updateSetting(
 
             <div>
               <label className="text-sm font-semibold text-slate-700">
-                Height (cm)
+                Height (cm) <span className="text-red-500">*</span>
               </label>
 
               <input
@@ -602,7 +627,7 @@ async function updateSetting(
 
             <div>
               <label className="text-sm font-semibold text-slate-700">
-                Weight (kg)
+                Weight (kg) <span className="text-red-500">*</span>
               </label>
 
               <input
@@ -775,7 +800,7 @@ async function updateSetting(
         <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <div className="rounded-xl bg-orange-50 p-4">
             <label className="text-xs font-semibold text-orange-700">
-              🔥 Calories (kcal)
+              🔥 Calories (kcal) <span className="text-red-500">*</span>
             </label>
 
             <input
@@ -794,7 +819,7 @@ async function updateSetting(
 
           <div className="rounded-xl bg-green-50 p-4">
             <label className="text-xs font-semibold text-green-700">
-              💪 Protein (g)
+              💪 Protein (g) <span className="text-red-500">*</span>
             </label>
 
             <input
@@ -814,7 +839,7 @@ async function updateSetting(
 
           <div className="rounded-xl bg-yellow-50 p-4">
             <label className="text-xs font-semibold text-yellow-700">
-              🌾 Carbs (g)
+              🌾 Carbs (g) <span className="text-red-500">*</span>
             </label>
 
             <input
@@ -834,7 +859,7 @@ async function updateSetting(
 
           <div className="rounded-xl bg-purple-50 p-4">
             <label className="text-xs font-semibold text-purple-700">
-              🥑 Fat (g)
+              🥑 Fat (g) <span className="text-red-500">*</span>
             </label>
 
             <input
@@ -868,7 +893,7 @@ async function updateSetting(
 
         <div className="mt-5 max-w-sm">
           <label className="text-sm font-semibold text-slate-700">
-            Daily Water Goal (ml)
+            Daily Water Goal (ml) <span className="text-red-500">*</span>
           </label>
 
           <input

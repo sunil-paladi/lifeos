@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
 type Meal = {
-  id: number;
+  id: string;
   name: string;
   calories: number;
   protein: number;
@@ -32,32 +32,7 @@ const EMPTY_FORM: MealForm = {
   fat: "",
 };
 
-const INITIAL_MEALS: Meal[] = [
-  {
-    id: 1,
-    name: "Breakfast",
-    calories: 500,
-    protein: 25,
-    carbs: 60,
-    fat: 15,
-  },
-  {
-    id: 2,
-    name: "Lunch",
-    calories: 700,
-    protein: 45,
-    carbs: 70,
-    fat: 18,
-  },
-  {
-    id: 3,
-    name: "Snacks",
-    calories: 600,
-    protein: 40,
-    carbs: 40,
-    fat: 12,
-  },
-];
+
 
 type NutritionTargets = {
   calories: number;
@@ -79,7 +54,7 @@ const NUTRITION_TARGETS_KEY = "lifeos-nutrition-targets";
 
 export default function NutritionTracker() {
   // Start with the same data on server and browser to avoid a hydration mismatch.
-  const [meals, setMeals] = useState<Meal[]>(INITIAL_MEALS);
+  const [meals, setMeals] = useState<Meal[]>([]);
   const [mealsLoaded, setMealsLoaded] = useState(false);
   const [nutritionHistory, setNutritionHistory] =
     useState<NutritionDay[]>([]);
@@ -103,87 +78,63 @@ export default function NutritionTracker() {
   const [goalsError, setGoalsError] =
     useState("");
 
-  // Load saved meals only after the component has mounted in the browser.
+  // Load today's meals and nutrition targets from the database.
   useEffect(() => {
-    try {
-      const savedMeals = localStorage.getItem(STORAGE_KEY);
+    async function loadNutrition() {
+      try {
+        const [mealsResponse, targetsResponse] =
+          await Promise.all([
+            fetch("/api/nutrition", {
+              cache: "no-store",
+            }),
+            fetch("/api/nutrition/targets", {
+              cache: "no-store",
+            }),
+          ]);
 
-      if (savedMeals) {
-        const parsedMeals = JSON.parse(savedMeals);
-
-        if (Array.isArray(parsedMeals)) {
-          setMeals(parsedMeals);
-          setNutritionTracked(true);
+        if (!mealsResponse.ok) {
+          throw new Error("Failed to load nutrition meals.");
         }
-      }
 
-      const savedTargets = localStorage.getItem(
-        NUTRITION_TARGETS_KEY
-      );
+        if (!targetsResponse.ok) {
+          throw new Error("Failed to load nutrition targets.");
+        }
 
-      if (savedTargets) {
-        const parsedTargets =
-          JSON.parse(savedTargets);
+        const mealsData = await mealsResponse.json();
+        const targetsData = await targetsResponse.json();
 
-        if (
-          parsedTargets &&
-          typeof parsedTargets === "object"
-        ) {
+        if (Array.isArray(mealsData.meals)) {
+          setMeals(mealsData.meals);
+          setNutritionTracked(mealsData.meals.length > 0);
+        } else {
+          setMeals([]);
+          setNutritionTracked(false);
+        }
+
+        if (targetsData.target) {
           const loadedTargets: NutritionTargets = {
-            calories: Number(parsedTargets.calories),
-            protein: Number(parsedTargets.protein),
-            carbs: Number(parsedTargets.carbs),
-            fat: Number(parsedTargets.fat),
+            calories: Number(targetsData.target.calories),
+            protein: Number(targetsData.target.protein),
+            carbs: Number(targetsData.target.carbs),
+            fat: Number(targetsData.target.fat),
           };
 
-          if (
-            Object.values(loadedTargets).every(
-              (value) =>
-                Number.isFinite(value) &&
-                value > 0
-            )
-          ) {
-            setTargets(loadedTargets);
-            setGoalsForm(loadedTargets);
-          }
+          setTargets(loadedTargets);
+          setGoalsForm(loadedTargets);
         }
+      } catch (error) {
+        console.error(
+          "Failed to load nutrition:",
+          error
+        );
+      } finally {
+        setMealsLoaded(true);
+        setTargetsLoaded(true);
       }
-
-      const savedHistory = localStorage.getItem(
-        NUTRITION_HISTORY_KEY
-      );
-
-      if (savedHistory) {
-        const parsedHistory = JSON.parse(savedHistory);
-
-        if (Array.isArray(parsedHistory)) {
-          setNutritionHistory(parsedHistory);
-        }
-      }
-    } catch (error) {
-      console.error("Failed to load meals:", error);
-    } finally {
-      setMealsLoaded(true);
-      setNutritionHistoryLoaded(true);
-      setTargetsLoaded(true);
     }
+
+    loadNutrition();
   }, []);
-
-  // Save changes only after the initial localStorage load is complete.
-  useEffect(() => {
-    if (!mealsLoaded) {
-      return;
-    }
-
-    try {
-      localStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify(meals)
-      );
-    } catch (error) {
-      console.error("Failed to save meals:", error);
-    }
-  }, [meals, mealsLoaded]);
 
   /* =========================================================
      SAVE TODAY'S NUTRITION TO ANALYTICS HISTORY
@@ -290,7 +241,7 @@ export default function NutritionTracker() {
     useState(false);
 
   const [editingMealId, setEditingMealId] =
-    useState<number | null>(null);
+    useState<string | null>(null);
 
   const [mealForm, setMealForm] =
     useState<MealForm>(EMPTY_FORM);
@@ -465,131 +416,160 @@ export default function NutritionTracker() {
      SAVE / UPDATE MANUAL MEAL
   ========================================================= */
 
-  function handleSaveMeal() {
-    const name =
-      mealForm.name.trim();
+async function handleSaveMeal() {
+  const name = mealForm.name.trim();
 
-    if (!name) {
-      setError(
-        "Please enter a meal name."
-      );
+  if (!name) {
+    setError("Please enter a meal name.");
+    return;
+  }
 
-      return;
-    }
+  const calories = Number(mealForm.calories);
+  const protein = Number(mealForm.protein);
+  const carbs = Number(mealForm.carbs);
+  const fat = Number(mealForm.fat);
 
-    const calories =
-      Number(mealForm.calories);
+  if (
+    !Number.isFinite(calories) ||
+    !Number.isFinite(protein) ||
+    !Number.isFinite(carbs) ||
+    !Number.isFinite(fat)
+  ) {
+    setError("Please enter valid nutrition values.");
+    return;
+  }
 
-    const protein =
-      Number(mealForm.protein);
+  if (
+    calories < 0 ||
+    protein < 0 ||
+    carbs < 0 ||
+    fat < 0
+  ) {
+    setError("Nutrition values cannot be negative.");
+    return;
+  }
 
-    const carbs =
-      Number(mealForm.carbs);
+  const mealData = {
+    name,
+    calories,
+    protein,
+    carbs,
+    fat,
+  };
 
-    const fat =
-      Number(mealForm.fat);
-
-    if (
-      !Number.isFinite(calories) ||
-      !Number.isFinite(protein) ||
-      !Number.isFinite(carbs) ||
-      !Number.isFinite(fat)
-    ) {
-      setError(
-        "Please enter valid nutrition values."
-      );
-
-      return;
-    }
-
-    if (
-      calories < 0 ||
-      protein < 0 ||
-      carbs < 0 ||
-      fat < 0
-    ) {
-      setError(
-        "Nutrition values cannot be negative."
-      );
-
-      return;
-    }
-
-    const mealData = {
-      name,
-      calories,
-      protein,
-      carbs,
-      fat,
-    };
-
-    /* EDIT */
-
+  try {
     if (editingMealId !== null) {
-      const updatedMeals = meals.map((meal) =>
-        meal.id === editingMealId
-          ? {
-              ...meal,
-              ...mealData,
-            }
-          : meal
+      const response = await fetch(
+        `/api/nutrition/${editingMealId}`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(mealData),
+        }
       );
 
-      setMeals(updatedMeals);
-      saveNutritionHistoryForToday(
-        updatedMeals
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(
+          data.error || "Failed to update meal."
+        );
+        return;
+      }
+
+      setMeals((previousMeals) =>
+        previousMeals.map((meal) =>
+          meal.id === editingMealId
+            ? data.meal
+            : meal
+        )
       );
-    }
+    } else {
+      const response = await fetch("/api/nutrition", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(mealData),
+      });
 
-    /* ADD */
+      const data = await response.json();
 
-    else {
-      const newMeal: Meal = {
-        id: Date.now(),
-        ...mealData,
-      };
+      if (!response.ok) {
+        setError(
+          data.error || "Failed to add meal."
+        );
+        return;
+      }
 
-      const updatedMeals = [
-        ...meals,
-        newMeal,
-      ];
+      setMeals((previousMeals) => [
+        ...previousMeals,
+        data.meal,
+      ]);
 
-      setMeals(updatedMeals);
-      saveNutritionHistoryForToday(
-        updatedMeals
-      );
+      setNutritionTracked(true);
     }
 
     closeMealModal();
+  } catch (error) {
+    console.error("Failed to save meal:", error);
+    setError(
+      "Something went wrong. Please try again."
+    );
   }
+}
 
   /* =========================================================
      DELETE MEAL
   ========================================================= */
 
-  function deleteMeal(id: number) {
-    const meal =
-      meals.find(
-        (item) => item.id === id
-      );
+  async function deleteMeal(id: string) {
+    const meal = meals.find(
+      (item) => item.id === id
+    );
 
     if (!meal) return;
 
-    const confirmed =
-      window.confirm(
-        `Delete "${meal.name}" from today's meals?`
-      );
+    const confirmed = window.confirm(
+      `Delete "${meal.name}" from today's meals?`
+    );
 
     if (!confirmed) return;
 
-    const updatedMeals = meals.filter(
-      (meal) => meal.id !== id
-    );
+    try {
+      const response = await fetch(
+        `/api/nutrition/${id}`,
+        {
+          method: "DELETE",
+        }
+      );
 
-    setMeals(updatedMeals);
-    saveNutritionHistoryForToday(
-      updatedMeals
-    );
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(
+          data.error || "Failed to delete meal."
+        );
+        return;
+      }
+
+      setMeals((previousMeals) =>
+        previousMeals.filter(
+          (item) => item.id !== id
+        )
+      );
+    } catch (error) {
+      console.error(
+        "Failed to delete meal:",
+        error
+      );
+
+      setError(
+        "Something went wrong. Please try again."
+      );
+    }
   }
 
   /* =========================================================
