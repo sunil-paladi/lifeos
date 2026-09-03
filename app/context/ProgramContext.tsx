@@ -16,16 +16,10 @@ import { exercises } from "@/app/data/exercises";
 
 export interface ProgramExercise {
   id: number;
-
-  // Exercise type
   type?: "strength" | "cardio";
-
-  // Strength exercises
   sets?: number;
   reps?: number;
   rest?: number;
-
-  // Cardio exercises
   duration?: number;
 }
 
@@ -53,13 +47,26 @@ type SaveStatus =
   | "saving"
   | "error";
 
-/*
- * Temporary default.
- *
- * The actual program duration is controlled
- * by ProgramBuilder.
- */
 const DEFAULT_PROGRAM_WEEKS = 12;
+
+/* =========================================================
+   DATABASE DAY INFORMATION
+   ========================================================= */
+
+interface DbDayInfo {
+  phaseId: string;
+  weekId: string;
+  dayId: string;
+}
+
+type DbDayMap = Record<string, DbDayInfo>;
+
+function dayMapKey(
+  weekIndex: number,
+  day: DayName
+) {
+  return `${weekIndex}:${day}`;
+}
 
 /* =========================================================
    INITIAL DATA
@@ -102,47 +109,28 @@ interface StoredProgram {
    ========================================================= */
 
 interface ProgramContextType {
-  /*
-   * Compatibility with existing components.
-   * Points to Week 1.
-   */
   workout: DayWorkout;
 
-  /*
-   * Complete week-based program.
-   */
   weeks: DayWorkout[];
 
   saveStatus: SaveStatus;
 
-  /*
-   * Get a specific week's workout.
-   */
   getWorkoutForWeek: (
     weekIndex: number
   ) => DayWorkout;
 
-  /*
-   * Add muscle group.
-   */
   addMuscleGroup: (
     day: DayName,
     muscle: MuscleGroup,
     weekIndex?: number
   ) => void;
 
-  /*
-   * Remove muscle group.
-   */
   removeMuscleGroup: (
     day: DayName,
     muscleName: string,
     weekIndex: number
   ) => void;
 
-  /*
-   * Add exercises inside a muscle group.
-   */
   addExercisesToMuscle: (
     day: DayName,
     muscleName: string,
@@ -150,9 +138,6 @@ interface ProgramContextType {
     weekIndex?: number
   ) => void;
 
-  /*
-   * Update exercise settings.
-   */
   updateExerciseSettings: (
     day: DayName,
     muscleName: string,
@@ -166,9 +151,6 @@ interface ProgramContextType {
     weekIndex?: number
   ) => void;
 
-  /*
-   * Move exercise up/down.
-   */
   reorderExercise: (
     day: DayName,
     muscleName: string,
@@ -177,9 +159,6 @@ interface ProgramContextType {
     weekIndex?: number
   ) => void;
 
-  /*
-   * Manual save.
-   */
   saveProgram: () => void;
 }
 
@@ -205,6 +184,12 @@ export function ProgramProvider({
     DayWorkout[]
   >(() => createInitialWeeks());
 
+  const [trainingPlanId, setTrainingPlanId] =
+    useState<string | null>(null);
+
+  const [dbDayMap, setDbDayMap] =
+    useState<DbDayMap>({});
+
   const [loaded, setLoaded] =
     useState(false);
 
@@ -216,122 +201,329 @@ export function ProgramProvider({
      ======================================================= */
 
   useEffect(() => {
-    try {
-      const saved =
-        localStorage.getItem(STORAGE_KEY);
+    async function loadProgram() {
+      try {
+        /* -----------------------------------------------
+           LOAD TRAINING PLAN
+        ----------------------------------------------- */
 
-      if (saved) {
-        const parsed = JSON.parse(saved);
+        const planResponse =
+          await fetch("/api/training-plans");
 
-        /*
-         * ---------------------------------------------------
-         * NEW FORMAT
-         * ---------------------------------------------------
-         */
+        if (!planResponse.ok) {
+          throw new Error(
+            "Failed to load training plans"
+          );
+        }
 
-        if (
-          parsed &&
-          Array.isArray(parsed.weeks)
+        const planData =
+          await planResponse.json();
+
+        const plan =
+          planData.plans?.[0];
+
+        if (!plan) {
+          throw new Error(
+            "No training plan found"
+          );
+        }
+
+        setTrainingPlanId(plan.id);
+
+        console.log(
+          "✅ Training plan loaded:",
+          plan.id
+        );
+
+        /* -----------------------------------------------
+           LOAD DATABASE STRUCTURE
+        ----------------------------------------------- */
+
+        const structureResponse =
+          await fetch(
+            `/api/training-plans/${plan.id}/structure`
+          );
+
+        if (!structureResponse.ok) {
+          throw new Error(
+            "Failed to load training plan structure"
+          );
+        }
+
+        const structure =
+          await structureResponse.json();
+
+        const newDbDayMap: DbDayMap = {};
+
+        for (
+          const phase of
+            structure.phases || []
         ) {
-          const loadedWeeks =
-            parsed.weeks.map(
-              (week: DayWorkout) => ({
-                Monday:
-                  week?.Monday || [],
-                Tuesday:
-                  week?.Tuesday || [],
-                Wednesday:
-                  week?.Wednesday || [],
-                Thursday:
-                  week?.Thursday || [],
-                Friday:
-                  week?.Friday || [],
-                Saturday:
-                  week?.Saturday || [],
-                Sunday:
-                  week?.Sunday || [],
-              })
-            );
+          for (
+            const week of
+              phase.weeks || []
+          ) {
+            const weekIndex =
+              Number(week.weekNumber) - 1;
 
-          if (loadedWeeks.length > 0) {
-            setWeeks(loadedWeeks);
+            if (
+              weekIndex < 0
+            ) {
+              continue;
+            }
+
+            for (
+              const workoutDay of
+                week.workoutDays || []
+            ) {
+              const dayName =
+                workoutDay.name as DayName;
+
+              const validDayNames = [
+                "Monday",
+                "Tuesday",
+                "Wednesday",
+                "Thursday",
+                "Friday",
+                "Saturday",
+                "Sunday",
+              ];
+
+              if (
+                validDayNames.includes(
+                  dayName
+                )
+              ) {
+                newDbDayMap[
+                  dayMapKey(
+                    weekIndex,
+                    dayName
+                  )
+                ] = {
+                  phaseId:
+                    phase.id,
+                  weekId:
+                    week.id,
+                  dayId:
+                    workoutDay.id,
+                };
+              }
+            }
           }
         }
 
-        /*
-         * ---------------------------------------------------
-         * OLD FORMAT
-         * ---------------------------------------------------
-         *
-         * Previous version stored:
-         *
-         * {
-         *   Monday: [],
-         *   Tuesday: [],
-         *   ...
-         * }
-         *
-         * Preserve that data in Week 1.
-         */
+        setDbDayMap(
+          newDbDayMap
+        );
 
-        else if (
-          parsed &&
-          (
-            Array.isArray(parsed.Monday) ||
-            Array.isArray(parsed.Tuesday) ||
-            Array.isArray(parsed.Wednesday) ||
-            Array.isArray(parsed.Thursday) ||
-            Array.isArray(parsed.Friday) ||
-            Array.isArray(parsed.Saturday) ||
-            Array.isArray(parsed.Sunday)
-          )
-        ) {
-          const migratedWeek: DayWorkout = {
-            Monday:
-              parsed.Monday || [],
-            Tuesday:
-              parsed.Tuesday || [],
-            Wednesday:
-              parsed.Wednesday || [],
-            Thursday:
-              parsed.Thursday || [],
-            Friday:
-              parsed.Friday || [],
-            Saturday:
-              parsed.Saturday || [],
-            Sunday:
-              parsed.Sunday || [],
-          };
+        console.log(
+          "✅ Database workout days loaded:",
+          newDbDayMap
+        );
 
-          const migratedWeeks =
-            createInitialWeeks();
+        /* -----------------------------------------------
+           LOAD LOCAL PROGRAM
+        ----------------------------------------------- */
 
-          migratedWeeks[0] =
-            migratedWeek;
-
-          setWeeks(migratedWeeks);
-
-          console.log(
-            "✅ Existing workout program migrated to Week 1"
+        const saved =
+          localStorage.getItem(
+            STORAGE_KEY
           );
+
+        if (saved) {
+          const parsed =
+            JSON.parse(saved);
+
+          if (
+            parsed &&
+            Array.isArray(
+              parsed.weeks
+            )
+          ) {
+            const loadedWeeks =
+              parsed.weeks.map(
+                (week: DayWorkout) => ({
+                  Monday:
+                    week?.Monday || [],
+                  Tuesday:
+                    week?.Tuesday || [],
+                  Wednesday:
+                    week?.Wednesday || [],
+                  Thursday:
+                    week?.Thursday || [],
+                  Friday:
+                    week?.Friday || [],
+                  Saturday:
+                    week?.Saturday || [],
+                  Sunday:
+                    week?.Sunday || [],
+                })
+              );
+
+            if (
+              loadedWeeks.length > 0
+            ) {
+              setWeeks(
+                loadedWeeks
+              );
+            }
+          } else if (
+            parsed &&
+            (
+              Array.isArray(
+                parsed.Monday
+              ) ||
+              Array.isArray(
+                parsed.Tuesday
+              ) ||
+              Array.isArray(
+                parsed.Wednesday
+              ) ||
+              Array.isArray(
+                parsed.Thursday
+              ) ||
+              Array.isArray(
+                parsed.Friday
+              ) ||
+              Array.isArray(
+                parsed.Saturday
+              ) ||
+              Array.isArray(
+                parsed.Sunday
+              )
+            )
+          ) {
+            const migratedWeek:
+              DayWorkout = {
+              Monday:
+                parsed.Monday || [],
+              Tuesday:
+                parsed.Tuesday || [],
+              Wednesday:
+                parsed.Wednesday || [],
+              Thursday:
+                parsed.Thursday || [],
+              Friday:
+                parsed.Friday || [],
+              Saturday:
+                parsed.Saturday || [],
+              Sunday:
+                parsed.Sunday || [],
+            };
+
+            const migratedWeeks =
+              createInitialWeeks();
+
+            migratedWeeks[0] =
+              migratedWeek;
+
+            setWeeks(
+              migratedWeeks
+            );
+
+            console.log(
+              "✅ Existing workout program migrated to Week 1"
+            );
+          }
         }
+
+        setSaveStatus(
+          "saved"
+        );
+      } catch (error) {
+        console.error(
+          "Failed to load workout program:",
+          error
+        );
+
+        setSaveStatus(
+          "error"
+        );
+      } finally {
+        setLoaded(true);
       }
-
-      setSaveStatus("saved");
-    } catch (error) {
-      console.error(
-        "Failed to load workout program:",
-        error
-      );
-
-      setSaveStatus("error");
-    } finally {
-      setLoaded(true);
     }
+
+    loadProgram();
   }, []);
 
   /* =======================================================
-     AUTO SAVE
+     SAVE EXERCISE TO DATABASE
+     ======================================================= */
+
+  async function saveExerciseToDatabase(
+    day: DayName,
+    weekIndex: number,
+    exercise: ProgramExercise
+  ) {
+    if (!trainingPlanId) {
+      console.warn(
+        "No training plan ID available"
+      );
+      return;
+    }
+
+    const dbDay =
+      dbDayMap[
+        dayMapKey(
+          weekIndex,
+          day
+        )
+      ];
+
+    if (!dbDay) {
+      console.warn(
+        "No database WorkoutDay mapping found:",
+        {
+          weekIndex,
+          day,
+        }
+      );
+      return;
+    }
+
+    const response =
+      await fetch(
+        `/api/training-plans/${trainingPlanId}/phases/${dbDay.phaseId}/weeks/${dbDay.weekId}/days/${dbDay.dayId}/exercises`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type":
+              "application/json",
+          },
+          body: JSON.stringify({
+            exerciseId:
+              exercise.id,
+            sets:
+              exercise.sets ?? 3,
+            reps:
+              exercise.reps ?? 10,
+            restSeconds:
+              exercise.rest ?? 60,
+          }),
+        }
+      );
+
+    if (!response.ok) {
+      const errorText =
+        await response.text();
+
+      console.error(
+        "Failed to save exercise:",
+        errorText
+      );
+
+      return;
+    }
+
+    console.log(
+      "✅ Exercise saved to database:",
+      exercise.id
+    );
+  }
+
+  /* =======================================================
+     AUTO SAVE LOCAL PROGRAM
      ======================================================= */
 
   useEffect(() => {
@@ -339,33 +531,43 @@ export function ProgramProvider({
       return;
     }
 
-    setSaveStatus("saving");
+    setSaveStatus(
+      "saving"
+    );
 
-    const timeout = setTimeout(() => {
-      try {
-        const dataToSave: StoredProgram = {
-          weeks,
-        };
+    const timeout =
+      setTimeout(() => {
+        try {
+          const dataToSave:
+            StoredProgram = {
+            weeks,
+          };
 
-        localStorage.setItem(
-          STORAGE_KEY,
-          JSON.stringify(dataToSave)
-        );
+          localStorage.setItem(
+            STORAGE_KEY,
+            JSON.stringify(
+              dataToSave
+            )
+          );
 
-        console.log(
-          "✅ Workout program auto-saved"
-        );
+          console.log(
+            "✅ Workout program auto-saved"
+          );
 
-        setSaveStatus("saved");
-      } catch (error) {
-        console.error(
-          "Failed to save workout program:",
-          error
-        );
+          setSaveStatus(
+            "saved"
+          );
+        } catch (error) {
+          console.error(
+            "Failed to save workout program:",
+            error
+          );
 
-        setSaveStatus("error");
-      }
-    }, 300);
+          setSaveStatus(
+            "error"
+          );
+        }
+      }, 300);
 
     return () => {
       clearTimeout(timeout);
@@ -381,12 +583,15 @@ export function ProgramProvider({
   ): DayWorkout {
     if (
       weekIndex < 0 ||
-      weekIndex >= weeks.length
+      weekIndex >=
+        weeks.length
     ) {
       return createEmptyWeek();
     }
 
-    return weeks[weekIndex];
+    return weeks[
+      weekIndex
+    ];
   }
 
   /* =======================================================
@@ -395,16 +600,21 @@ export function ProgramProvider({
 
   function saveProgram() {
     try {
-      const dataToSave: StoredProgram = {
+      const dataToSave:
+        StoredProgram = {
         weeks,
       };
 
       localStorage.setItem(
         STORAGE_KEY,
-        JSON.stringify(dataToSave)
+        JSON.stringify(
+          dataToSave
+        )
       );
 
-      setSaveStatus("saved");
+      setSaveStatus(
+        "saved"
+      );
 
       console.log(
         "✅ Workout program saved"
@@ -415,7 +625,9 @@ export function ProgramProvider({
         error
       );
 
-      setSaveStatus("error");
+      setSaveStatus(
+        "error"
+      );
     }
   }
 
@@ -429,10 +641,12 @@ export function ProgramProvider({
     weekIndex: number = 0
   ) {
     setWeeks((prev) => {
-      const updatedWeeks = [...prev];
+      const updatedWeeks =
+        [...prev];
 
       while (
-        updatedWeeks.length <= weekIndex
+        updatedWeeks.length <=
+        weekIndex
       ) {
         updatedWeeks.push(
           createEmptyWeek()
@@ -440,19 +654,36 @@ export function ProgramProvider({
       }
 
       const currentWeek =
-        updatedWeeks[weekIndex];
+        updatedWeeks[
+          weekIndex
+        ];
 
-      updatedWeeks[weekIndex] = {
+      updatedWeeks[
+        weekIndex
+      ] = {
         ...currentWeek,
 
         [day]: [
-          ...(currentWeek[day] || []),
+          ...(currentWeek[
+            day
+          ] || []),
           muscle,
         ],
       };
 
       return updatedWeeks;
     });
+
+    for (
+      const exercise of
+        muscle.exercises || []
+    ) {
+      void saveExerciseToDatabase(
+        day,
+        weekIndex,
+        exercise
+      );
+    }
   }
 
   /* =======================================================
@@ -465,26 +696,35 @@ export function ProgramProvider({
     weekIndex: number
   ) {
     setWeeks((prev) => {
-      const updatedWeeks = [...prev];
+      const updatedWeeks =
+        [...prev];
 
       if (
         weekIndex < 0 ||
-        weekIndex >= updatedWeeks.length
+        weekIndex >=
+          updatedWeeks.length
       ) {
         return prev;
       }
 
       const currentWeek =
-        updatedWeeks[weekIndex];
+        updatedWeeks[
+          weekIndex
+        ];
 
-      updatedWeeks[weekIndex] = {
+      updatedWeeks[
+        weekIndex
+      ] = {
         ...currentWeek,
 
         [day]: (
-          currentWeek[day] || []
+          currentWeek[
+            day
+          ] || []
         ).filter(
           (muscle) =>
-            muscle.name !== muscleName
+            muscle.name !==
+            muscleName
         ),
       };
 
@@ -493,19 +733,23 @@ export function ProgramProvider({
   }
 
   /* =======================================================
-     FIND EXERCISE FROM LIBRARY
+     FIND EXERCISE
      ======================================================= */
 
   function findExerciseById(
     exerciseId: number
   ) {
-    for (const muscleExercises of Object.values(
-      exercises
-    )) {
+    for (
+      const muscleExercises of
+        Object.values(
+          exercises
+        )
+    ) {
       const found =
         muscleExercises.find(
           (exercise) =>
-            exercise.id === exerciseId
+            exercise.id ===
+            exerciseId
         );
 
       if (found) {
@@ -526,27 +770,39 @@ export function ProgramProvider({
     exerciseIds: number[],
     weekIndex: number = 0
   ) {
+    const exercisesToSave:
+      ProgramExercise[] = [];
+
     setWeeks((prev) => {
-      const updatedWeeks = [...prev];
+      const updatedWeeks =
+        [...prev];
 
       if (
         weekIndex < 0 ||
-        weekIndex >= updatedWeeks.length
+        weekIndex >=
+          updatedWeeks.length
       ) {
         return prev;
       }
 
       const currentWeek =
-        updatedWeeks[weekIndex];
+        updatedWeeks[
+          weekIndex
+        ];
 
-      updatedWeeks[weekIndex] = {
+      updatedWeeks[
+        weekIndex
+      ] = {
         ...currentWeek,
 
         [day]: (
-          currentWeek[day] || []
+          currentWeek[
+            day
+          ] || []
         ).map((muscle) => {
           if (
-            muscle.name !== muscleName
+            muscle.name !==
+            muscleName
           ) {
             return muscle;
           }
@@ -555,61 +811,61 @@ export function ProgramProvider({
             muscle.exercises || [];
 
           const updatedExercises =
-            exerciseIds.map((id) => {
-              const existing =
-                existingExercises.find(
-                  (exercise) =>
-                    exercise.id === id
+            exerciseIds.map(
+              (id) => {
+                const existing =
+                  existingExercises.find(
+                    (exercise) =>
+                      exercise.id ===
+                      id
+                  );
+
+                if (existing) {
+                  return existing;
+                }
+
+                const libraryExercise =
+                  findExerciseById(
+                    id
+                  );
+
+                if (
+                  libraryExercise?.type ===
+                  "cardio"
+                ) {
+                  const newExercise:
+                    ProgramExercise = {
+                    id,
+                    type: "cardio",
+                    duration:
+                      libraryExercise.duration ??
+                      20,
+                    rest: 0,
+                  };
+
+                  exercisesToSave.push(
+                    newExercise
+                  );
+
+                  return newExercise;
+                }
+
+                const newExercise:
+                  ProgramExercise = {
+                  id,
+                  type: "strength",
+                  sets: 3,
+                  reps: 10,
+                  rest: 60,
+                };
+
+                exercisesToSave.push(
+                  newExercise
                 );
 
-              /*
-               * Keep existing settings when
-               * the exercise is already present.
-               */
-              if (existing) {
-                return existing;
+                return newExercise;
               }
-
-              /*
-               * Find the original exercise
-               * from the exercise library.
-               */
-              const libraryExercise =
-                findExerciseById(id);
-
-              /*
-               * CARDIO
-               *
-               * Cardio gets duration instead
-               * of fake sets/reps.
-               */
-              if (
-                libraryExercise?.type ===
-                "cardio"
-              ) {
-                return {
-                  id,
-                  type: "cardio" as const,
-                  duration:
-                    libraryExercise.duration ??
-                    20,
-                  rest: 0,
-                };
-              }
-
-              /*
-               * STRENGTH
-               *
-               * Normal default settings.
-               */
-              return {
-                id,
-                type: "strength" as const,
-                sets: 3,
-                reps: 10,
-                rest: 60,
-              };
-            });
+            );
 
           return {
             ...muscle,
@@ -621,6 +877,17 @@ export function ProgramProvider({
 
       return updatedWeeks;
     });
+
+    for (
+      const exercise of
+        exercisesToSave
+    ) {
+      void saveExerciseToDatabase(
+        day,
+        weekIndex,
+        exercise
+      );
+    }
   }
 
   /* =======================================================
@@ -640,26 +907,35 @@ export function ProgramProvider({
     weekIndex: number = 0
   ) {
     setWeeks((prev) => {
-      const updatedWeeks = [...prev];
+      const updatedWeeks =
+        [...prev];
 
       if (
         weekIndex < 0 ||
-        weekIndex >= updatedWeeks.length
+        weekIndex >=
+          updatedWeeks.length
       ) {
         return prev;
       }
 
       const currentWeek =
-        updatedWeeks[weekIndex];
+        updatedWeeks[
+          weekIndex
+        ];
 
-      updatedWeeks[weekIndex] = {
+      updatedWeeks[
+        weekIndex
+      ] = {
         ...currentWeek,
 
         [day]: (
-          currentWeek[day] || []
+          currentWeek[
+            day
+          ] || []
         ).map((muscle) => {
           if (
-            muscle.name !== muscleName
+            muscle.name !==
+            muscleName
           ) {
             return muscle;
           }
@@ -668,9 +944,13 @@ export function ProgramProvider({
             ...muscle,
 
             exercises:
-              (muscle.exercises || []).map(
+              (
+                muscle.exercises ||
+                []
+              ).map(
                 (exercise) =>
-                  exercise.id === exerciseId
+                  exercise.id ===
+                  exerciseId
                     ? {
                         ...exercise,
                         ...settings,
@@ -693,46 +973,65 @@ export function ProgramProvider({
     day: DayName,
     muscleName: string,
     exerciseId: number,
-    direction: "up" | "down",
+    direction:
+      | "up"
+      | "down",
     weekIndex: number = 0
   ) {
     setWeeks((prev) => {
-      const updatedWeeks = [...prev];
+      const updatedWeeks =
+        [...prev];
 
       if (
         weekIndex < 0 ||
-        weekIndex >= updatedWeeks.length
+        weekIndex >=
+          updatedWeeks.length
       ) {
         return prev;
       }
 
       const currentWeek =
-        updatedWeeks[weekIndex];
+        updatedWeeks[
+          weekIndex
+        ];
 
-      updatedWeeks[weekIndex] = {
+      updatedWeeks[
+        weekIndex
+      ] = {
         ...currentWeek,
 
         [day]: (
-          currentWeek[day] || []
+          currentWeek[
+            day
+          ] || []
         ).map((muscle) => {
           if (
-            muscle.name !== muscleName
+            muscle.name !==
+            muscleName
           ) {
             return muscle;
           }
 
           const currentIndex =
-            (muscle.exercises || []).findIndex(
+            (
+              muscle.exercises ||
+              []
+            ).findIndex(
               (exercise) =>
-                exercise.id === exerciseId
+                exercise.id ===
+                exerciseId
             );
 
-          if (currentIndex === -1) {
+          if (
+            currentIndex ===
+            -1
+          ) {
             return muscle;
           }
 
           const newIndex =
-            direction === "up"
+            direction ===
+            "up"
               ? currentIndex - 1
               : currentIndex + 1;
 
@@ -744,11 +1043,14 @@ export function ProgramProvider({
             return muscle;
           }
 
-          const updatedExercises = [
-            ...muscle.exercises,
-          ];
+          const updatedExercises =
+            [
+              ...muscle.exercises,
+            ];
 
-          const [movedExercise] =
+          const [
+            movedExercise,
+          ] =
             updatedExercises.splice(
               currentIndex,
               1
@@ -777,7 +1079,8 @@ export function ProgramProvider({
      ======================================================= */
 
   const workout =
-    weeks[0] || createEmptyWeek();
+    weeks[0] ||
+    createEmptyWeek();
 
   /* =======================================================
      PROVIDER
@@ -812,7 +1115,9 @@ export function ProgramProvider({
 
 export function useProgram() {
   const context =
-    useContext(ProgramContext);
+    useContext(
+      ProgramContext
+    );
 
   if (!context) {
     throw new Error(
