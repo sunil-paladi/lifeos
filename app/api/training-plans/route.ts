@@ -62,20 +62,77 @@ export async function POST(request: Request) {
     );
   }
 
-  const plan = await prisma.trainingPlan.create({
-    data: {
-      userId: session.user.id,
-      name: body.name,
-      description: body.description ?? null,
-      totalWeeks: Number(body.totalWeeks),
-      startDate: body.startDate
-        ? new Date(body.startDate)
-        : null,
-      endDate: body.endDate
-        ? new Date(body.endDate)
-        : null,
-      isActive: body.isActive ?? false,
-    },
+  const totalWeeks = Number(body.totalWeeks);
+
+  if (!Number.isInteger(totalWeeks) || totalWeeks < 1) {
+    return NextResponse.json(
+      {
+        error: "totalWeeks must be a positive integer",
+      },
+      { status: 400 }
+    );
+  }
+
+  const plan = await prisma.$transaction(async (tx) => {
+    const trainingPlan = await tx.trainingPlan.create({
+      data: {
+        userId: session.user.id,
+        name: body.name,
+        description: body.description ?? null,
+        totalWeeks,
+        startDate: body.startDate
+          ? new Date(body.startDate)
+          : null,
+        endDate: body.endDate
+          ? new Date(body.endDate)
+          : null,
+        isActive: body.isActive ?? false,
+      },
+    });
+
+    const phase = await tx.programPhase.create({
+      data: {
+        trainingPlanId: trainingPlan.id,
+        name: "Phase 1",
+        description: null,
+        phaseOrder: 1,
+        durationWeeks: totalWeeks,
+        startWeek: 1,
+        endWeek: totalWeeks,
+      },
+    });
+
+    const dayNames = [
+      "Monday",
+      "Tuesday",
+      "Wednesday",
+      "Thursday",
+      "Friday",
+      "Saturday",
+      "Sunday",
+    ];
+
+    for (let weekNumber = 1; weekNumber <= totalWeeks; weekNumber++) {
+      const week = await tx.programWeek.create({
+        data: {
+          phaseId: phase.id,
+          weekNumber,
+        },
+      });
+
+      await tx.workoutDay.createMany({
+        data: dayNames.map((name, index) => ({
+          weekId: week.id,
+          dayOfWeek: index + 1,
+          name,
+          description: null,
+          isRestDay: false,
+          dayOrder: index + 1,
+        })),
+      });
+    }
+
+    return trainingPlan;
   });
 
   return NextResponse.json(

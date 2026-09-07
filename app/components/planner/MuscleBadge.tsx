@@ -198,7 +198,7 @@ export default function MuscleBadge({
                   className="rounded-lg border border-slate-200 bg-white p-3"
                 >
 
-                  <div className="flex items-start justify-between gap-3">
+                  <div className="flex flex-col gap-2">
 
                     {/* Exercise Info */}
                     <div className="flex-1">
@@ -248,7 +248,7 @@ export default function MuscleBadge({
                     </div>
 
                     {/* Controls */}
-                    <div className="flex items-center gap-1">
+                    <div className="flex w-full items-center justify-end gap-1 border-t border-slate-100 pt-1">
 
                       {/* Move Up */}
                       <button
@@ -399,17 +399,17 @@ function ExerciseSettings({
   /* Strength */
   const [sets, setSets] =
     useState(
-      exercise.sets ?? 3
+      String(exercise.sets ?? 3)
     );
 
   const [reps, setReps] =
     useState(
-      exercise.reps ?? 10
+      String(exercise.reps ?? 10)
     );
 
   const [rest, setRest] =
     useState(
-      exercise.rest ?? 60
+      String(exercise.rest ?? 60)
     );
 
   /* Cardio */
@@ -436,7 +436,7 @@ function ExerciseSettings({
   onChange={(e) =>
     setDuration(e.target.value)
   }
-  className="mt-1 w-full rounded-lg border p-2"
+  className="mt-1 h-11 w-full min-w-0 appearance-none rounded-lg border border-slate-300 bg-white px-0.5 text-center text-sm font-medium text-slate-900 outline-none focus:border-green-500 focus:ring-2 focus:ring-green-100"
 />
           </label>
 
@@ -462,24 +462,23 @@ function ExerciseSettings({
            STRENGTH SETTINGS
            ================================================= */
         <>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-3 gap-1.5">
 
             {/* Sets */}
             <label className="text-xs font-medium">
               Sets
 
               <input
-                type="number"
-                min="1"
+                type="text"
+                inputMode="numeric"
                 value={sets}
+                onFocus={(e) => e.currentTarget.select()}
                 onChange={(e) =>
                   setSets(
-                    Number(
-                      e.target.value
-                    )
+                    e.target.value.replace(/\D/g, "")
                   )
                 }
-                className="mt-1 w-full rounded-lg border p-2"
+                className="mt-1 h-11 w-full min-w-0 appearance-none rounded-lg border border-slate-300 bg-white px-0.5 text-center text-sm font-medium text-slate-900 outline-none focus:border-green-500 focus:ring-2 focus:ring-green-100"
               />
             </label>
 
@@ -488,17 +487,16 @@ function ExerciseSettings({
               Reps
 
               <input
-                type="number"
-                min="1"
+                type="text"
+                inputMode="numeric"
                 value={reps}
+                onFocus={(e) => e.currentTarget.select()}
                 onChange={(e) =>
                   setReps(
-                    Number(
-                      e.target.value
-                    )
+                    e.target.value.replace(/\D/g, "")
                   )
                 }
-                className="mt-1 w-full rounded-lg border p-2"
+                className="mt-1 h-11 w-full min-w-0 appearance-none rounded-lg border border-slate-300 bg-white px-0.5 text-center text-sm font-medium text-slate-900 outline-none focus:border-green-500 focus:ring-2 focus:ring-green-100"
               />
             </label>
 
@@ -507,14 +505,13 @@ function ExerciseSettings({
               Rest
 
               <input
-                type="number"
-                min="0"
+                type="text"
+                inputMode="numeric"
                 value={rest}
+                onFocus={(e) => e.currentTarget.select()}
                 onChange={(e) =>
                   setRest(
-                    Number(
-                      e.target.value
-                    )
+                    e.target.value.replace(/\D/g, "")
                   )
                 }
                 className="mt-1 w-full rounded-lg border p-2"
@@ -529,9 +526,9 @@ function ExerciseSettings({
               onSave(
                 exercise.id,
                 {
-                  sets,
-                  reps,
-                  rest,
+                  sets: Number(sets),
+                  reps: Number(reps),
+                  rest: Number(rest),
                 }
               )
             }

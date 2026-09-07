@@ -322,108 +322,195 @@ export function ProgramProvider({
         );
 
         /* -----------------------------------------------
-           LOAD LOCAL PROGRAM
+           LOAD PROGRAM FROM DATABASE
         ----------------------------------------------- */
 
-        const saved =
-          localStorage.getItem(
-            STORAGE_KEY
-          );
+        const dbWeeks =
+          createInitialWeeks();
 
-        if (saved) {
-          const parsed =
-            JSON.parse(saved);
+        let hasDbExercises = false;
 
-          if (
-            parsed &&
-            Array.isArray(
-              parsed.weeks
-            )
+        for (
+          const phase of
+            structure.phases || []
+        ) {
+          for (
+            const week of
+              phase.weeks || []
           ) {
-            const loadedWeeks =
-              parsed.weeks.map(
-                (week: DayWorkout) => ({
-                  Monday:
-                    week?.Monday || [],
-                  Tuesday:
-                    week?.Tuesday || [],
-                  Wednesday:
-                    week?.Wednesday || [],
-                  Thursday:
-                    week?.Thursday || [],
-                  Friday:
-                    week?.Friday || [],
-                  Saturday:
-                    week?.Saturday || [],
-                  Sunday:
-                    week?.Sunday || [],
-                })
-              );
+            const weekIndex =
+              Number(week.weekNumber) - 1;
 
             if (
-              loadedWeeks.length > 0
+              weekIndex < 0 ||
+              weekIndex >= dbWeeks.length
             ) {
-              setWeeks(
-                loadedWeeks
-              );
+              continue;
             }
-          } else if (
-            parsed &&
-            (
+
+            for (
+              const workoutDay of
+                week.workoutDays || []
+            ) {
+              const dayName =
+                workoutDay.name as DayName;
+
+              const validDayNames = [
+                "Monday",
+                "Tuesday",
+                "Wednesday",
+                "Thursday",
+                "Friday",
+                "Saturday",
+                "Sunday",
+              ];
+
+              if (
+                !validDayNames.includes(
+                  dayName
+                )
+              ) {
+                continue;
+              }
+
+              const programExercises =
+                workoutDay.programExercises || [];
+
+              if (
+                programExercises.length === 0
+              ) {
+                continue;
+              }
+
+              hasDbExercises = true;
+
+              const muscleGroups: MuscleGroup[] = [];
+
+              for (
+                const programExercise of
+                  programExercises
+              ) {
+                const libraryExercise =
+                  programExercise.exercise;
+
+                if (!libraryExercise) {
+                  continue;
+                }
+
+                const primaryMuscle =
+                  libraryExercise.primaryMuscle;
+
+                const muscleName =
+                  [
+                    "Middle Back",
+                    "Upper Back",
+                    "Lats",
+                    "Lower Back",
+                    "Back",
+                  ].includes(primaryMuscle)
+                    ? "Back"
+                    : primaryMuscle;
+
+                let muscle =
+                  muscleGroups.find(
+                    (item) =>
+                      item.name ===
+                      muscleName
+                  );
+
+                if (!muscle) {
+                  muscle = {
+                    id:
+                      muscleGroups.length + 1,
+                    name: muscleName,
+                    exercises: [],
+                  };
+
+                  muscleGroups.push(
+                    muscle
+                  );
+                }
+
+                muscle.exercises.push({
+                  id: Number(
+                    libraryExercise.id
+                  ),
+                  type:
+                    libraryExercise.type ===
+                    "cardio"
+                      ? "cardio"
+                      : "strength",
+                  sets:
+                    programExercise.sets,
+                  reps:
+                    programExercise.minReps,
+                  rest:
+                    programExercise.restSeconds ??
+                    60,
+                });
+              }
+
+              dbWeeks[weekIndex][
+                dayName
+              ] = muscleGroups;
+            }
+          }
+        }
+
+        if (hasDbExercises) {
+          setWeeks(dbWeeks);
+
+          console.log(
+            "✅ Workout program loaded from database"
+          );
+        } else {
+          /* ---------------------------------------------
+             LOCAL STORAGE FALLBACK
+          --------------------------------------------- */
+
+          const saved =
+            localStorage.getItem(
+              STORAGE_KEY
+            );
+
+          if (saved) {
+            const parsed =
+              JSON.parse(saved);
+
+            if (
+              parsed &&
               Array.isArray(
-                parsed.Monday
-              ) ||
-              Array.isArray(
-                parsed.Tuesday
-              ) ||
-              Array.isArray(
-                parsed.Wednesday
-              ) ||
-              Array.isArray(
-                parsed.Thursday
-              ) ||
-              Array.isArray(
-                parsed.Friday
-              ) ||
-              Array.isArray(
-                parsed.Saturday
-              ) ||
-              Array.isArray(
-                parsed.Sunday
+                parsed.weeks
               )
-            )
-          ) {
-            const migratedWeek:
-              DayWorkout = {
-              Monday:
-                parsed.Monday || [],
-              Tuesday:
-                parsed.Tuesday || [],
-              Wednesday:
-                parsed.Wednesday || [],
-              Thursday:
-                parsed.Thursday || [],
-              Friday:
-                parsed.Friday || [],
-              Saturday:
-                parsed.Saturday || [],
-              Sunday:
-                parsed.Sunday || [],
-            };
+            ) {
+              const loadedWeeks =
+                parsed.weeks.map(
+                  (week: DayWorkout) => ({
+                    Monday:
+                      week?.Monday || [],
+                    Tuesday:
+                      week?.Tuesday || [],
+                    Wednesday:
+                      week?.Wednesday || [],
+                    Thursday:
+                      week?.Thursday || [],
+                    Friday:
+                      week?.Friday || [],
+                    Saturday:
+                      week?.Saturday || [],
+                    Sunday:
+                      week?.Sunday || [],
+                  })
+                );
 
-            const migratedWeeks =
-              createInitialWeeks();
-
-            migratedWeeks[0] =
-              migratedWeek;
-
-            setWeeks(
-              migratedWeeks
-            );
-
-            console.log(
-              "✅ Existing workout program migrated to Week 1"
-            );
+              if (
+                loadedWeeks.length > 0
+              ) {
+                setWeeks(
+                  loadedWeeks
+                );
+              }
+            }
           }
         }
 
@@ -523,8 +610,141 @@ export function ProgramProvider({
   }
 
   /* =======================================================
+     DATABASE EXERCISE HELPERS
+     ======================================================= */
+
+  async function updateExerciseInDatabase(
+    day: DayName,
+    weekIndex: number,
+    exerciseId: number,
+    settings: {
+      sets?: number;
+      reps?: number;
+      rest?: number;
+      duration?: number;
+    }
+  ) {
+    if (!trainingPlanId) {
+      return;
+    }
+
+    const dbDay =
+      dbDayMap[
+        dayMapKey(weekIndex, day)
+      ];
+
+    if (!dbDay) {
+      return;
+    }
+
+    const response = await fetch(
+      `/api/training-plans/${trainingPlanId}/phases/${dbDay.phaseId}/weeks/${dbDay.weekId}/days/${dbDay.dayId}/exercises`,
+      {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          exerciseId,
+          sets: settings.sets,
+          reps: settings.reps,
+          restSeconds: settings.rest,
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      console.error(
+        "Failed to update exercise:",
+        await response.text()
+      );
+    }
+  }
+
+  async function deleteExerciseFromDatabase(
+    day: DayName,
+    weekIndex: number,
+    exerciseId: number
+  ) {
+    if (!trainingPlanId) {
+      return;
+    }
+
+    const dbDay =
+      dbDayMap[
+        dayMapKey(weekIndex, day)
+      ];
+
+    if (!dbDay) {
+      return;
+    }
+
+    const response = await fetch(
+      `/api/training-plans/${trainingPlanId}/phases/${dbDay.phaseId}/weeks/${dbDay.weekId}/days/${dbDay.dayId}/exercises`,
+      {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          exerciseId,
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      console.error(
+        "Failed to delete exercise:",
+        await response.text()
+      );
+    }
+  }
+
+  async function reorderExerciseInDatabase(
+    day: DayName,
+    weekIndex: number,
+    exerciseId: number,
+    direction: "up" | "down"
+  ) {
+    if (!trainingPlanId) {
+      return;
+    }
+
+    const dbDay =
+      dbDayMap[
+        dayMapKey(weekIndex, day)
+      ];
+
+    if (!dbDay) {
+      return;
+    }
+
+    const response = await fetch(
+      `/api/training-plans/${trainingPlanId}/phases/${dbDay.phaseId}/weeks/${dbDay.weekId}/days/${dbDay.dayId}/exercises`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          exerciseId,
+          direction,
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      console.error(
+        "Failed to reorder exercise:",
+        await response.text()
+      );
+    }
+  }
+
+  /* =======================================================
      AUTO SAVE LOCAL PROGRAM
      ======================================================= */
+
 
   useEffect(() => {
     if (!loaded) {
@@ -695,6 +915,27 @@ export function ProgramProvider({
     muscleName: string,
     weekIndex: number
   ) {
+    const currentWeek =
+      weeks[weekIndex];
+
+    if (!currentWeek) {
+      return;
+    }
+
+    const muscle =
+      (currentWeek[day] || []).find(
+        (item) =>
+          item.name === muscleName
+      );
+
+    if (!muscle) {
+      return;
+    }
+
+    /*
+     * Remove the muscle group from
+     * the local program immediately.
+     */
     setWeeks((prev) => {
       const updatedWeeks =
         [...prev];
@@ -707,29 +948,36 @@ export function ProgramProvider({
         return prev;
       }
 
-      const currentWeek =
-        updatedWeeks[
-          weekIndex
-        ];
+      const week =
+        updatedWeeks[weekIndex];
 
-      updatedWeeks[
-        weekIndex
-      ] = {
-        ...currentWeek,
-
+      updatedWeeks[weekIndex] = {
+        ...week,
         [day]: (
-          currentWeek[
-            day
-          ] || []
+          week[day] || []
         ).filter(
-          (muscle) =>
-            muscle.name !==
-            muscleName
+          (item) =>
+            item.name !== muscleName
         ),
       };
 
       return updatedWeeks;
     });
+
+    /*
+     * Remove all exercises belonging
+     * to this muscle group from DB.
+     */
+    for (
+      const exercise of
+        muscle.exercises || []
+    ) {
+      void deleteExerciseFromDatabase(
+        day,
+        weekIndex,
+        exercise.id
+      );
+    }
   }
 
   /* =======================================================
@@ -770,9 +1018,97 @@ export function ProgramProvider({
     exerciseIds: number[],
     weekIndex: number = 0
   ) {
+    const currentMuscle =
+      weeks[weekIndex]?.[day]?.find(
+        (muscle) =>
+          muscle.name === muscleName
+      );
+
+    if (!currentMuscle) {
+      return;
+    }
+
+    const existingExercises =
+      currentMuscle.exercises || [];
+
+    /*
+     * Determine which exercises are being removed.
+     */
+    const exercisesToDelete =
+      existingExercises
+        .filter(
+          (exercise) =>
+            !exerciseIds.includes(
+              exercise.id
+            )
+        )
+        .map(
+          (exercise) =>
+            exercise.id
+        );
+
+    /*
+     * Build the new exercise list outside
+     * the React state updater.
+     */
     const exercisesToSave:
       ProgramExercise[] = [];
 
+    const updatedExercises =
+      exerciseIds.map((id) => {
+        const existing =
+          existingExercises.find(
+            (exercise) =>
+              exercise.id === id
+          );
+
+        if (existing) {
+          return existing;
+        }
+
+        const libraryExercise =
+          findExerciseById(id);
+
+        if (
+          libraryExercise?.type ===
+          "cardio"
+        ) {
+          const newExercise:
+            ProgramExercise = {
+            id,
+            type: "cardio",
+            duration:
+              libraryExercise.duration ??
+              20,
+            rest: 0,
+          };
+
+          exercisesToSave.push(
+            newExercise
+          );
+
+          return newExercise;
+        }
+
+        const newExercise:
+          ProgramExercise = {
+          id,
+          type: "strength",
+          sets: 3,
+          reps: 10,
+          rest: 60,
+        };
+
+        exercisesToSave.push(
+          newExercise
+        );
+
+        return newExercise;
+      });
+
+    /*
+     * Update the UI.
+     */
     setWeeks((prev) => {
       const updatedWeeks =
         [...prev];
@@ -786,9 +1122,7 @@ export function ProgramProvider({
       }
 
       const currentWeek =
-        updatedWeeks[
-          weekIndex
-        ];
+        updatedWeeks[weekIndex];
 
       updatedWeeks[
         weekIndex
@@ -799,85 +1133,23 @@ export function ProgramProvider({
           currentWeek[
             day
           ] || []
-        ).map((muscle) => {
-          if (
-            muscle.name !==
-            muscleName
-          ) {
-            return muscle;
-          }
-
-          const existingExercises =
-            muscle.exercises || [];
-
-          const updatedExercises =
-            exerciseIds.map(
-              (id) => {
-                const existing =
-                  existingExercises.find(
-                    (exercise) =>
-                      exercise.id ===
-                      id
-                  );
-
-                if (existing) {
-                  return existing;
-                }
-
-                const libraryExercise =
-                  findExerciseById(
-                    id
-                  );
-
-                if (
-                  libraryExercise?.type ===
-                  "cardio"
-                ) {
-                  const newExercise:
-                    ProgramExercise = {
-                    id,
-                    type: "cardio",
-                    duration:
-                      libraryExercise.duration ??
-                      20,
-                    rest: 0,
-                  };
-
-                  exercisesToSave.push(
-                    newExercise
-                  );
-
-                  return newExercise;
-                }
-
-                const newExercise:
-                  ProgramExercise = {
-                  id,
-                  type: "strength",
-                  sets: 3,
-                  reps: 10,
-                  rest: 60,
-                };
-
-                exercisesToSave.push(
-                  newExercise
-                );
-
-                return newExercise;
+        ).map((muscle) =>
+          muscle.name === muscleName
+            ? {
+                ...muscle,
+                exercises:
+                  updatedExercises,
               }
-            );
-
-          return {
-            ...muscle,
-            exercises:
-              updatedExercises,
-          };
-        }),
+            : muscle
+        ),
       };
 
       return updatedWeeks;
     });
 
+    /*
+     * Persist newly added exercises.
+     */
     for (
       const exercise of
         exercisesToSave
@@ -886,6 +1158,20 @@ export function ProgramProvider({
         day,
         weekIndex,
         exercise
+      );
+    }
+
+    /*
+     * Persist removed exercises.
+     */
+    for (
+      const exerciseId of
+        exercisesToDelete
+    ) {
+      void deleteExerciseFromDatabase(
+        day,
+        weekIndex,
+        exerciseId
       );
     }
   }
@@ -963,6 +1249,13 @@ export function ProgramProvider({
 
       return updatedWeeks;
     });
+
+    void updateExerciseInDatabase(
+      day,
+      weekIndex,
+      exerciseId,
+      settings
+    );
   }
 
   /* =======================================================
@@ -1072,6 +1365,13 @@ export function ProgramProvider({
 
       return updatedWeeks;
     });
+
+    void reorderExerciseInDatabase(
+      day,
+      weekIndex,
+      exerciseId,
+      direction
+    );
   }
 
   /* =======================================================
