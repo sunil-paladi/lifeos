@@ -45,14 +45,18 @@ model User {
   weightEntries    WeightEntry[]
   bodyMeasurements BodyMeasurement[]
 
+  // Gym relationships
+  ownedGyms      Gym[]           @relation("GymOwner")
+  gymMemberships GymMembership[]
+
   // Timestamps
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
-  createdExercises Exercise[]       @relation("ExerciseCreator")
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  createdExercises Exercise[]        @relation("ExerciseCreator")
   trainingPlans    TrainingPlan[]
   workoutSessions  WorkoutSession[]
   nutritionTargets NutritionTarget[]
-  nutritionDays   NutritionDay[]
+  nutritionDays    NutritionDay[]
 
   @@map("user")
 }
@@ -65,6 +69,19 @@ enum UserRole {
   USER
   TRAINER
   OWNER
+}
+
+enum GymMembershipRole {
+  OWNER
+  TRAINER
+  MEMBER
+}
+
+enum GymMembershipStatus {
+  INVITED
+  ACTIVE
+  SUSPENDED
+  LEFT
 }
 
 // ========================================
@@ -102,6 +119,39 @@ enum TrainingExperience {
 // ========================================
 // WEIGHT HISTORY
 // ========================================
+
+model Gym {
+  id        String   @id @default(cuid())
+  name      String
+  ownerId   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  owner       User            @relation("GymOwner", fields: [ownerId], references: [id], onDelete: Restrict)
+  memberships GymMembership[]
+
+  @@index([ownerId])
+  @@map("gym")
+}
+
+model GymMembership {
+  id        String              @id @default(cuid())
+  gymId     String
+  userId    String
+  role      GymMembershipRole
+  status    GymMembershipStatus @default(ACTIVE)
+  joinedAt  DateTime            @default(now())
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
+
+  gym  Gym  @relation(fields: [gymId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([gymId, userId])
+  @@index([gymId, role])
+  @@index([userId])
+  @@map("gym_membership")
+}
 
 model WeightEntry {
   id         String   @id @default(cuid())
@@ -436,8 +486,8 @@ model WorkoutSet {
 // ========================================
 
 model NutritionTarget {
-  id       String @id @default(cuid())
-  userId   String
+  id     String @id @default(cuid())
+  userId String
 
   calories Int
   protein  Float
@@ -465,7 +515,7 @@ model NutritionDay {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  user  User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user  User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   meals NutritionMeal[]
 
   @@unique([userId, date])
