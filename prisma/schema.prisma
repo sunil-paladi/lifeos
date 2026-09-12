@@ -129,6 +129,7 @@ model Gym {
 
   owner       User            @relation("GymOwner", fields: [ownerId], references: [id], onDelete: Restrict)
   memberships GymMembership[]
+  trainerClientAssignments TrainerClient[]
 
   @@index([ownerId])
   @@map("gym")
@@ -146,6 +147,9 @@ model GymMembership {
 
   gym  Gym  @relation(fields: [gymId], references: [id], onDelete: Cascade)
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  trainerAssignments TrainerClient[] @relation("TrainerClients")
+  clientAssignments  TrainerClient[] @relation("ClientTrainer")
 
   @@unique([gymId, userId])
   @@index([gymId, role])
@@ -544,4 +548,27 @@ model NutritionMeal {
 
   @@index([nutritionDayId])
   @@map("nutrition_meal")
+}
+// ========================================
+// TRAINER CLIENT
+// ========================================
+
+model TrainerClient {
+  id                  String   @id @default(cuid())
+  gymId               String
+  trainerMembershipId String
+  clientMembershipId  String
+  assignedAt          DateTime @default(now())
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  gym               Gym           @relation(fields: [gymId], references: [id], onDelete: Cascade)
+  trainerMembership GymMembership @relation("TrainerClients", fields: [trainerMembershipId], references: [id], onDelete: Cascade)
+  clientMembership  GymMembership @relation("ClientTrainer", fields: [clientMembershipId], references: [id], onDelete: Cascade)
+
+  @@unique([gymId, trainerMembershipId, clientMembershipId])
+  @@index([gymId])
+  @@index([trainerMembershipId])
+  @@index([clientMembershipId])
+  @@map("trainer_client")
 }
