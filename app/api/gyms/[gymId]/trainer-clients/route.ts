@@ -5,6 +5,12 @@ import {
   requireRole,
 } from "@/app/lib/authorization";
 
+type TrainerClientRouteContext = {
+  params: Promise<{
+    gymId: string;
+  }>;
+};
+
 export async function POST(
   request: Request,
   {
@@ -142,3 +148,68 @@ export async function POST(
     { status: 201 }
   );
 }
+
+export async function GET(
+  request: Request,
+  context: TrainerClientRouteContext
+) {
+  const { user, response } = await getAuthenticatedUser();
+
+  if (!user) {
+    return response;
+  }
+
+  const { gymId } = await context.params;
+
+  const membership = await prisma.gymMembership.findFirst({
+    where: {
+      gymId,
+      userId: user.id,
+      role: {
+        in: ["OWNER", "TRAINER"],
+      },
+      status: "ACTIVE",
+    },
+  });
+
+  if (!membership) {
+    return NextResponse.json(
+      { error: "You are not an active member of this gym" },
+      { status: 403 }
+    );
+  }
+
+  const assignments = await prisma.trainerClient.findMany({
+    where: {
+      gymId,
+      trainerMembershipId: membership.id,
+    },
+    include: {
+      clientMembership: {
+        include: {
+          user: {
+            select: {
+              id: true,
+              username: true,
+              name: true,
+              email: true,
+            },
+          },
+        },
+      },
+    },
+    orderBy: {
+      assignedAt: "desc",
+    },
+  });
+
+  return NextResponse.json({
+    success: true,
+    clients: assignments.map((assignment) => ({
+      assignmentId: assignment.id,
+      assignedAt: assignment.assignedAt,
+      client: assignment.clientMembership.user,
+    })),
+  });
+}
+
