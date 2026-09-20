@@ -57,8 +57,26 @@ model User {
   workoutSessions  WorkoutSession[]
   nutritionTargets NutritionTarget[]
   nutritionDays    NutritionDay[]
+  habits           Habit[]
 
   @@map("user")
+}
+
+model Habit {
+  id          String   @id @default(cuid())
+  userId      String
+  name        String
+  description String?
+  frequency   String
+  target      Int?
+  unit        String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 // ========================================
