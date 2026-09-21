@@ -169,3 +169,47 @@ export async function PATCH(
     );
   }
 }
+
+export async function DELETE(
+  request: Request,
+  context: { params: Promise<{ habitId: string }> }
+) {
+  const { user, response } = await getAuthenticatedUser();
+
+  if (response) {
+    return response;
+  }
+
+  const { habitId } = await context.params;
+
+  try {
+    const habit = await prisma.habit.findFirst({
+      where: {
+        id: habitId,
+        userId: user!.id,
+      },
+    });
+
+    if (!habit) {
+      return NextResponse.json(
+        { error: "Habit not found" },
+        { status: 404 }
+      );
+    }
+
+    await prisma.habit.delete({
+      where: {
+        id: habit.id,
+      },
+    });
+
+    return NextResponse.json({
+      success: true,
+    });
+  } catch {
+    return NextResponse.json(
+      { error: "Failed to delete habit" },
+      { status: 500 }
+    );
+  }
+}
