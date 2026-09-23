@@ -50,6 +50,115 @@ export async function GET(
   }
 }
 
+export async function PATCH(
+  request: Request,
+  context: { params: Promise<{ habitId: string }> }
+) {
+  const { user, response } = await getAuthenticatedUser();
+
+  if (response) {
+    return response;
+  }
+
+  const { habitId } = await context.params;
+
+  let body: unknown;
+
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json(
+      { error: "Request body must be valid JSON" },
+      { status: 400 }
+    );
+  }
+
+  if (!body || typeof body !== "object" || Array.isArray(body)) {
+    return NextResponse.json(
+      { error: "Request body must be a JSON object" },
+      { status: 400 }
+    );
+  }
+
+  const input = body as Record<string, unknown>;
+
+  if (typeof input.date !== "string") {
+    return NextResponse.json(
+      { error: "Date must be a valid date string" },
+      { status: 400 }
+    );
+  }
+
+  const normalizedDate = new Date(input.date);
+
+  if (Number.isNaN(normalizedDate.getTime())) {
+    return NextResponse.json(
+      { error: "Date must be a valid date string" },
+      { status: 400 }
+    );
+  }
+
+  normalizedDate.setHours(0, 0, 0, 0);
+
+  if (typeof input.completed !== "boolean") {
+    return NextResponse.json(
+      { error: "Completed must be a boolean" },
+      { status: 400 }
+    );
+  }
+
+  try {
+    const habit = await prisma.habit.findFirst({
+      where: {
+        id: habitId,
+        userId: user!.id,
+      },
+    });
+
+    if (!habit) {
+      return NextResponse.json(
+        { error: "Habit not found" },
+        { status: 404 }
+      );
+    }
+
+    const completion = await prisma.habitCompletion.findUnique({
+      where: {
+        habitId_date: {
+          habitId: habit.id,
+          date: normalizedDate,
+        },
+      },
+    });
+
+    if (!completion) {
+      return NextResponse.json(
+        { error: "Habit completion not found" },
+        { status: 404 }
+      );
+    }
+
+    const updatedCompletion = await prisma.habitCompletion.update({
+      where: {
+        id: completion.id,
+      },
+      data: {
+        completed: input.completed,
+      },
+    });
+
+    return NextResponse.json({
+      success: true,
+      completion: updatedCompletion,
+    });
+  } catch {
+    return NextResponse.json(
+      { error: "Failed to update habit completion" },
+      { status: 500 }
+    );
+  }
+}
+
 export async function POST(
   request: Request,
   context: { params: Promise<{ habitId: string }> }
