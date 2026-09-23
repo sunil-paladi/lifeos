@@ -2,6 +2,54 @@ import { NextResponse } from "next/server";
 import { getAuthenticatedUser } from "@/app/lib/authorization";
 import { prisma } from "@/lib/prisma";
 
+export async function GET(
+  request: Request,
+  context: { params: Promise<{ habitId: string }> }
+) {
+  const { user, response } = await getAuthenticatedUser();
+
+  if (response) {
+    return response;
+  }
+
+  const { habitId } = await context.params;
+
+  try {
+    const habit = await prisma.habit.findFirst({
+      where: {
+        id: habitId,
+        userId: user!.id,
+      },
+    });
+
+    if (!habit) {
+      return NextResponse.json(
+        { error: "Habit not found" },
+        { status: 404 }
+      );
+    }
+
+    const completions = await prisma.habitCompletion.findMany({
+      where: {
+        habitId: habit.id,
+      },
+      orderBy: {
+        date: "desc",
+      },
+    });
+
+    return NextResponse.json({
+      success: true,
+      completions,
+    });
+  } catch {
+    return NextResponse.json(
+      { error: "Failed to fetch habit completions" },
+      { status: 500 }
+    );
+  }
+}
+
 export async function POST(
   request: Request,
   context: { params: Promise<{ habitId: string }> }
