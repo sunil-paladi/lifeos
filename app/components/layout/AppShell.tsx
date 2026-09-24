@@ -26,6 +26,8 @@ export default function AppShell({
   const router = useRouter();
 
   const [user, setUser] = useState<AppUser | null>(null);
+  const [hasTrainerMembership, setHasTrainerMembership] =
+    useState(false);
   const [loading, setLoading] = useState(true);
 
   const isPublicRoute = publicRoutes.includes(pathname);
@@ -35,14 +37,37 @@ export default function AppShell({
       const session = await authClient.getSession();
 
       if (session.data?.user) {
+        let trainerMembership = false;
+
+        try {
+          const membershipsResponse = await fetch("/api/gyms", {
+            cache: "no-store",
+          });
+
+          if (membershipsResponse.ok) {
+            const data = (await membershipsResponse.json()) as {
+              memberships?: Array<{ role?: string }>;
+            };
+
+            trainerMembership =
+              data.memberships?.some(
+                (membership) => membership.role === "TRAINER"
+              ) ?? false;
+          }
+        } catch {
+          trainerMembership = false;
+        }
+
         setUser({
           id: session.data.user.id,
           name: session.data.user.name,
           username: session.data.user.username,
           email: session.data.user.email,
         });
+        setHasTrainerMembership(trainerMembership);
       } else {
         setUser(null);
+        setHasTrainerMembership(false);
 
         // Root "/" is our public landing page.
         // Login and signup are also public.
@@ -84,6 +109,7 @@ export default function AppShell({
           <TopBar
             authenticated={false}
             user={null}
+            hasTrainerMembership={false}
           />
 
           <main className="min-h-[calc(100vh-4rem)]">
@@ -100,6 +126,7 @@ export default function AppShell({
           <TopBar
             authenticated={false}
             user={null}
+            hasTrainerMembership={false}
           />
 
           <main className="min-h-[calc(100vh-4rem)]">
@@ -236,7 +263,10 @@ export default function AppShell({
 
       {/* Authenticated Sidebar */}
       <div className="relative z-50">
-        <Sidebar user={user} />
+        <Sidebar
+          user={user}
+          hasTrainerMembership={hasTrainerMembership}
+        />
       </div>
 
       {/* Main Application Area */}
@@ -247,6 +277,7 @@ export default function AppShell({
           <TopBar
             authenticated={true}
             user={user}
+            hasTrainerMembership={hasTrainerMembership}
           />
         </div>
 

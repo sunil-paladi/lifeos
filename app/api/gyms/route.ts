@@ -5,6 +5,43 @@ import {
   requireRole,
 } from "@/app/lib/authorization";
 
+export async function GET() {
+  const { user, response } = await getAuthenticatedUser();
+
+  if (!user) {
+    return response;
+  }
+
+  const memberships = await prisma.gymMembership.findMany({
+    where: {
+      userId: user.id,
+      status: "ACTIVE",
+    },
+    orderBy: {
+      joinedAt: "desc",
+    },
+    select: {
+      gymId: true,
+      role: true,
+      status: true,
+      gym: {
+        select: {
+          name: true,
+        },
+      },
+    },
+  });
+
+  return NextResponse.json({
+    memberships: memberships.map((membership) => ({
+      gymId: membership.gymId,
+      gymName: membership.gym.name,
+      role: membership.role,
+      status: membership.status,
+    })),
+  });
+}
+
 export async function POST(request: Request) {
   const { user, response } = await getAuthenticatedUser();
 

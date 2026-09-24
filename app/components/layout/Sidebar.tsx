@@ -10,6 +10,7 @@ import {
   FileText,
   LayoutDashboard,
   Settings,
+  ShieldCheck,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import type { AppUser } from "./AppShell";
@@ -64,12 +65,14 @@ interface SidebarProps {
   mobile?: boolean;
   onNavigate?: () => void;
   user: AppUser;
+  hasTrainerMembership: boolean;
 }
 
 export default function Sidebar({
   mobile = false,
   onNavigate,
   user,
+  hasTrainerMembership,
 }: SidebarProps) {
   const pathname = usePathname();
 
@@ -202,6 +205,36 @@ export default function Sidebar({
             })}
           </div>
         </div>
+
+        {hasTrainerMembership ? (
+          <div className="mt-7">
+            <p className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+              Gym
+            </p>
+
+            <Link
+              href="/trainer"
+              onClick={onNavigate}
+              className={`group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
+                isActive("/trainer")
+                  ? "bg-green-600 text-white shadow-sm"
+                  : "text-slate-300 hover:bg-slate-800 hover:text-white"
+              }`}
+            >
+              <ShieldCheck
+                size={18}
+                strokeWidth={isActive("/trainer") ? 2.2 : 1.8}
+                className={
+                  isActive("/trainer")
+                    ? "text-white"
+                    : "text-slate-400 transition-colors group-hover:text-white"
+                }
+              />
+
+              <span>Trainer Dashboard</span>
+            </Link>
+          </div>
+        ) : null}
 
         {/* Settings */}
         <div className="mt-7">

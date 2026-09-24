@@ -17,11 +17,13 @@ import type { AppUser } from "./AppShell";
 interface TopBarProps {
   authenticated: boolean;
   user: AppUser | null;
+  hasTrainerMembership: boolean;
 }
 
 export default function TopBar({
   authenticated,
   user,
+  hasTrainerMembership,
 }: TopBarProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -403,6 +405,7 @@ export default function TopBar({
               <Sidebar
                 mobile={true}
                 user={user!}
+                hasTrainerMembership={hasTrainerMembership}
                 onNavigate={() =>
                   setMobileMenuOpen(false)
                 }
