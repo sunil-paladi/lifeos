@@ -2,6 +2,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { auth } from "@/app/lib/auth";
 import { prisma } from "@/lib/prisma";
+import CreateClientForm from "./CreateClientForm";
 
 type GymMember = {
   id: string;
@@ -133,6 +134,8 @@ export default async function OwnerMembersPage() {
           View the people connected to your active gym.
         </p>
       </header>
+
+      {membership ? <CreateClientForm gymId={membership.gymId} /> : null}
 
       {response.error ? (
         <section className="rounded-xl border border-red-200 bg-red-50 p-5 text-red-800">
