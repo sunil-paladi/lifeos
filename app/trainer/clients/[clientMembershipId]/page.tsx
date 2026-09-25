@@ -4,6 +4,7 @@ import { ArrowLeft, CalendarDays, Mail, Phone, UserRound } from "lucide-react";
 import { redirect } from "next/navigation";
 import { auth } from "@/app/lib/auth";
 import { prisma } from "@/lib/prisma";
+import CreateWorkoutProgramForm from "./CreateWorkoutProgramForm";
 
 type ClientWorkspace = {
   client: {
@@ -367,6 +368,12 @@ export default async function ClientWorkspacePage({
                     Existing training plans for this client.
                   </p>
                 </div>
+                {membership ? (
+                  <CreateWorkoutProgramForm
+                    gymId={membership.gymId}
+                    clientMembershipId={clientMembershipId}
+                  />
+                ) : null}
               </div>
 
               {trainingPlansResponse.error ? (
