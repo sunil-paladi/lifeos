@@ -1,9 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import {
-  getAuthenticatedUser,
-  requireRole,
-} from "@/app/lib/authorization";
+import { getAuthenticatedUser } from "@/app/lib/authorization";
 
 type TrainerClientRouteContext = {
   params: Promise<{
@@ -23,12 +20,6 @@ export async function POST(
 
   if (response) {
     return response;
-  }
-
-  const roleResponse = requireRole(user, ["OWNER"]);
-
-  if (roleResponse) {
-    return roleResponse;
   }
 
   const { gymId } = await params;
@@ -53,20 +44,22 @@ export async function POST(
     );
   }
 
-  const gym = await prisma.gym.findFirst({
+  const ownerMembership = await prisma.gymMembership.findFirst({
     where: {
-      id: gymId,
-      ownerId: user.id,
+      gymId,
+      userId: user.id,
+      role: "OWNER",
+      status: "ACTIVE",
     },
     select: {
-      id: true,
+      gymId: true,
     },
   });
 
-  if (!gym) {
+  if (!ownerMembership) {
     return NextResponse.json(
-      { error: "Gym not found" },
-      { status: 404 }
+      { error: "You are not an active owner of this gym" },
+      { status: 403 }
     );
   }
 
@@ -180,19 +173,36 @@ export async function GET(
   }
 
   const assignments = await prisma.trainerClient.findMany({
-    where: {
-      gymId,
-      trainerMembershipId: membership.id,
-    },
-    include: {
+    where:
+      membership.role === "OWNER"
+        ? { gymId }
+        : {
+            gymId,
+            trainerMembershipId: membership.id,
+          },
+    select: {
+      id: true,
+      assignedAt: true,
+      clientMembershipId: true,
       clientMembership: {
-        include: {
+        select: {
           user: {
             select: {
               id: true,
               username: true,
               name: true,
               email: true,
+            },
+          },
+        },
+      },
+      trainerMembership: {
+        select: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              username: true,
             },
           },
         },
@@ -210,6 +220,7 @@ export async function GET(
       assignedAt: assignment.assignedAt,
       clientMembershipId: assignment.clientMembershipId,
       client: assignment.clientMembership.user,
+      trainer: assignment.trainerMembership.user,
     })),
   });
 }

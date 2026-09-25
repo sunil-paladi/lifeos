@@ -2,6 +2,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { auth } from "@/app/lib/auth";
 import { prisma } from "@/lib/prisma";
+import AssignTrainerForm from "./AssignTrainerForm";
 import CreateClientForm from "./CreateClientForm";
 
 type GymMember = {
@@ -15,8 +16,32 @@ type GymMember = {
   joinedAt: string;
 };
 
+type Trainer = {
+  membershipId: string;
+  name: string;
+  username: string | null;
+};
+
+type AssignedTrainer = {
+  name: string;
+  username: string | null;
+};
+
 type MembersResponse = {
   memberships?: GymMember[];
+  error?: string;
+};
+
+type TrainersResponse = {
+  trainers?: Trainer[];
+  error?: string;
+};
+
+type AssignmentsResponse = {
+  clients?: Array<{
+    clientMembershipId: string;
+    trainer: AssignedTrainer;
+  }>;
   error?: string;
 };
 
@@ -92,6 +117,78 @@ async function getMembers(
   }
 }
 
+async function getTrainers(
+  gymId: string,
+  requestHeaders: Headers
+): Promise<TrainersResponse> {
+  const host =
+    requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host");
+  const protocol = requestHeaders.get("x-forwarded-proto") ?? "http";
+  const configuredUrl = process.env.NEXT_PUBLIC_APP_URL;
+  const baseUrl = configuredUrl
+    ? configuredUrl.replace(/\/$/, "")
+    : host
+      ? `${protocol}://${host}`
+      : null;
+
+  if (!baseUrl) {
+    return { error: "Unable to connect to the trainers service" };
+  }
+
+  try {
+    const response = await fetch(
+      `${baseUrl}/api/gyms/${encodeURIComponent(gymId)}/trainers`,
+      {
+        headers: { cookie: requestHeaders.get("cookie") ?? "" },
+        cache: "no-store",
+      }
+    );
+    const data = (await response.json()) as TrainersResponse;
+
+    return response.ok
+      ? data
+      : { error: data.error ?? "Unable to load active trainers" };
+  } catch {
+    return { error: "Unable to load active trainers" };
+  }
+}
+
+async function getAssignments(
+  gymId: string,
+  requestHeaders: Headers
+): Promise<AssignmentsResponse> {
+  const host =
+    requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host");
+  const protocol = requestHeaders.get("x-forwarded-proto") ?? "http";
+  const configuredUrl = process.env.NEXT_PUBLIC_APP_URL;
+  const baseUrl = configuredUrl
+    ? configuredUrl.replace(/\/$/, "")
+    : host
+      ? `${protocol}://${host}`
+      : null;
+
+  if (!baseUrl) {
+    return { error: "Unable to connect to the assignments service" };
+  }
+
+  try {
+    const response = await fetch(
+      `${baseUrl}/api/gyms/${encodeURIComponent(gymId)}/trainer-clients`,
+      {
+        headers: { cookie: requestHeaders.get("cookie") ?? "" },
+        cache: "no-store",
+      }
+    );
+    const data = (await response.json()) as AssignmentsResponse;
+
+    return response.ok
+      ? data
+      : { error: data.error ?? "Unable to load trainer assignments" };
+  } catch {
+    return { error: "Unable to load trainer assignments" };
+  }
+}
+
 export default async function OwnerMembersPage() {
   const requestHeaders = await headers();
   const session = await auth.api.getSession({
@@ -119,7 +216,20 @@ export default async function OwnerMembersPage() {
   const response = membership
     ? await getMembers(membership.gymId, requestHeaders)
     : { error: "You do not have an active owner membership." };
+  const trainersResponse = membership
+    ? await getTrainers(membership.gymId, requestHeaders)
+    : { error: "You do not have an active owner membership." };
+  const assignmentsResponse = membership
+    ? await getAssignments(membership.gymId, requestHeaders)
+    : { error: "You do not have an active owner membership." };
   const members = response.memberships ?? [];
+  const trainers = trainersResponse.trainers ?? [];
+  const assignments = new Map(
+    (assignmentsResponse.clients ?? []).map((assignment) => [
+      assignment.clientMembershipId,
+      assignment.trainer,
+    ])
+  );
 
   return (
     <div className="space-y-6 py-2">
@@ -191,6 +301,14 @@ export default async function OwnerMembersPage() {
                     Joined {formatDate(member.joinedAt)}
                   </p>
                 </div>
+                {member.role === "MEMBER" && membership ? (
+                  <AssignTrainerForm
+                    gymId={membership.gymId}
+                    clientMembershipId={member.id}
+                    trainers={trainers}
+                    currentTrainer={assignments.get(member.id)}
+                  />
+                ) : null}
               </article>
             ))}
           </div>

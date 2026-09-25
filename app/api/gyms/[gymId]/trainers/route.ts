@@ -11,6 +11,66 @@ type RouteContext = {
   }>;
 };
 
+export async function GET(
+  _request: Request,
+  context: RouteContext
+) {
+  const { user, response } = await getAuthenticatedUser();
+
+  if (!user) {
+    return response;
+  }
+
+  const { gymId } = await context.params;
+
+  const ownerMembership = await prisma.gymMembership.findFirst({
+    where: {
+      gymId,
+      userId: user.id,
+      role: "OWNER",
+      status: "ACTIVE",
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  if (!ownerMembership) {
+    return NextResponse.json(
+      { error: "You are not an active owner of this gym" },
+      { status: 403 }
+    );
+  }
+
+  const trainers = await prisma.gymMembership.findMany({
+    where: {
+      gymId,
+      role: "TRAINER",
+      status: "ACTIVE",
+    },
+    orderBy: {
+      joinedAt: "asc",
+    },
+    select: {
+      id: true,
+      user: {
+        select: {
+          name: true,
+          username: true,
+        },
+      },
+    },
+  });
+
+  return NextResponse.json({
+    trainers: trainers.map((trainer) => ({
+      membershipId: trainer.id,
+      name: trainer.user.name,
+      username: trainer.user.username,
+    })),
+  });
+}
+
 export async function POST(
   request: Request,
   context: RouteContext
