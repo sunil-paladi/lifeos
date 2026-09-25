@@ -33,6 +33,21 @@ type ClientWorkspaceResponse = Partial<ClientWorkspace> & {
   error?: string;
 };
 
+type TrainingPlan = {
+  id: string;
+  name: string;
+  description: string | null;
+  totalWeeks: number;
+  startDate: string | null;
+  endDate: string | null;
+  isActive: boolean;
+};
+
+type TrainingPlansResponse = {
+  plans?: TrainingPlan[];
+  error?: string;
+};
+
 type PageProps = {
   params: Promise<{
     clientMembershipId: string;
@@ -104,6 +119,55 @@ async function getClientWorkspace(
   }
 }
 
+async function getClientTrainingPlans(
+  gymId: string,
+  clientMembershipId: string,
+  requestHeaders: Headers
+): Promise<TrainingPlansResponse> {
+  const host =
+    requestHeaders.get("x-forwarded-host") ??
+    requestHeaders.get("host");
+  const protocol =
+    requestHeaders.get("x-forwarded-proto") ?? "http";
+  const configuredUrl = process.env.NEXT_PUBLIC_APP_URL;
+  const baseUrl = configuredUrl
+    ? configuredUrl.replace(/\/$/, "")
+    : host
+      ? `${protocol}://${host}`
+      : null;
+
+  if (!baseUrl) {
+    return { error: "Unable to connect to the training plans service" };
+  }
+
+  try {
+    const response = await fetch(
+      `${baseUrl}/api/gyms/${encodeURIComponent(gymId)}/trainer-clients/${encodeURIComponent(clientMembershipId)}/training-plans`,
+      {
+        headers: {
+          cookie: requestHeaders.get("cookie") ?? "",
+        },
+        cache: "no-store",
+      }
+    );
+
+    const data = (await response.json()) as TrainingPlansResponse;
+
+    if (!response.ok) {
+      return {
+        error:
+          response.status === 403 || response.status === 404
+            ? "You are not authorized to view this client's workout program."
+            : data.error ?? "Unable to load workout program",
+      };
+    }
+
+    return data;
+  } catch {
+    return { error: "Unable to load workout program" };
+  }
+}
+
 function DetailItem({
   label,
   value,
@@ -150,6 +214,13 @@ export default async function ClientWorkspacePage({
   const { clientMembershipId } = await params;
   const response = membership
     ? await getClientWorkspace(
+        membership.gymId,
+        clientMembershipId,
+        requestHeaders
+      )
+    : { error: "You do not have an active trainer membership." };
+  const trainingPlansResponse = membership
+    ? await getClientTrainingPlans(
         membership.gymId,
         clientMembershipId,
         requestHeaders
@@ -286,6 +357,59 @@ export default async function ClientWorkspacePage({
                   </span>
                 </div>
               </div>
+            </section>
+
+            <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm lg:col-span-2">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h2 className="text-lg font-bold text-slate-900">Workout Program</h2>
+                  <p className="mt-1 text-sm text-slate-500">
+                    Existing training plans for this client.
+                  </p>
+                </div>
+              </div>
+
+              {trainingPlansResponse.error ? (
+                <p className="mt-4 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+                  {trainingPlansResponse.error}
+                </p>
+              ) : trainingPlansResponse.plans?.length ? (
+                <div className="mt-4 space-y-3">
+                  {trainingPlansResponse.plans.map((plan) => (
+                    <article
+                      key={plan.id}
+                      className="rounded-lg border border-slate-200 bg-slate-50/60 p-4"
+                    >
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                        <div>
+                          <h3 className="font-semibold text-slate-900">{plan.name}</h3>
+                          {plan.description ? (
+                            <p className="mt-1 text-sm text-slate-600">{plan.description}</p>
+                          ) : null}
+                        </div>
+                        {plan.isActive ? (
+                          <span className="w-fit rounded-full bg-green-50 px-2.5 py-1 text-xs font-semibold text-green-700">
+                            Active
+                          </span>
+                        ) : null}
+                      </div>
+                      <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 border-t border-slate-200 pt-3 text-sm text-slate-600">
+                        <span>{plan.totalWeeks} weeks</span>
+                        {plan.startDate ? (
+                          <span>Starts {formatDate(plan.startDate)}</span>
+                        ) : null}
+                        {plan.endDate ? (
+                          <span>Ends {formatDate(plan.endDate)}</span>
+                        ) : null}
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              ) : (
+                <p className="mt-4 rounded-lg border border-dashed border-slate-300 bg-slate-50 p-5 text-center text-sm font-medium text-slate-600">
+                  No workout program assigned yet.
+                </p>
+              )}
             </section>
           </div>
         </>
