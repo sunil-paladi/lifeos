@@ -1,4 +1,5 @@
 import { headers } from "next/headers";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { CalendarDays, Mail, UserRound } from "lucide-react";
 import { auth } from "@/app/lib/auth";
@@ -7,6 +8,7 @@ import { prisma } from "@/lib/prisma";
 type AssignedClient = {
   assignmentId: string;
   assignedAt: string;
+  clientMembershipId: string;
   client: {
     id: string;
     username: string | null;
@@ -159,9 +161,10 @@ export default async function TrainerPage() {
               </div>
             ) : (
               <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                {clients.map(({ assignmentId, assignedAt, client }) => (
-                  <article
+                {clients.map(({ assignmentId, assignedAt, clientMembershipId, client }) => (
+                  <Link
                     key={assignmentId}
+                    href={`/trainer/clients/${encodeURIComponent(clientMembershipId)}`}
                     className="group rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-colors hover:border-green-200"
                   >
                     <div className="flex items-start justify-between gap-3">
@@ -192,7 +195,7 @@ export default async function TrainerPage() {
                         </span>
                       </div>
                     </div>
-                  </article>
+                  </Link>
                 ))}
               </div>
             )}

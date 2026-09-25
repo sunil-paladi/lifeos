@@ -208,6 +208,7 @@ export async function GET(
     clients: assignments.map((assignment) => ({
       assignmentId: assignment.id,
       assignedAt: assignment.assignedAt,
+      clientMembershipId: assignment.clientMembershipId,
       client: assignment.clientMembership.user,
     })),
   });
