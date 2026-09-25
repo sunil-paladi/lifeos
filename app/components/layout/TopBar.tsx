@@ -18,12 +18,14 @@ interface TopBarProps {
   authenticated: boolean;
   user: AppUser | null;
   hasTrainerMembership: boolean;
+  hasOwnerMembership: boolean;
 }
 
 export default function TopBar({
   authenticated,
   user,
   hasTrainerMembership,
+  hasOwnerMembership,
 }: TopBarProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -406,6 +408,7 @@ export default function TopBar({
                 mobile={true}
                 user={user!}
                 hasTrainerMembership={hasTrainerMembership}
+                hasOwnerMembership={hasOwnerMembership}
                 onNavigate={() =>
                   setMobileMenuOpen(false)
                 }

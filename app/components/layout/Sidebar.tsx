@@ -11,6 +11,7 @@ import {
   LayoutDashboard,
   Settings,
   ShieldCheck,
+  Users,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import type { AppUser } from "./AppShell";
@@ -66,6 +67,7 @@ interface SidebarProps {
   onNavigate?: () => void;
   user: AppUser;
   hasTrainerMembership: boolean;
+  hasOwnerMembership: boolean;
 }
 
 export default function Sidebar({
@@ -73,6 +75,7 @@ export default function Sidebar({
   onNavigate,
   user,
   hasTrainerMembership,
+  hasOwnerMembership,
 }: SidebarProps) {
   const pathname = usePathname();
 
@@ -232,6 +235,36 @@ export default function Sidebar({
               />
 
               <span>Trainer Dashboard</span>
+            </Link>
+          </div>
+        ) : null}
+
+        {hasOwnerMembership ? (
+          <div className="mt-7">
+            <p className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+              Owner
+            </p>
+
+            <Link
+              href="/owner/members"
+              onClick={onNavigate}
+              className={`group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
+                isActive("/owner/members")
+                  ? "bg-green-600 text-white shadow-sm"
+                  : "text-slate-300 hover:bg-slate-800 hover:text-white"
+              }`}
+            >
+              <Users
+                size={18}
+                strokeWidth={isActive("/owner/members") ? 2.2 : 1.8}
+                className={
+                  isActive("/owner/members")
+                    ? "text-white"
+                    : "text-slate-400 transition-colors group-hover:text-white"
+                }
+              />
+
+              <span>Members</span>
             </Link>
           </div>
         ) : null}

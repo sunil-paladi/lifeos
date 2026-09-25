@@ -28,6 +28,8 @@ export default function AppShell({
   const [user, setUser] = useState<AppUser | null>(null);
   const [hasTrainerMembership, setHasTrainerMembership] =
     useState(false);
+  const [hasOwnerMembership, setHasOwnerMembership] =
+    useState(false);
   const [loading, setLoading] = useState(true);
 
   const isPublicRoute = publicRoutes.includes(pathname);
@@ -38,6 +40,7 @@ export default function AppShell({
 
       if (session.data?.user) {
         let trainerMembership = false;
+        let ownerMembership = false;
 
         try {
           const membershipsResponse = await fetch("/api/gyms", {
@@ -53,6 +56,10 @@ export default function AppShell({
               data.memberships?.some(
                 (membership) => membership.role === "TRAINER"
               ) ?? false;
+            ownerMembership =
+              data.memberships?.some(
+                (membership) => membership.role === "OWNER"
+              ) ?? false;
           }
         } catch {
           trainerMembership = false;
@@ -65,9 +72,11 @@ export default function AppShell({
           email: session.data.user.email,
         });
         setHasTrainerMembership(trainerMembership);
+        setHasOwnerMembership(ownerMembership);
       } else {
         setUser(null);
         setHasTrainerMembership(false);
+        setHasOwnerMembership(false);
 
         // Root "/" is our public landing page.
         // Login and signup are also public.
@@ -110,6 +119,7 @@ export default function AppShell({
             authenticated={false}
             user={null}
             hasTrainerMembership={false}
+            hasOwnerMembership={false}
           />
 
           <main className="min-h-[calc(100vh-4rem)]">
@@ -127,6 +137,7 @@ export default function AppShell({
             authenticated={false}
             user={null}
             hasTrainerMembership={false}
+            hasOwnerMembership={false}
           />
 
           <main className="min-h-[calc(100vh-4rem)]">
@@ -266,6 +277,7 @@ export default function AppShell({
         <Sidebar
           user={user}
           hasTrainerMembership={hasTrainerMembership}
+          hasOwnerMembership={hasOwnerMembership}
         />
       </div>
 
@@ -278,6 +290,7 @@ export default function AppShell({
             authenticated={true}
             user={user}
             hasTrainerMembership={hasTrainerMembership}
+            hasOwnerMembership={hasOwnerMembership}
           />
         </div>
 
