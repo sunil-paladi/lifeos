@@ -187,6 +187,7 @@ model Gym {
   trainerClientAssignments TrainerClient[]
   membershipStatusHistory GymMembershipStatusHistory[]
   ptSessions PTSession[]
+  attendanceRecords GymAttendance[]
 
   @@index([ownerId])
   @@map("gym")
@@ -210,6 +211,7 @@ model GymMembership {
   statusHistory     GymMembershipStatusHistory[]
   trainerSessions   PTSession[] @relation("PTSessionTrainer")
   clientSessions    PTSession[] @relation("PTSessionClient")
+  attendanceRecords GymAttendance[]
 
   @@unique([gymId, userId])
   @@index([gymId, role])
@@ -670,4 +672,20 @@ model PTSession {
   @@index([trainerMembershipId, scheduledAt])
   @@index([clientMembershipId, scheduledAt])
   @@map("pt_session")
+}
+
+model GymAttendance {
+  id                 String    @id @default(cuid())
+  gymId              String
+  memberMembershipId String
+  checkedInAt        DateTime  @default(now())
+  checkedOutAt       DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  gym               Gym           @relation(fields: [gymId], references: [id], onDelete: Cascade)
+  memberMembership  GymMembership @relation(fields: [memberMembershipId], references: [id], onDelete: Restrict)
+
+  @@index([gymId, checkedInAt])
+  @@index([memberMembershipId, checkedInAt])
 }
