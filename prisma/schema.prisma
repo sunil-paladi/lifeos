@@ -48,6 +48,7 @@ model User {
   // Gym relationships
   ownedGyms      Gym[]           @relation("GymOwner")
   gymMemberships GymMembership[]
+  membershipStatusChanges GymMembershipStatusHistory[] @relation("MembershipStatusChangedBy")
 
   // Timestamps
   createdAt        DateTime          @default(now())
@@ -126,6 +127,7 @@ enum GymMembershipRole {
 enum GymMembershipStatus {
   INVITED
   ACTIVE
+  INACTIVE
   SUSPENDED
   LEFT
 }
@@ -176,6 +178,7 @@ model Gym {
   owner       User            @relation("GymOwner", fields: [ownerId], references: [id], onDelete: Restrict)
   memberships GymMembership[]
   trainerClientAssignments TrainerClient[]
+  membershipStatusHistory GymMembershipStatusHistory[]
 
   @@index([ownerId])
   @@map("gym")
@@ -196,11 +199,29 @@ model GymMembership {
 
   trainerAssignments TrainerClient[] @relation("TrainerClients")
   clientAssignments  TrainerClient[] @relation("ClientTrainer")
+  statusHistory     GymMembershipStatusHistory[]
 
   @@unique([gymId, userId])
   @@index([gymId, role])
   @@index([userId])
   @@map("gym_membership")
+}
+
+model GymMembershipStatusHistory {
+  id           String              @id @default(cuid())
+  gymId        String
+  membershipId String
+  status       GymMembershipStatus
+  changedById  String
+  changedAt    DateTime            @default(now())
+
+  gym        Gym           @relation(fields: [gymId], references: [id], onDelete: Cascade)
+  membership GymMembership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+  changedBy  User          @relation("MembershipStatusChangedBy", fields: [changedById], references: [id], onDelete: Restrict)
+
+  @@index([gymId, membershipId, changedAt])
+  @@index([membershipId, changedAt])
+  @@map("gym_membership_status_history")
 }
 
 model WeightEntry {

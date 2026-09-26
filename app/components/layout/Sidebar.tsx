@@ -12,6 +12,7 @@ import {
   Settings,
   ShieldCheck,
   Users,
+  UserCog,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import type { AppUser } from "./AppShell";
@@ -265,6 +266,28 @@ export default function Sidebar({
               />
 
               <span>Members</span>
+            </Link>
+
+            <Link
+              href="/owner/staff"
+              onClick={onNavigate}
+              className={`group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
+                isActive("/owner/staff")
+                  ? "bg-green-600 text-white shadow-sm"
+                  : "text-slate-300 hover:bg-slate-800 hover:text-white"
+              }`}
+            >
+              <UserCog
+                size={18}
+                strokeWidth={isActive("/owner/staff") ? 2.2 : 1.8}
+                className={
+                  isActive("/owner/staff")
+                    ? "text-white"
+                    : "text-slate-400 transition-colors group-hover:text-white"
+                }
+              />
+
+              <span>Staff / Trainers</span>
             </Link>
           </div>
         ) : null}

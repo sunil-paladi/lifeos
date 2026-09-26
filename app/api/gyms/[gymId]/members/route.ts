@@ -196,30 +196,41 @@ export async function POST(
 
     createdUserId = signup.user.id;
 
-    const membership = await prisma.$transaction(async (tx) =>
-      tx.gymMembership.create({
-        data: {
-          gymId,
-          userId: signup.user.id,
-          role: "MEMBER",
-          status: "ACTIVE",
-        },
-        select: {
-          id: true,
-          userId: true,
-          role: true,
-          status: true,
-          joinedAt: true,
-          user: {
-            select: {
-              name: true,
-              username: true,
-              email: true,
+      const membership = await prisma.$transaction(async (tx) => {
+        const createdMembership = await tx.gymMembership.create({
+          data: {
+            gymId,
+            userId: signup.user.id,
+            role: "MEMBER",
+            status: "ACTIVE",
+          },
+          select: {
+            id: true,
+            userId: true,
+            role: true,
+            status: true,
+            joinedAt: true,
+            user: {
+              select: {
+                name: true,
+                username: true,
+                email: true,
+              },
             },
           },
-        },
-      })
-    );
+        });
+
+        await tx.gymMembershipStatusHistory.create({
+          data: {
+            gymId,
+            membershipId: createdMembership.id,
+            status: "ACTIVE",
+            changedById: user.id,
+          },
+        });
+
+        return createdMembership;
+      });
 
     return NextResponse.json(
       {

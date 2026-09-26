@@ -2,6 +2,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { auth } from "@/app/lib/auth";
 import { prisma } from "@/lib/prisma";
+import MembershipActions from "../MembershipActions";
 import AssignTrainerForm from "./AssignTrainerForm";
 import CreateClientForm from "./CreateClientForm";
 
@@ -137,7 +138,7 @@ async function getTrainers(
 
   try {
     const response = await fetch(
-      `${baseUrl}/api/gyms/${encodeURIComponent(gymId)}/trainers`,
+      `${baseUrl}/api/gyms/${encodeURIComponent(gymId)}/trainers?status=ACTIVE`,
       {
         headers: { cookie: requestHeaders.get("cookie") ?? "" },
         cache: "no-store",
@@ -302,12 +303,20 @@ export default async function OwnerMembersPage() {
                   </p>
                 </div>
                 {member.role === "MEMBER" && membership ? (
-                  <AssignTrainerForm
-                    gymId={membership.gymId}
-                    clientMembershipId={member.id}
-                    trainers={trainers}
-                    currentTrainer={assignments.get(member.id)}
-                  />
+                  <>
+                    <AssignTrainerForm
+                      gymId={membership.gymId}
+                      clientMembershipId={member.id}
+                      trainers={trainers}
+                      currentTrainer={assignments.get(member.id)}
+                    />
+                    <MembershipActions
+                      gymId={membership.gymId}
+                      membershipId={member.id}
+                      role="MEMBER"
+                      status={member.status}
+                    />
+                  </>
                 ) : null}
               </article>
             ))}
