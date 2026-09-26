@@ -132,6 +132,13 @@ enum GymMembershipStatus {
   LEFT
 }
 
+enum PTSessionStatus {
+  SCHEDULED
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
 // ========================================
 // FITNESS GOAL
 // ========================================
@@ -179,6 +186,7 @@ model Gym {
   memberships GymMembership[]
   trainerClientAssignments TrainerClient[]
   membershipStatusHistory GymMembershipStatusHistory[]
+  ptSessions PTSession[]
 
   @@index([ownerId])
   @@map("gym")
@@ -200,6 +208,8 @@ model GymMembership {
   trainerAssignments TrainerClient[] @relation("TrainerClients")
   clientAssignments  TrainerClient[] @relation("ClientTrainer")
   statusHistory     GymMembershipStatusHistory[]
+  trainerSessions   PTSession[] @relation("PTSessionTrainer")
+  clientSessions    PTSession[] @relation("PTSessionClient")
 
   @@unique([gymId, userId])
   @@index([gymId, role])
@@ -638,4 +648,26 @@ model TrainerClient {
   @@index([trainerMembershipId])
   @@index([clientMembershipId])
   @@map("trainer_client")
+}
+
+model PTSession {
+  id                  String         @id @default(cuid())
+  gymId               String
+  trainerMembershipId String
+  clientMembershipId  String
+  scheduledAt         DateTime
+  durationMinutes     Int
+  status              PTSessionStatus @default(SCHEDULED)
+  notes               String?
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+
+  gym               Gym           @relation(fields: [gymId], references: [id], onDelete: Cascade)
+  trainerMembership GymMembership @relation("PTSessionTrainer", fields: [trainerMembershipId], references: [id], onDelete: Restrict)
+  clientMembership  GymMembership @relation("PTSessionClient", fields: [clientMembershipId], references: [id], onDelete: Restrict)
+
+  @@index([gymId, scheduledAt])
+  @@index([trainerMembershipId, scheduledAt])
+  @@index([clientMembershipId, scheduledAt])
+  @@map("pt_session")
 }

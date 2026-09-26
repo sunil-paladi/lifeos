@@ -4,6 +4,7 @@ import Link from "next/link";
 import {
   BarChart3,
   BookOpen,
+  CalendarDays,
   CheckSquare,
   Droplets,
   Dumbbell,
@@ -236,6 +237,27 @@ export default function Sidebar({
               />
 
               <span>Trainer Dashboard</span>
+            </Link>
+
+            <Link
+              href="/trainer/sessions"
+              onClick={onNavigate}
+              className={`group mt-1 flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
+                isActive("/trainer/sessions")
+                  ? "bg-green-600 text-white shadow-sm"
+                  : "text-slate-300 hover:bg-slate-800 hover:text-white"
+              }`}
+            >
+              <CalendarDays
+                size={18}
+                strokeWidth={isActive("/trainer/sessions") ? 2.2 : 1.8}
+                className={
+                  isActive("/trainer/sessions")
+                    ? "text-white"
+                    : "text-slate-400 transition-colors group-hover:text-white"
+                }
+              />
+              <span>PT Sessions</span>
             </Link>
           </div>
         ) : null}
