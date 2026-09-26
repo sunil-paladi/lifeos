@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 
 type MemberSummary = {
   total: number;
@@ -20,6 +21,10 @@ type StatsResponse = {
   attendance: {
     todayCheckIns: number;
     currentlyCheckedIn: number;
+    checkedInMembers: Array<{
+      name: string;
+      checkedInAt: string;
+    }>;
     completedVisits: number;
     trend: TrendPoint[];
   };
@@ -33,6 +38,28 @@ type StatsResponse = {
     newMembers: number;
     trend: TrendPoint[];
   };
+  trainers: Array<{
+    id: string;
+    name: string;
+    status: string;
+    clients: Array<{ id: string; name: string }>;
+    report: {
+      scheduled: number;
+      completed: number;
+      cancelled: number;
+      noShow: number;
+      completedMinutes: number;
+      clientsTrained: number;
+      clients: Array<{ id: string; name: string; sessions: number }>;
+    };
+  }>;
+  members: Array<{
+    id: string;
+    name: string;
+    status: string;
+    trainerName: string | null;
+  }>;
+  memberOverviewTotal: number;
   range: {
     from: string;
     to: string;
@@ -91,6 +118,9 @@ export default function OwnerStatisticsClient({
   const [customFrom, setCustomFrom] = useState("");
   const [customTo, setCustomTo] = useState("");
   const [data, setData] = useState<StatsResponse | null>(null);
+  const [expandedTrainers, setExpandedTrainers] = useState<Record<string, boolean>>({});
+  const [expandedReports, setExpandedReports] = useState<Record<string, boolean>>({});
+  const [checkedInExpanded, setCheckedInExpanded] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -236,8 +266,25 @@ export default function OwnerStatisticsClient({
                   <p className="mt-2 text-2xl font-bold text-slate-900">{data.attendance.todayCheckIns}</p>
                 </div>
                 <div className="rounded-lg bg-slate-50 p-4">
-                  <p className="text-sm text-slate-500">Currently checked in</p>
-                  <p className="mt-2 text-2xl font-bold text-slate-900">{data.attendance.currentlyCheckedIn}</p>
+                  <button
+                    type="button"
+                    aria-expanded={checkedInExpanded}
+                    aria-controls="checked-in-members"
+                    onClick={() => setCheckedInExpanded((expanded) => !expanded)}
+                    className="flex w-full items-center justify-between gap-2 text-left text-sm font-medium text-slate-700"
+                  >
+                    <span>Currently checked in: {data.attendance.currentlyCheckedIn}</span>
+                    <span aria-hidden="true" className="text-base">{checkedInExpanded ? "▾" : "▸"}</span>
+                  </button>
+                  {checkedInExpanded ? (
+                    <ul id="checked-in-members" className="mt-3 space-y-1 text-sm text-slate-600">
+                      {data.attendance.checkedInMembers.length ? data.attendance.checkedInMembers.map((member, index) => (
+                        <li key={`${member.checkedInAt}-${index}`}>
+                          {member.name} — Checked in {new Date(member.checkedInAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
+                        </li>
+                      )) : <li>No members are currently checked in.</li>}
+                    </ul>
+                  ) : null}
                 </div>
                 <div className="rounded-lg bg-slate-50 p-4">
                   <p className="text-sm text-slate-500">Completed visits today</p>
@@ -272,6 +319,117 @@ export default function OwnerStatisticsClient({
                   <p className="mt-2 text-2xl font-bold text-slate-900">{data.ptSessions.noShow}</p>
                 </div>
               </div>
+            </div>
+          </section>
+
+          <section className="grid gap-4 xl:grid-cols-2">
+            <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+              <h2 className="text-xl font-bold text-slate-900">Trainer overview</h2>
+              {data.trainers.length ? (
+                <div className="mt-3 divide-y divide-slate-100">
+                  {data.trainers.map((trainer) => {
+                    const isExpanded = Boolean(expandedTrainers[trainer.id]);
+                    const reportExpanded = Boolean(expandedReports[trainer.id]);
+                    const reportId = `trainer-report-${trainer.id}`;
+                    const clientsId = `trainer-clients-${trainer.id}`;
+
+                    return (
+                      <article key={trainer.id} className="py-3 first:pt-0 last:pb-0">
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+                          <button
+                            type="button"
+                            aria-expanded={isExpanded}
+                            aria-controls={clientsId}
+                            onClick={() => setExpandedTrainers((current) => ({ ...current, [trainer.id]: !current[trainer.id] }))}
+                            className="flex min-w-0 flex-1 items-center gap-2 text-left font-semibold text-slate-900 hover:text-green-700"
+                          >
+                            <span className="shrink-0 text-base" aria-hidden="true">{isExpanded ? "▾" : "▸"}</span>
+                            <span className="truncate">{trainer.name}</span>
+                            <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">
+                              {trainer.status === "ACTIVE" ? "Active" : "Inactive"}
+                            </span>
+                            <span className="shrink-0 text-sm font-normal text-slate-500">
+                              {trainer.clients.length} {trainer.clients.length === 1 ? "client" : "clients"}
+                            </span>
+                          </button>
+                          {isExpanded ? (
+                            <button
+                              type="button"
+                              aria-expanded={reportExpanded}
+                              aria-controls={reportId}
+                              onClick={() => setExpandedReports((current) => ({ ...current, [trainer.id]: !current[trainer.id] }))}
+                              className="shrink-0 text-sm font-semibold text-green-700 hover:text-green-800"
+                            >
+                              {reportExpanded ? "Hide report" : "View report"}
+                            </button>
+                          ) : null}
+                        </div>
+
+                        {isExpanded ? (
+                          <div id={clientsId} className="ml-6 mt-2 space-y-3">
+                            {trainer.clients.length ? (
+                              <ul className="space-y-1 text-sm text-slate-600">
+                                {trainer.clients.map((client) => <li key={client.id}>- {client.name}</li>)}
+                              </ul>
+                            ) : <p className="text-sm text-slate-500">No assigned clients.</p>}
+
+                            {reportExpanded ? (
+                              <div id={reportId} className="rounded-lg bg-slate-50 p-3 text-sm">
+                                <h3 className="font-semibold text-slate-800">Report for selected date range</h3>
+                                <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-slate-600 sm:grid-cols-4">
+                                  <div><dt>Scheduled</dt><dd className="font-semibold text-slate-900">{trainer.report.scheduled}</dd></div>
+                                  <div><dt>Completed</dt><dd className="font-semibold text-slate-900">{trainer.report.completed}</dd></div>
+                                  <div><dt>Cancelled</dt><dd className="font-semibold text-slate-900">{trainer.report.cancelled}</dd></div>
+                                  <div><dt>No show</dt><dd className="font-semibold text-slate-900">{trainer.report.noShow}</dd></div>
+                                </dl>
+                                <p className="mt-3 text-slate-700">
+                                  Completed training time: <strong>{trainer.report.completedMinutes} minutes</strong>
+                                </p>
+                                <p className="mt-1 text-slate-700">
+                                  Clients trained: <strong>{trainer.report.clientsTrained}</strong>
+                                </p>
+                                <h4 className="mt-3 font-semibold text-slate-800">Sessions by client</h4>
+                                {trainer.report.clients.length ? (
+                                  <ul className="mt-1 space-y-1 text-slate-600">
+                                    {trainer.report.clients.map((client) => (
+                                      <li key={client.id}>{client.name} — {client.sessions} {client.sessions === 1 ? "session" : "sessions"}</li>
+                                    ))}
+                                  </ul>
+                                ) : <p className="mt-1 text-slate-500">No sessions in this date range.</p>}
+                              </div>
+                            ) : null}
+                          </div>
+                        ) : null}
+                      </article>
+                    );
+                  })}
+                </div>
+              ) : <p className="mt-3 text-sm text-slate-500">No trainers in this gym.</p>}
+            </div>
+
+            <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h2 className="text-xl font-bold text-slate-900">Member overview</h2>
+                <Link href="/owner/members" className="text-sm font-semibold text-green-700 hover:text-green-800">
+                  View all members
+                </Link>
+              </div>
+              {data.members.length ? (
+                <ul className="mt-3 divide-y divide-slate-100">
+                  {data.members.map((member) => (
+                    <li key={member.id} className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 py-2 first:pt-0 last:pb-0 text-sm">
+                      <span className="min-w-0 truncate font-medium text-slate-800">{member.name}</span>
+                      <span className="text-slate-500">{member.status === "ACTIVE" ? "Active" : "Inactive"}</span>
+                      <span className="w-full text-slate-500 sm:w-auto sm:text-right">
+                        {member.trainerName ? `Trainer: ${member.trainerName}` : "No trainer assigned"}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              ) : <p className="mt-3 text-sm text-slate-500">No members in this gym.</p>}
+              {data.memberOverviewTotal > data.members.length ? (
+                <p className="mt-3 text-xs text-slate-500">Showing {data.members.length} of {data.memberOverviewTotal} members.</p>
+              ) : null}
             </div>
           </section>
 

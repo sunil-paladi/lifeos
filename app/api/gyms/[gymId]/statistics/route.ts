@@ -136,7 +136,7 @@ export async function GET(request: Request, context: RouteContext) {
     return NextResponse.json({ error: "Invalid date range" }, { status: 400 });
   }
 
-  const [memberSummaryRaw, attendanceRecords, ptSessions, growthRecords] = await Promise.all([
+  const [memberSummaryRaw, attendanceRecords, ptSessions, growthRecords, trainers, members, trainerSessionGroups, checkedInRecords] = await Promise.all([
     prisma.gymMembership.groupBy({
       by: ["role", "status"],
       where: { gymId },
@@ -181,6 +181,77 @@ export async function GET(request: Request, context: RouteContext) {
       },
       orderBy: { joinedAt: "asc" },
     }),
+    prisma.gymMembership.findMany({
+      where: { gymId, role: "TRAINER" },
+      select: {
+        id: true,
+        status: true,
+        user: { select: { name: true } },
+        trainerAssignments: {
+          where: {
+            gymId,
+            clientMembership: { gymId, role: "MEMBER" },
+          },
+          select: {
+            clientMembership: {
+              select: {
+                id: true,
+                user: { select: { name: true } },
+              },
+            },
+          },
+          orderBy: { assignedAt: "asc" },
+        },
+      },
+      orderBy: { user: { name: "asc" } },
+    }),
+    prisma.gymMembership.findMany({
+      where: { gymId, role: "MEMBER" },
+      select: {
+        id: true,
+        status: true,
+        user: { select: { name: true } },
+        clientAssignments: {
+          where: {
+            gymId,
+            trainerMembership: { gymId, role: "TRAINER" },
+          },
+          select: {
+            trainerMembership: {
+              select: {
+                user: { select: { name: true } },
+              },
+            },
+          },
+          orderBy: { assignedAt: "desc" },
+          take: 1,
+        },
+      },
+      orderBy: { user: { name: "asc" } },
+    }),
+    prisma.pTSession.groupBy({
+      by: ["trainerMembershipId", "clientMembershipId", "status"],
+      where: {
+        gymId,
+        scheduledAt: { gte: range.from, lte: range.to },
+        trainerMembership: { gymId, role: "TRAINER" },
+        clientMembership: { gymId, role: "MEMBER" },
+      },
+      _count: { _all: true },
+      _sum: { durationMinutes: true },
+    }),
+    prisma.gymAttendance.findMany({
+      where: {
+        gymId,
+        checkedOutAt: null,
+        memberMembership: { gymId, role: "MEMBER" },
+      },
+      select: {
+        checkedInAt: true,
+        memberMembership: { select: { user: { select: { name: true } } } },
+      },
+      orderBy: { checkedInAt: "asc" },
+    }),
   ]);
 
   const memberSummary = {
@@ -208,12 +279,7 @@ export async function GET(request: Request, context: RouteContext) {
     return day.getTime() === range.todayStart.getTime();
   }).length;
 
-  const currentlyCheckedIn = await prisma.gymAttendance.count({
-    where: {
-      gymId,
-      checkedOutAt: null,
-    },
-  });
+  const currentlyCheckedIn = checkedInRecords.length;
 
   const completedVisits = attendanceRecords.filter((record) => record.checkedOutAt !== null && record.checkedOutAt >= range.todayStart && record.checkedOutAt <= range.todayEnd).length;
 
@@ -230,15 +296,87 @@ export async function GET(request: Request, context: RouteContext) {
     range.to
   );
 
+  const clientNames = new Map(members.map((member) => [member.id, member.user.name]));
+  const trainerReports = new Map(trainers.map((trainer) => [trainer.id, {
+    scheduled: 0,
+    completed: 0,
+    cancelled: 0,
+    noShow: 0,
+    completedMinutes: 0,
+    completedClientIds: new Set<string>(),
+    clients: new Map<string, number>(),
+  }]));
+
+  for (const sessionGroup of trainerSessionGroups) {
+    const report = trainerReports.get(sessionGroup.trainerMembershipId);
+    if (!report) continue;
+
+    if (sessionGroup.status === "SCHEDULED") report.scheduled += sessionGroup._count._all;
+    if (sessionGroup.status === "COMPLETED") {
+      report.completed += sessionGroup._count._all;
+      report.completedMinutes += sessionGroup._sum.durationMinutes ?? 0;
+      report.completedClientIds.add(sessionGroup.clientMembershipId);
+    }
+    if (sessionGroup.status === "CANCELLED") report.cancelled += sessionGroup._count._all;
+    if (sessionGroup.status === "NO_SHOW") report.noShow += sessionGroup._count._all;
+
+    report.clients.set(
+      sessionGroup.clientMembershipId,
+      (report.clients.get(sessionGroup.clientMembershipId) ?? 0) + sessionGroup._count._all
+    );
+  }
+
+  const trainerOverview = trainers.map((trainer) => {
+    const report = trainerReports.get(trainer.id)!;
+    return {
+      id: trainer.id,
+      name: trainer.user.name,
+      status: trainer.status,
+      clients: trainer.trainerAssignments.map((assignment) => ({
+        id: assignment.clientMembership.id,
+        name: assignment.clientMembership.user.name,
+      })),
+      report: {
+        scheduled: report.scheduled,
+        completed: report.completed,
+        cancelled: report.cancelled,
+        noShow: report.noShow,
+        completedMinutes: report.completedMinutes,
+        clientsTrained: report.completedClientIds.size,
+        clients: [...report.clients.entries()]
+          .map(([clientId, sessions]) => ({
+            id: clientId,
+            name: clientNames.get(clientId) ?? "Member",
+            sessions,
+          }))
+          .sort((first, second) => first.name.localeCompare(second.name)),
+      },
+    };
+  });
+
+  const memberOverview = members.slice(0, 8).map((member) => ({
+    id: member.id,
+    name: member.user.name,
+    status: member.status,
+    trainerName: member.clientAssignments[0]?.trainerMembership.user.name ?? null,
+  }));
+
   return NextResponse.json({
     memberSummary,
     attendance: {
       todayCheckIns,
       currentlyCheckedIn,
+      checkedInMembers: checkedInRecords.map((record) => ({
+        name: record.memberMembership.user.name,
+        checkedInAt: record.checkedInAt.toISOString(),
+      })),
       completedVisits,
       trend: attendanceTrend,
     },
     ptSessions: ptSessionSummary,
+    trainers: trainerOverview,
+    members: memberOverview,
+    memberOverviewTotal: memberSummary.total,
     memberGrowth: {
       newMembers: growthRecords.length,
       trend: memberGrowthTrend,
