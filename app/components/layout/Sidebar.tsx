@@ -6,6 +6,7 @@ import {
   BookOpen,
   CalendarDays,
   CheckSquare,
+  ClipboardCheck,
   Droplets,
   Dumbbell,
   FileText,
@@ -28,6 +29,11 @@ const mainMenu = [
     label: "Workout",
     icon: Dumbbell,
     path: "/workout",
+  },
+  {
+    label: "Attendance",
+    icon: ClipboardCheck,
+    path: "/attendance",
   },
   {
     label: "Nutrition",
@@ -259,6 +265,27 @@ export default function Sidebar({
               />
               <span>PT Sessions</span>
             </Link>
+
+            <Link
+              href="/trainer/attendance"
+              onClick={onNavigate}
+              className={`group mt-1 flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
+                isActive("/trainer/attendance")
+                  ? "bg-green-600 text-white shadow-sm"
+                  : "text-slate-300 hover:bg-slate-800 hover:text-white"
+              }`}
+            >
+              <ClipboardCheck
+                size={18}
+                strokeWidth={isActive("/trainer/attendance") ? 2.2 : 1.8}
+                className={
+                  isActive("/trainer/attendance")
+                    ? "text-white"
+                    : "text-slate-400 transition-colors group-hover:text-white"
+                }
+              />
+              <span>Client Attendance</span>
+            </Link>
           </div>
         ) : null}
 
@@ -288,6 +315,27 @@ export default function Sidebar({
               />
 
               <span>Members</span>
+            </Link>
+
+            <Link
+              href="/owner/attendance"
+              onClick={onNavigate}
+              className={`group mt-1 flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
+                isActive("/owner/attendance")
+                  ? "bg-green-600 text-white shadow-sm"
+                  : "text-slate-300 hover:bg-slate-800 hover:text-white"
+              }`}
+            >
+              <ClipboardCheck
+                size={18}
+                strokeWidth={isActive("/owner/attendance") ? 2.2 : 1.8}
+                className={
+                  isActive("/owner/attendance")
+                    ? "text-white"
+                    : "text-slate-400 transition-colors group-hover:text-white"
+                }
+              />
+              <span>Attendance</span>
             </Link>
 
             <Link
