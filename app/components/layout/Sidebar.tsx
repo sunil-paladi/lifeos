@@ -339,6 +339,49 @@ export default function Sidebar({
             </Link>
 
             <Link
+              href="/owner/statistics"
+              onClick={onNavigate}
+              className={`group mt-1 flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
+                isActive("/owner/statistics")
+                  ? "bg-green-600 text-white shadow-sm"
+                  : "text-slate-300 hover:bg-slate-800 hover:text-white"
+              }`}
+            >
+              <BarChart3
+                size={18}
+                strokeWidth={isActive("/owner/statistics") ? 2.2 : 1.8}
+                className={
+                  isActive("/owner/statistics")
+                    ? "text-white"
+                    : "text-slate-400 transition-colors group-hover:text-white"
+                }
+              />
+              <span>Owner Statistics</span>
+            </Link>
+
+            <Link
+              href="/owner/settings"
+              onClick={onNavigate}
+              className={`group mt-1 flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
+                isActive("/owner/settings")
+                  ? "bg-green-600 text-white shadow-sm"
+                  : "text-slate-300 hover:bg-slate-800 hover:text-white"
+              }`}
+            >
+              <Settings
+                size={18}
+                strokeWidth={isActive("/owner/settings") ? 2.2 : 1.8}
+                className={
+                  isActive("/owner/settings")
+                    ? "text-white"
+                    : "text-slate-400 transition-colors group-hover:text-white"
+                }
+              />
+
+              <span>Gym Settings</span>
+            </Link>
+
+            <Link
               href="/owner/staff"
               onClick={onNavigate}
               className={`group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${

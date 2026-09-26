@@ -182,12 +182,13 @@ model Gym {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  owner       User            @relation("GymOwner", fields: [ownerId], references: [id], onDelete: Restrict)
-  memberships GymMembership[]
+  owner                    User                        @relation("GymOwner", fields: [ownerId], references: [id], onDelete: Restrict)
+  memberships              GymMembership[]
   trainerClientAssignments TrainerClient[]
-  membershipStatusHistory GymMembershipStatusHistory[]
-  ptSessions PTSession[]
-  attendanceRecords GymAttendance[]
+  membershipStatusHistory  GymMembershipStatusHistory[]
+  ptSessions               PTSession[]
+  attendanceRecords        GymAttendance[]
+  settings                 GymSettings?
 
   @@index([ownerId])
   @@map("gym")
@@ -234,6 +235,26 @@ model GymMembershipStatusHistory {
   @@index([gymId, membershipId, changedAt])
   @@index([membershipId, changedAt])
   @@map("gym_membership_status_history")
+}
+
+model GymSettings {
+  id          String   @id @default(cuid())
+  gymId       String   @unique
+  country     String   @default("IN")
+  timezone    String   @default("Asia/Kolkata")
+  currency    String   @default("INR")
+  language    String   @default("en")
+  dateFormat  String   @default("DD/MM/YYYY")
+  timeFormat  String   @default("12h")
+  weightUnit  String   @default("kg")
+  distanceUnit String  @default("km")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  gym Gym @relation(fields: [gymId], references: [id], onDelete: Cascade)
+
+  @@index([gymId])
+  @@map("gym_settings")
 }
 
 model WeightEntry {
