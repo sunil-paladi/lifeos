@@ -3,7 +3,6 @@ import "./globals.css";
 
 import { ProgramProvider } from "./context/ProgramContext";
 import { WorkoutProvider } from "./context/WorkoutContext";
-
 import AppShell from "./components/layout/AppShell";
 
 export const metadata: Metadata = {

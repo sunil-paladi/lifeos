@@ -7,6 +7,7 @@ import {
   CalendarDays,
   CheckSquare,
   ClipboardCheck,
+  CreditCard,
   Droplets,
   Dumbbell,
   FileText,
@@ -339,6 +340,27 @@ export default function Sidebar({
             </Link>
 
             <Link
+              href="/owner/pt-sessions"
+              onClick={onNavigate}
+              className={`group mt-1 flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
+                isActive("/owner/pt-sessions")
+                  ? "bg-green-600 text-white shadow-sm"
+                  : "text-slate-300 hover:bg-slate-800 hover:text-white"
+              }`}
+            >
+              <CalendarDays
+                size={18}
+                strokeWidth={isActive("/owner/pt-sessions") ? 2.2 : 1.8}
+                className={
+                  isActive("/owner/pt-sessions")
+                    ? "text-white"
+                    : "text-slate-400 transition-colors group-hover:text-white"
+                }
+              />
+              <span>PT Sessions</span>
+            </Link>
+
+            <Link
               href="/owner/statistics"
               onClick={onNavigate}
               className={`group mt-1 flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
@@ -357,6 +379,27 @@ export default function Sidebar({
                 }
               />
               <span>Owner Statistics</span>
+            </Link>
+
+            <Link
+              href="/owner/billing"
+              onClick={onNavigate}
+              className={`group mt-1 flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
+                isActive("/owner/billing")
+                  ? "bg-green-600 text-white shadow-sm"
+                  : "text-slate-300 hover:bg-slate-800 hover:text-white"
+              }`}
+            >
+              <CreditCard
+                size={18}
+                strokeWidth={isActive("/owner/billing") ? 2.2 : 1.8}
+                className={
+                  isActive("/owner/billing")
+                    ? "text-white"
+                    : "text-slate-400 transition-colors group-hover:text-white"
+                }
+              />
+              <span>Billing</span>
             </Link>
 
             <Link

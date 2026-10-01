@@ -12,12 +12,22 @@ const sessionSelect = {
   gymId: true,
   trainerMembershipId: true,
   clientMembershipId: true,
+  ptPricingId: true,
   scheduledAt: true,
   durationMinutes: true,
   status: true,
   notes: true,
   createdAt: true,
   updatedAt: true,
+  ptPricing: {
+    select: {
+      id: true,
+      name: true,
+      price: true,
+      currency: true,
+      durationMinutes: true,
+    },
+  },
   trainerMembership: {
     select: { user: { select: { id: true, name: true } } },
   },
@@ -91,7 +101,9 @@ export async function POST(request: Request, context: RouteContext) {
     ? membership.id
     : body.trainerMembershipId;
   const clientMembershipId = body.clientMembershipId;
+  const ptPricingId = body.ptPricingId === undefined ? null : body.ptPricingId;
   const scheduledAt = parseScheduledAt(body.scheduledAt);
+  const status = body.status === undefined ? "SCHEDULED" : body.status;
 
   if (typeof trainerMembershipId !== "string" || typeof clientMembershipId !== "string") {
     return NextResponse.json({ error: "trainerMembershipId and clientMembershipId are required" }, { status: 400 });
@@ -105,11 +117,19 @@ export async function POST(request: Request, context: RouteContext) {
     return NextResponse.json({ error: "durationMinutes must be an integer from 1 to 480" }, { status: 400 });
   }
 
+  if (ptPricingId !== null && (typeof ptPricingId !== "string" || !ptPricingId.trim())) {
+    return NextResponse.json({ error: "ptPricingId must be a valid pricing ID or null" }, { status: 400 });
+  }
+
+  if (!( ["SCHEDULED", "COMPLETED", "CANCELLED", "NO_SHOW"] as const).includes(status as "SCHEDULED" | "COMPLETED" | "CANCELLED" | "NO_SHOW")) {
+    return NextResponse.json({ error: "status is not a valid PT session status" }, { status: 400 });
+  }
+
   if (body.notes !== undefined && body.notes !== null && typeof body.notes !== "string") {
     return NextResponse.json({ error: "notes must be a string or null" }, { status: 400 });
   }
 
-  const [trainerMembership, clientMembership] = await Promise.all([
+  const [trainerMembership, clientMembership, ptPricing] = await Promise.all([
     prisma.gymMembership.findFirst({
       where: {
         id: trainerMembershipId,
@@ -128,10 +148,20 @@ export async function POST(request: Request, context: RouteContext) {
       },
       select: { id: true },
     }),
+    ptPricingId === null
+      ? Promise.resolve(null)
+      : prisma.pTPricing.findFirst({
+          where: { id: ptPricingId, gymId, isActive: true },
+          select: { id: true },
+        }),
   ]);
 
   if (!trainerMembership || !clientMembership) {
     return NextResponse.json({ error: "An active trainer and client membership in this gym are required" }, { status: 404 });
+  }
+
+  if (ptPricingId !== null && !ptPricing) {
+    return NextResponse.json({ error: "Active PT pricing not found in this gym" }, { status: 404 });
   }
 
   const assignment = await prisma.trainerClient.findUnique({
@@ -154,8 +184,10 @@ export async function POST(request: Request, context: RouteContext) {
       gymId,
       trainerMembershipId,
       clientMembershipId,
+      ptPricingId,
       scheduledAt,
       durationMinutes: body.durationMinutes,
+      status: status as "SCHEDULED" | "COMPLETED" | "CANCELLED" | "NO_SHOW",
       notes: typeof body.notes === "string" ? body.notes.trim() || null : null,
     },
     select: sessionSelect,

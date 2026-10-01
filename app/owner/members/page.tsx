@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/app/lib/auth";
 import { prisma } from "@/lib/prisma";
 import MembershipActions from "../MembershipActions";
+import MembershipPlanAssignment from "./MembershipPlanAssignment";
 import AssignTrainerForm from "./AssignTrainerForm";
 import CreateClientForm from "./CreateClientForm";
 
@@ -224,6 +225,27 @@ export default async function OwnerMembersPage() {
     ? await getAssignments(membership.gymId, requestHeaders)
     : { error: "You do not have an active owner membership." };
   const members = response.memberships ?? [];
+  const [memberBillingDetails, activePlans] = membership
+    ? await Promise.all([
+        prisma.gymMembership.findMany({
+          where: { gymId: membership.gymId, role: "MEMBER" },
+          select: {
+            id: true,
+            membershipStartDate: true,
+            membershipEndDate: true,
+            membershipPlan: {
+              select: { id: true, name: true, price: true, currency: true, durationDays: true },
+            },
+          },
+        }),
+        prisma.gymMembershipPlan.findMany({
+          where: { gymId: membership.gymId, isActive: true },
+          orderBy: { name: "asc" },
+          select: { id: true, name: true, price: true, currency: true, durationDays: true },
+        }),
+      ])
+    : [[], []];
+  const memberBillingById = new Map(memberBillingDetails.map((item) => [item.id, item]));
   const trainers = trainersResponse.trainers ?? [];
   const assignments = new Map(
     (assignmentsResponse.clients ?? []).map((assignment) => [
@@ -315,6 +337,20 @@ export default async function OwnerMembersPage() {
                       membershipId={member.id}
                       role="MEMBER"
                       status={member.status}
+                    />
+                    <MembershipPlanAssignment
+                      membershipId={member.id}
+                      plans={activePlans.map((plan) => ({ ...plan, price: plan.price.toString() }))}
+                      initialMembership={{
+                        plan: memberBillingById.get(member.id)?.membershipPlan
+                          ? {
+                              ...memberBillingById.get(member.id)!.membershipPlan!,
+                              price: memberBillingById.get(member.id)!.membershipPlan!.price.toString(),
+                            }
+                          : null,
+                        startDate: memberBillingById.get(member.id)?.membershipStartDate?.toISOString() ?? null,
+                        endDate: memberBillingById.get(member.id)?.membershipEndDate?.toISOString() ?? null,
+                      }}
                     />
                   </>
                 ) : null}

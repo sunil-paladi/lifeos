@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { DEFAULT_TEST_CURRENCY, SUPPORTED_CURRENCIES } from "@/app/lib/currency";
 
 type SettingsForm = {
   gymName: string;
@@ -18,7 +19,7 @@ const DEFAULT_SETTINGS: SettingsForm = {
   gymName: "",
   country: "IN",
   timezone: "Asia/Kolkata",
-  currency: "INR",
+  currency: DEFAULT_TEST_CURRENCY,
   language: "en",
   dateFormat: "DD/MM/YYYY",
   timeFormat: "12h",
@@ -68,7 +69,7 @@ export default function OwnerSettingsClient({
           gymName: data.gymName ?? defaultGymName,
           country: data.country ?? "IN",
           timezone: data.timezone ?? "Asia/Kolkata",
-          currency: data.currency ?? "INR",
+          currency: data.currency ?? DEFAULT_TEST_CURRENCY,
           language: data.language ?? "en",
           dateFormat: data.dateFormat ?? "DD/MM/YYYY",
           timeFormat: data.timeFormat ?? "12h",
@@ -197,13 +198,7 @@ export default function OwnerSettingsClient({
               <label className="block text-sm font-medium text-slate-700">
                 Currency
                 <select value={form.currency} onChange={(event) => updateField("currency", event.target.value)} className="mt-1 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-slate-900 outline-none focus:border-green-500">
-                  <option value="INR">INR</option>
-                  <option value="USD">USD</option>
-                  <option value="EUR">EUR</option>
-                  <option value="GBP">GBP</option>
-                  <option value="AED">AED</option>
-                  <option value="SGD">SGD</option>
-                  <option value="AUD">AUD</option>
+                  {SUPPORTED_CURRENCIES.map(({ code, name }) => <option key={code} value={code}>{code} - {name}</option>)}
                 </select>
               </label>
 

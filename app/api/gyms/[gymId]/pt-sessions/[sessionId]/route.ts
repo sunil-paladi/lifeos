@@ -12,12 +12,22 @@ const sessionSelect = {
   gymId: true,
   trainerMembershipId: true,
   clientMembershipId: true,
+  ptPricingId: true,
   scheduledAt: true,
   durationMinutes: true,
   status: true,
   notes: true,
   createdAt: true,
   updatedAt: true,
+  ptPricing: {
+    select: {
+      id: true,
+      name: true,
+      price: true,
+      currency: true,
+      durationMinutes: true,
+    },
+  },
   trainerMembership: {
     select: { user: { select: { id: true, name: true } } },
   },
@@ -101,8 +111,9 @@ export async function PATCH(request: Request, context: RouteContext) {
   const hasDuration = Object.hasOwn(body, "durationMinutes");
   const hasNotes = Object.hasOwn(body, "notes");
   const hasStatus = Object.hasOwn(body, "status");
+  const hasPTPricingId = Object.hasOwn(body, "ptPricingId");
 
-  if (!hasScheduledAt && !hasDuration && !hasNotes && !hasStatus) {
+  if (!hasScheduledAt && !hasDuration && !hasNotes && !hasStatus && !hasPTPricingId) {
     return NextResponse.json({ error: "At least one editable field is required" }, { status: 400 });
   }
 
@@ -112,6 +123,21 @@ export async function PATCH(request: Request, context: RouteContext) {
 
   if (hasDuration && !isValidSessionDuration(body.durationMinutes)) {
     return NextResponse.json({ error: "durationMinutes must be an integer from 1 to 480" }, { status: 400 });
+  }
+
+  if (hasPTPricingId && body.ptPricingId !== null && (typeof body.ptPricingId !== "string" || !body.ptPricingId.trim())) {
+    return NextResponse.json({ error: "ptPricingId must be a valid pricing ID or null" }, { status: 400 });
+  }
+
+  if (hasPTPricingId && typeof body.ptPricingId === "string" && body.ptPricingId !== session.ptPricingId) {
+    const ptPricing = await prisma.pTPricing.findFirst({
+      where: { id: body.ptPricingId, gymId, isActive: true },
+      select: { id: true },
+    });
+
+    if (!ptPricing) {
+      return NextResponse.json({ error: "Active PT pricing not found in this gym" }, { status: 404 });
+    }
   }
 
   if (hasNotes && body.notes !== null && typeof body.notes !== "string") {
@@ -135,6 +161,7 @@ export async function PATCH(request: Request, context: RouteContext) {
     data: {
       ...(hasScheduledAt ? { scheduledAt: parseScheduledAt(body.scheduledAt)! } : {}),
       ...(hasDuration ? { durationMinutes: body.durationMinutes as number } : {}),
+      ...(hasPTPricingId ? { ptPricingId: body.ptPricingId as string | null } : {}),
       ...(hasNotes ? { notes: typeof body.notes === "string" ? body.notes.trim() || null : null } : {}),
       ...(hasStatus ? { status: body.status as "SCHEDULED" | "COMPLETED" | "CANCELLED" | "NO_SHOW" } : {}),
     },
