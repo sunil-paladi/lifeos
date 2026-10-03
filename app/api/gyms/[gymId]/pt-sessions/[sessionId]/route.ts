@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { getAuthenticatedUser } from "@/app/lib/authorization";
-import { getPTSessionMembership, isValidSessionDuration, parseScheduledAt } from "@/app/lib/pt-sessions";
+import { requireGymRole } from "@/app/lib/authorization";
+import { isValidSessionDuration, parseScheduledAt } from "@/app/lib/pt-sessions";
 import { prisma } from "@/lib/prisma";
 
 type RouteContext = {
@@ -41,20 +41,24 @@ async function getScopedSession(sessionId: string, gymId: string, membership: { 
     where: {
       id: sessionId,
       gymId,
-      ...(membership.role === "TRAINER"
-        ? {
-            trainerMembershipId: membership.id,
-            clientMembership: {
-              is: {
+      clientMembership: {
+        is: {
+          role: "MEMBER",
+          status: "ACTIVE",
+          ...(membership.role === "TRAINER"
+            ? {
                 clientAssignments: {
                   some: {
                     gymId,
                     trainerMembershipId: membership.id,
                   },
                 },
-              },
-            },
-          }
+              }
+            : {}),
+        },
+      },
+      ...(membership.role === "TRAINER"
+        ? { trainerMembershipId: membership.id }
         : {}),
     },
     select: sessionSelect,
@@ -62,15 +66,14 @@ async function getScopedSession(sessionId: string, gymId: string, membership: { 
 }
 
 export async function GET(_request: Request, context: RouteContext) {
-  const { user, response } = await getAuthenticatedUser();
-  if (!user) return response;
-
   const { gymId, sessionId } = await context.params;
-  const membership = await getPTSessionMembership(user.id, gymId);
+  const access = await requireGymRole(gymId, ["OWNER", "TRAINER"]);
 
-  if (!membership) {
-    return NextResponse.json({ error: "You are not an active owner or trainer in this gym" }, { status: 403 });
+  if (!access.ok) {
+    return access.response;
   }
+
+  const membership = access.membership;
 
   const session = await getScopedSession(sessionId, gymId, membership);
   if (!session) {
@@ -81,15 +84,14 @@ export async function GET(_request: Request, context: RouteContext) {
 }
 
 export async function PATCH(request: Request, context: RouteContext) {
-  const { user, response } = await getAuthenticatedUser();
-  if (!user) return response;
-
   const { gymId, sessionId } = await context.params;
-  const membership = await getPTSessionMembership(user.id, gymId);
+  const access = await requireGymRole(gymId, ["OWNER", "TRAINER"]);
 
-  if (!membership) {
-    return NextResponse.json({ error: "You are not an active owner or trainer in this gym" }, { status: 403 });
+  if (!access.ok) {
+    return access.response;
   }
+
+  const membership = access.membership;
 
   const session = await getScopedSession(sessionId, gymId, membership);
   if (!session) {

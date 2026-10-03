@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { getAuthenticatedUser } from "@/app/lib/authorization";
-import { getPTSessionMembership, isValidSessionDuration, parseScheduledAt } from "@/app/lib/pt-sessions";
+import { requireGymRole } from "@/app/lib/authorization";
+import { isValidSessionDuration, parseScheduledAt } from "@/app/lib/pt-sessions";
 import { prisma } from "@/lib/prisma";
 
 type RouteContext = {
@@ -37,33 +37,38 @@ const sessionSelect = {
 } as const;
 
 export async function GET(_request: Request, context: RouteContext) {
-  const { user, response } = await getAuthenticatedUser();
-  if (!user) return response;
-
   const { gymId } = await context.params;
-  const membership = await getPTSessionMembership(user.id, gymId);
+  const access = await requireGymRole(gymId, ["OWNER", "TRAINER"]);
 
-  if (!membership) {
-    return NextResponse.json({ error: "You are not an active owner or trainer in this gym" }, { status: 403 });
+  if (!access.ok) {
+    return access.response;
   }
 
+  const membership = access.membership;
+
   const sessions = await prisma.pTSession.findMany({
-    where: membership.role === "OWNER"
-      ? { gymId }
-      : {
-          gymId,
-          trainerMembershipId: membership.id,
-          clientMembership: {
-            is: {
-              clientAssignments: {
-                some: {
-                  gymId,
-                  trainerMembershipId: membership.id,
+    where: {
+      gymId,
+      clientMembership: {
+        is: {
+          role: "MEMBER",
+          status: "ACTIVE",
+          ...(membership.role === "TRAINER"
+            ? {
+                clientAssignments: {
+                  some: {
+                    gymId,
+                    trainerMembershipId: membership.id,
+                  },
                 },
-              },
-            },
-          },
+              }
+            : {}),
         },
+      },
+      ...(membership.role === "TRAINER"
+        ? { trainerMembershipId: membership.id }
+        : {}),
+    },
     select: sessionSelect,
     orderBy: { scheduledAt: "asc" },
   });
@@ -72,15 +77,14 @@ export async function GET(_request: Request, context: RouteContext) {
 }
 
 export async function POST(request: Request, context: RouteContext) {
-  const { user, response } = await getAuthenticatedUser();
-  if (!user) return response;
-
   const { gymId } = await context.params;
-  const membership = await getPTSessionMembership(user.id, gymId);
+  const access = await requireGymRole(gymId, ["OWNER", "TRAINER"]);
 
-  if (!membership) {
-    return NextResponse.json({ error: "You are not an active owner or trainer in this gym" }, { status: 403 });
+  if (!access.ok) {
+    return access.response;
   }
+
+  const membership = access.membership;
 
   let body: Record<string, unknown>;
   try {

@@ -221,6 +221,7 @@ model Gym {
   attendanceRecords        GymAttendance[]
   settings                 GymSettings?
   payments                 Payment[]
+  trainingPlans            TrainingPlan[]
 
   @@index([ownerId])
   @@map("gym")
@@ -479,6 +480,7 @@ enum ExerciseVisibility {
 model TrainingPlan {
   id          String    @id @default(cuid())
   userId      String
+  gymId       String
   name        String
   description String?
   totalWeeks  Int
@@ -490,10 +492,12 @@ model TrainingPlan {
   updatedAt DateTime @updatedAt
 
   user   User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  gym    Gym            @relation(fields: [gymId], references: [id], onDelete: Restrict)
   phases ProgramPhase[]
 
   @@index([userId])
   @@index([userId, isActive])
+  @@index([gymId, userId])
   @@map("training_plan")
 }
 

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getAuthenticatedUser } from "@/app/lib/authorization";
+import { requireGymRole } from "@/app/lib/authorization";
 
 type TrainerClientRouteContext = {
   params: Promise<{
@@ -16,13 +16,13 @@ export async function POST(
     params: Promise<{ gymId: string }>;
   }
 ) {
-  const { user, response } = await getAuthenticatedUser();
-
-  if (response) {
-    return response;
-  }
-
   const { gymId } = await params;
+
+  const access = await requireGymRole(gymId, ["OWNER"]);
+
+  if (!access.ok) {
+    return access.response;
+  }
 
   const body = await request.json();
 
@@ -41,25 +41,6 @@ export async function POST(
           "trainerMembershipId and clientMembershipId are required",
       },
       { status: 400 }
-    );
-  }
-
-  const ownerMembership = await prisma.gymMembership.findFirst({
-    where: {
-      gymId,
-      userId: user.id,
-      role: "OWNER",
-      status: "ACTIVE",
-    },
-    select: {
-      gymId: true,
-    },
-  });
-
-  if (!ownerMembership) {
-    return NextResponse.json(
-      { error: "You are not an active owner of this gym" },
-      { status: 403 }
     );
   }
 
@@ -146,39 +127,31 @@ export async function GET(
   request: Request,
   context: TrainerClientRouteContext
 ) {
-  const { user, response } = await getAuthenticatedUser();
-
-  if (!user) {
-    return response;
-  }
-
   const { gymId } = await context.params;
 
-  const membership = await prisma.gymMembership.findFirst({
-    where: {
-      gymId,
-      userId: user.id,
-      role: {
-        in: ["OWNER", "TRAINER"],
-      },
-      status: "ACTIVE",
-    },
-  });
+  const access = await requireGymRole(gymId, ["OWNER", "TRAINER"]);
 
-  if (!membership) {
-    return NextResponse.json(
-      { error: "You are not an active member of this gym" },
-      { status: 403 }
-    );
+  if (!access.ok) {
+    return access.response;
   }
+
+  const membership = access.membership;
 
   const assignments = await prisma.trainerClient.findMany({
     where:
       membership.role === "OWNER"
-        ? { gymId }
+        ? {
+            gymId,
+            clientMembership: {
+              is: { role: "MEMBER", status: "ACTIVE" },
+            },
+          }
         : {
             gymId,
             trainerMembershipId: membership.id,
+            clientMembership: {
+              is: { role: "MEMBER", status: "ACTIVE" },
+            },
           },
     select: {
       id: true,

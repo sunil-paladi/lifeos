@@ -1,6 +1,7 @@
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { auth } from "@/app/lib/auth";
+import { getOwnedTrainingPlan } from "@/app/lib/training-plans";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -16,6 +17,15 @@ async function getOwnedWorkoutDay(
   params: RouteParams,
   userId: string
 ) {
+  const access = await getOwnedTrainingPlan(
+    params.planId,
+    userId
+  );
+
+  if (!access.ok) {
+    return null;
+  }
+
   return prisma.workoutDay.findFirst({
     where: {
       id: params.dayId,
@@ -29,6 +39,7 @@ async function getOwnedWorkoutDay(
           trainingPlan: {
             id: params.planId,
             userId,
+            gymId: access.plan.gymId,
           },
         },
       },

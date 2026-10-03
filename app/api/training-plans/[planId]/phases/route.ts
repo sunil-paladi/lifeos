@@ -1,6 +1,7 @@
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { auth } from "@/app/lib/auth";
+import { getOwnedTrainingPlan } from "@/app/lib/training-plans";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -27,18 +28,13 @@ export async function POST(
   const { planId } = await params;
   const body = await request.json();
 
-  const plan = await prisma.trainingPlan.findFirst({
-    where: {
-      id: planId,
-      userId: session.user.id,
-    },
-  });
+  const access = await getOwnedTrainingPlan(
+    planId,
+    session.user.id
+  );
 
-  if (!plan) {
-    return NextResponse.json(
-      { error: "Training plan not found" },
-      { status: 404 }
-    );
+  if (!access.ok) {
+    return access.response;
   }
 
   if (
@@ -59,7 +55,7 @@ export async function POST(
 
   const phase = await prisma.programPhase.create({
     data: {
-      trainingPlanId: plan.id,
+      trainingPlanId: access.plan.id,
       name: body.name,
       description: body.description ?? null,
       phaseOrder: Number(body.phaseOrder),

@@ -1,6 +1,7 @@
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { auth } from "@/app/lib/auth";
+import { getOwnedTrainingPlan } from "@/app/lib/training-plans";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -26,21 +27,16 @@ export async function GET(
 
   const { planId } = await params;
 
-  const plan = await prisma.trainingPlan.findFirst({
-    where: {
-      id: planId,
-      userId: session.user.id,
-    },
-  });
+  const access = await getOwnedTrainingPlan(
+    planId,
+    session.user.id
+  );
 
-  if (!plan) {
-    return NextResponse.json(
-      { error: "Training plan not found" },
-      { status: 404 }
-    );
+  if (!access.ok) {
+    return access.response;
   }
 
   return NextResponse.json({
-    plan,
+    plan: access.plan,
   });
 }

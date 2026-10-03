@@ -1,6 +1,7 @@
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { auth } from "@/app/lib/auth";
+import { getOwnedTrainingPlan } from "@/app/lib/training-plans";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -35,6 +36,15 @@ export async function GET(
   const { planId, phaseId, weekId } =
     await params;
 
+  const access = await getOwnedTrainingPlan(
+    planId,
+    session.user.id
+  );
+
+  if (!access.ok) {
+    return access.response;
+  }
+
   const week = await prisma.programWeek.findFirst({
     where: {
       id: weekId,
@@ -43,7 +53,9 @@ export async function GET(
         id: phaseId,
         trainingPlanId: planId,
         trainingPlan: {
+          id: access.plan.id,
           userId: session.user.id,
+          gymId: access.plan.gymId,
         },
       },
     },
@@ -103,6 +115,15 @@ export async function POST(
 
   const body = await request.json();
 
+  const access = await getOwnedTrainingPlan(
+    planId,
+    session.user.id
+  );
+
+  if (!access.ok) {
+    return access.response;
+  }
+
   const week = await prisma.programWeek.findFirst({
     where: {
       id: weekId,
@@ -111,7 +132,9 @@ export async function POST(
         id: phaseId,
         trainingPlanId: planId,
         trainingPlan: {
+          id: access.plan.id,
           userId: session.user.id,
+          gymId: access.plan.gymId,
         },
       },
     },

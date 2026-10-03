@@ -1,6 +1,7 @@
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { auth } from "@/app/lib/auth";
+import { getOwnedTrainingPlan } from "@/app/lib/training-plans";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -34,12 +35,23 @@ export async function POST(
   const { planId, phaseId } = await params;
   const body = await request.json();
 
+  const access = await getOwnedTrainingPlan(
+    planId,
+    session.user.id
+  );
+
+  if (!access.ok) {
+    return access.response;
+  }
+
   const phase = await prisma.programPhase.findFirst({
     where: {
       id: phaseId,
       trainingPlanId: planId,
       trainingPlan: {
+        id: access.plan.id,
         userId: session.user.id,
+        gymId: access.plan.gymId,
       },
     },
   });

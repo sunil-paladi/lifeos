@@ -210,6 +210,11 @@ export function ProgramProvider({
         const planResponse =
           await fetch("/api/training-plans");
 
+        if (planResponse.status === 401) {
+          setSaveStatus("saved");
+          return;
+        }
+
         if (!planResponse.ok) {
           throw new Error(
             "Failed to load training plans"

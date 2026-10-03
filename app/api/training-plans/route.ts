@@ -1,6 +1,7 @@
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { auth } from "@/app/lib/auth";
+import { requireGymRole } from "@/app/lib/authorization";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -21,9 +22,18 @@ export async function GET() {
     );
   }
 
+  const memberships = await prisma.gymMembership.findMany({
+    where: {
+      userId: session.user.id,
+      status: "ACTIVE",
+    },
+    select: { gymId: true },
+  });
+
   const plans = await prisma.trainingPlan.findMany({
     where: {
       userId: session.user.id,
+      gymId: { in: memberships.map(({ gymId }) => gymId) },
     },
     orderBy: {
       createdAt: "desc",
@@ -53,6 +63,22 @@ export async function POST(request: Request) {
 
   const body = await request.json();
 
+  if (typeof body.gymId !== "string" || !body.gymId) {
+    return NextResponse.json(
+      { error: "gymId is required" },
+      { status: 400 }
+    );
+  }
+
+  const gymAccess = await requireGymRole(
+    body.gymId,
+    ["OWNER", "TRAINER", "MEMBER"]
+  );
+
+  if (!gymAccess.ok) {
+    return gymAccess.response;
+  }
+
   if (!body.name || !body.totalWeeks) {
     return NextResponse.json(
       {
@@ -77,6 +103,7 @@ export async function POST(request: Request) {
     const trainingPlan = await tx.trainingPlan.create({
       data: {
         userId: session.user.id,
+        gymId: body.gymId,
         name: body.name,
         description: body.description ?? null,
         totalWeeks,
