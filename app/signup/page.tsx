@@ -58,26 +58,25 @@ export default function SignupPage() {
     setMessage("");
     setLoading(true);
 
-    const { error } =
-      await authClient.signUp.email({
+    try {
+      const { error } = await authClient.signUp.email({
         name,
         username,
         email,
         password,
       });
 
-    if (error) {
-      setLoading(false);
-      setMessage(
-        error.message || "Signup failed"
-      );
-      return;
-    }
+      if (error) {
+        setMessage("Could not create an account with those details.");
+        return;
+      }
 
-    // Signup succeeded.
-    // Better Auth creates the session for the user,
-    // so send them directly to the Dashboard.
-    window.location.href = "/";
+      window.location.href = "/";
+    } catch {
+      setMessage("Unable to create an account right now. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   // ========================================
@@ -268,6 +267,8 @@ export default function SignupPage() {
                     setPassword(e.target.value)
                   }
                   required
+                  minLength={12}
+                  maxLength={128}
                   autoComplete="new-password"
                   className="w-full rounded-xl border border-slate-300 bg-white py-3 pl-10 pr-12 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-green-500 focus:ring-4 focus:ring-green-100"
                 />
@@ -295,7 +296,7 @@ export default function SignupPage() {
               </div>
 
               <p className="mt-1.5 text-xs text-slate-400">
-                Use at least 8 characters for a stronger password.
+                Use 12 to 128 characters.
               </p>
             </div>
 

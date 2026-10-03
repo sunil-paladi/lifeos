@@ -63,32 +63,22 @@ export default function LoginPage() {
       return;
     }
 
-    let error;
+    try {
+      const result = value.includes("@")
+        ? await authClient.signIn.email({ email: value, password })
+        : await authClient.signIn.username({ username: value, password });
 
-    if (value.includes("@")) {
-      const result = await authClient.signIn.email({
-        email: value,
-        password,
-      });
+      if (result.error) {
+        setMessage("Invalid email or username, or incorrect password.");
+        return;
+      }
 
-      error = result.error;
-    } else {
-      const result = await authClient.signIn.username({
-        username: value,
-        password,
-      });
-
-      error = result.error;
-    }
-
-    if (error) {
+      window.location.href = "/";
+    } catch {
+      setMessage("Unable to sign in right now. Please try again.");
+    } finally {
       setLoading(false);
-      setMessage(error.message || "Login failed");
-      return;
     }
-
-    // Login successful.
-    window.location.href = "/";
   }
 
   // ========================================
@@ -267,6 +257,15 @@ export default function LoginPage() {
                 : "Login"}
             </button>
           </form>
+
+          <div className="mt-4 text-right">
+            <Link
+              href="/forgot-password"
+              className="text-sm font-semibold text-green-600 hover:text-green-700"
+            >
+              Forgot password?
+            </Link>
+          </div>
 
           {/* Signup */}
           <div className="mt-6 border-t border-slate-100 pt-6 text-center">

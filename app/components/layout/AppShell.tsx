@@ -17,7 +17,12 @@ export type AppUser = {
   email?: string | null;
 };
 
-const publicRoutes = ["/login", "/signup"];
+const publicRoutes = [
+  "/login",
+  "/signup",
+  "/forgot-password",
+  "/reset-password",
+];
 
 export default function AppShell({
   children,
