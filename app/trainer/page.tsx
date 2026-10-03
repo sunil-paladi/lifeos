@@ -3,6 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { CalendarDays, Mail, UserRound } from "lucide-react";
 import { auth } from "@/app/lib/auth";
+import { getTrustedAppOrigin } from "@/app/lib/trusted-app-origin";
 import { prisma } from "@/lib/prisma";
 
 type AssignedClient = {
@@ -26,13 +27,7 @@ async function getAssignedClients(
   gymId: string,
   requestHeaders: Headers
 ): Promise<TrainerClientsResponse> {
-  const host =
-    requestHeaders.get("x-forwarded-host") ??
-    requestHeaders.get("host");
-  const protocol =
-    requestHeaders.get("x-forwarded-proto") ?? "http";
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ??
-    (host ? `${protocol}://${host}` : null);
+  const baseUrl = getTrustedAppOrigin();
 
   if (!baseUrl) {
     return { error: "Unable to connect to the trainer clients service" };
@@ -45,6 +40,7 @@ async function getAssignedClients(
         headers: {
           cookie: requestHeaders.get("cookie") ?? "",
         },
+        redirect: "error",
         cache: "no-store",
       }
     );

@@ -1,6 +1,7 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { auth } from "@/app/lib/auth";
+import { getTrustedAppOrigin } from "@/app/lib/trusted-app-origin";
 import { prisma } from "@/lib/prisma";
 import MembershipActions from "../MembershipActions";
 import CreateTrainerForm from "./CreateTrainerForm";
@@ -37,14 +38,7 @@ async function getTrainers(
   gymId: string,
   requestHeaders: Headers
 ): Promise<TrainersResponse> {
-  const host = requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host");
-  const protocol = requestHeaders.get("x-forwarded-proto") ?? "http";
-  const configuredUrl = process.env.NEXT_PUBLIC_APP_URL;
-  const baseUrl = configuredUrl
-    ? configuredUrl.replace(/\/$/, "")
-    : host
-      ? `${protocol}://${host}`
-      : null;
+  const baseUrl = getTrustedAppOrigin();
 
   if (!baseUrl) {
     return { error: "Unable to connect to the staff service" };
@@ -55,6 +49,7 @@ async function getTrainers(
       `${baseUrl}/api/gyms/${encodeURIComponent(gymId)}/trainers`,
       {
         headers: { cookie: requestHeaders.get("cookie") ?? "" },
+        redirect: "error",
         cache: "no-store",
       }
     );

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowLeft, CalendarDays, Mail, Phone, UserRound } from "lucide-react";
 import { redirect } from "next/navigation";
 import { auth } from "@/app/lib/auth";
+import { getTrustedAppOrigin } from "@/app/lib/trusted-app-origin";
 import { prisma } from "@/lib/prisma";
 import CreateWorkoutProgramForm from "./CreateWorkoutProgramForm";
 
@@ -76,17 +77,7 @@ async function getClientWorkspace(
   clientMembershipId: string,
   requestHeaders: Headers
 ): Promise<ClientWorkspaceResponse> {
-  const host =
-    requestHeaders.get("x-forwarded-host") ??
-    requestHeaders.get("host");
-  const protocol =
-    requestHeaders.get("x-forwarded-proto") ?? "http";
-  const configuredUrl = process.env.NEXT_PUBLIC_APP_URL;
-  const baseUrl = configuredUrl
-    ? configuredUrl.replace(/\/$/, "")
-    : host
-      ? `${protocol}://${host}`
-      : null;
+  const baseUrl = getTrustedAppOrigin();
 
   if (!baseUrl) {
     return { error: "Unable to connect to the client workspace service" };
@@ -99,6 +90,7 @@ async function getClientWorkspace(
         headers: {
           cookie: requestHeaders.get("cookie") ?? "",
         },
+        redirect: "error",
         cache: "no-store",
       }
     );
@@ -125,17 +117,7 @@ async function getClientTrainingPlans(
   clientMembershipId: string,
   requestHeaders: Headers
 ): Promise<TrainingPlansResponse> {
-  const host =
-    requestHeaders.get("x-forwarded-host") ??
-    requestHeaders.get("host");
-  const protocol =
-    requestHeaders.get("x-forwarded-proto") ?? "http";
-  const configuredUrl = process.env.NEXT_PUBLIC_APP_URL;
-  const baseUrl = configuredUrl
-    ? configuredUrl.replace(/\/$/, "")
-    : host
-      ? `${protocol}://${host}`
-      : null;
+  const baseUrl = getTrustedAppOrigin();
 
   if (!baseUrl) {
     return { error: "Unable to connect to the training plans service" };
@@ -148,6 +130,7 @@ async function getClientTrainingPlans(
         headers: {
           cookie: requestHeaders.get("cookie") ?? "",
         },
+        redirect: "error",
         cache: "no-store",
       }
     );
