@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAuthenticatedUser } from "@/app/lib/authorization";
 import { getActiveAttendanceMembership } from "@/app/lib/attendance";
+import { jsonError, logServerError } from "@/app/lib/error-response";
 import { prisma } from "@/lib/prisma";
 
 type RouteContext = {
@@ -48,6 +49,8 @@ export async function POST(_request: Request, context: RouteContext) {
     if (typeof error === "object" && error !== null && "code" in error && error.code === "P2034") {
       return NextResponse.json({ error: "You are already checked in" }, { status: 409 });
     }
-    throw error;
+
+    logServerError("POST /api/gyms/[gymId]/attendance/check-in", error);
+    return jsonError("Failed to check in", 500);
   }
 }

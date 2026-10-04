@@ -1,6 +1,7 @@
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { auth } from "@/app/lib/auth";
+import { jsonError, logServerError } from "@/app/lib/error-response";
 import { getOwnedTrainingPlan } from "@/app/lib/training-plans";
 import { prisma } from "@/lib/prisma";
 
@@ -214,17 +215,14 @@ export async function GET(
       phases: completePlan.phases,
     });
   } catch (error) {
-    console.error(
-      "GET TRAINING PLAN STRUCTURE ERROR:",
+    logServerError(
+      "GET /api/training-plans/[planId]/structure",
       error
     );
 
-    return NextResponse.json(
-      {
-        error:
-          "Failed to load training plan structure",
-      },
-      { status: 500 }
+    return jsonError(
+      "Failed to load training plan structure",
+      500
     );
   }
 }

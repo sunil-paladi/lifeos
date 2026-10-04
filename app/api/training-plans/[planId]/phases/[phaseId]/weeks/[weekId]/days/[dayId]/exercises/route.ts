@@ -1,6 +1,7 @@
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { auth } from "@/app/lib/auth";
+import { jsonError, logServerError } from "@/app/lib/error-response";
 import { parseJsonObject } from "@/app/lib/input-validation";
 import { getOwnedTrainingPlan } from "@/app/lib/training-plans";
 import { prisma } from "@/lib/prisma";
@@ -104,15 +105,12 @@ export async function GET(
       programExercises,
     });
   } catch (error) {
-    console.error(
-      "GET PROGRAM EXERCISES ERROR:",
+    logServerError(
+      "GET /api/training-plans/[planId]/phases/[phaseId]/weeks/[weekId]/days/[dayId]/exercises",
       error
     );
 
-    return NextResponse.json(
-      { error: "Failed to load exercises" },
-      { status: 500 }
-    );
+    return jsonError("Failed to load exercises", 500);
   }
 }
 
@@ -263,15 +261,12 @@ export async function POST(
       { status: 201 }
     );
   } catch (error) {
-    console.error(
-      "POST PROGRAM EXERCISE ERROR:",
+    logServerError(
+      "POST /api/training-plans/[planId]/phases/[phaseId]/weeks/[weekId]/days/[dayId]/exercises",
       error
     );
 
-    return NextResponse.json(
-      { error: "Failed to create exercise" },
-      { status: 500 }
-    );
+    return jsonError("Failed to create exercise", 500);
   }
 }
 
@@ -463,15 +458,12 @@ export async function PATCH(
       programExercise: updated,
     });
   } catch (error) {
-    console.error(
-      "PATCH PROGRAM EXERCISE ERROR:",
+    logServerError(
+      "PATCH /api/training-plans/[planId]/phases/[phaseId]/weeks/[weekId]/days/[dayId]/exercises",
       error
     );
 
-    return NextResponse.json(
-      { error: "Failed to update exercise" },
-      { status: 500 }
-    );
+    return jsonError("Failed to update exercise", 500);
   }
 }
 
@@ -580,15 +572,12 @@ export async function DELETE(
       success: true,
     });
   } catch (error) {
-    console.error(
-      "DELETE PROGRAM EXERCISE ERROR:",
+    logServerError(
+      "DELETE /api/training-plans/[planId]/phases/[phaseId]/weeks/[weekId]/days/[dayId]/exercises",
       error
     );
 
-    return NextResponse.json(
-      { error: "Failed to delete exercise" },
-      { status: 500 }
-    );
+    return jsonError("Failed to delete exercise", 500);
   }
 }
 
@@ -740,14 +729,11 @@ export async function PUT(
       success: true,
     });
   } catch (error) {
-    console.error(
-      "PUT PROGRAM EXERCISE ERROR:",
+    logServerError(
+      "PUT /api/training-plans/[planId]/phases/[phaseId]/weeks/[weekId]/days/[dayId]/exercises",
       error
     );
 
-    return NextResponse.json(
-      { error: "Failed to reorder exercise" },
-      { status: 500 }
-    );
+    return jsonError("Failed to reorder exercise", 500);
   }
 }

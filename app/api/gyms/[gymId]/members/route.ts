@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/app/lib/auth";
+import { jsonError, logServerError } from "@/app/lib/error-response";
 import { prisma } from "@/lib/prisma";
 import { getAuthenticatedUser } from "@/app/lib/authorization";
 import { parseJsonObject } from "@/app/lib/input-validation";
@@ -263,9 +264,7 @@ export async function POST(
       );
     }
 
-    return NextResponse.json(
-      { error: "Unable to create client account" },
-      { status: 500 }
-    );
+    logServerError("POST /api/gyms/[gymId]/members", error);
+    return jsonError("Unable to create client account", 500);
   }
 }
