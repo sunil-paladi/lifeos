@@ -174,7 +174,7 @@ export default function OwnerStatisticsClient({
   return (
     <div className="space-y-6">
       <header className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-        <p className="text-sm font-semibold uppercase tracking-wide text-green-600">Owner dashboard</p>
+        <p className="text-sm font-semibold uppercase tracking-wide text-primary">Owner dashboard</p>
         <div className="mt-2 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <h1 className="text-3xl font-bold tracking-tight text-slate-900">{gymName}</h1>
@@ -194,7 +194,7 @@ export default function OwnerStatisticsClient({
                 onClick={() => setRangeType(option.value)}
                 className={`rounded-lg px-3 py-2 text-sm font-medium transition ${
                   rangeType === option.value
-                    ? "bg-green-600 text-white"
+                    ? "bg-primary text-white"
                     : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
                 }`}
               >
@@ -341,7 +341,7 @@ export default function OwnerStatisticsClient({
                             aria-expanded={isExpanded}
                             aria-controls={clientsId}
                             onClick={() => setExpandedTrainers((current) => ({ ...current, [trainer.id]: !current[trainer.id] }))}
-                            className="flex min-w-0 flex-1 items-center gap-2 text-left font-semibold text-slate-900 hover:text-green-700"
+                            className="flex min-w-0 flex-1 items-center gap-2 text-left font-semibold text-slate-900 hover:text-primary"
                           >
                             <span className="shrink-0 text-base" aria-hidden="true">{isExpanded ? "▾" : "▸"}</span>
                             <span className="truncate">{trainer.name}</span>
@@ -358,7 +358,7 @@ export default function OwnerStatisticsClient({
                               aria-expanded={reportExpanded}
                               aria-controls={reportId}
                               onClick={() => setExpandedReports((current) => ({ ...current, [trainer.id]: !current[trainer.id] }))}
-                              className="shrink-0 text-sm font-semibold text-green-700 hover:text-green-800"
+                              className="shrink-0 text-sm font-semibold text-primary hover:text-primary"
                             >
                               {reportExpanded ? "Hide report" : "View report"}
                             </button>
@@ -410,7 +410,7 @@ export default function OwnerStatisticsClient({
             <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <h2 className="text-xl font-bold text-slate-900">Member overview</h2>
-                <Link href="/owner/members" className="text-sm font-semibold text-green-700 hover:text-green-800">
+                <Link href="/owner/members" className="text-sm font-semibold text-primary hover:text-primary">
                   View all members
                 </Link>
               </div>
@@ -439,7 +439,7 @@ export default function OwnerStatisticsClient({
               <div className="mt-5 flex h-52 items-end gap-2">
                 {data.attendance.trend.map((point) => (
                   <div key={point.date} className="flex flex-1 flex-col items-center justify-end gap-2">
-                    <div className="flex w-full items-end justify-center rounded-t-md bg-green-500/80" style={{ height: `${Math.max(10, (point.count / attendanceMax) * 100)}%` }} title={`${point.count}`} />
+                    <div className="flex w-full items-end justify-center rounded-t-md bg-primary/80" style={{ height: `${Math.max(10, (point.count / attendanceMax) * 100)}%` }} title={`${point.count}`} />
                     <span className="text-[10px] text-slate-500">{formatDateLabel(point.date)}</span>
                   </div>
                 ))}
@@ -455,7 +455,7 @@ export default function OwnerStatisticsClient({
               <div className="mt-5 flex h-40 items-end gap-2">
                 {data.memberGrowth.trend.map((point) => (
                   <div key={point.date} className="flex flex-1 flex-col items-center justify-end gap-2">
-                    <div className="flex w-full items-end justify-center rounded-t-md bg-blue-500/80" style={{ height: `${Math.max(10, (point.count / growthMax) * 100)}%` }} title={`${point.count}`} />
+                    <div className="flex w-full items-end justify-center rounded-t-md bg-secondary/200/80" style={{ height: `${Math.max(10, (point.count / growthMax) * 100)}%` }} title={`${point.count}`} />
                     <span className="text-[10px] text-slate-500">{formatDateLabel(point.date)}</span>
                   </div>
                 ))}

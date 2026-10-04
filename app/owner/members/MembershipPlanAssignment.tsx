@@ -110,13 +110,13 @@ export default function MembershipPlanAssignment({
           <label className="block text-xs font-semibold text-slate-600">Start date
             <input required type="date" value={startDate} onChange={(event) => setStartDate(event.target.value)} className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-normal text-slate-800" />
           </label>
-          <button disabled={loading} className="rounded-lg bg-green-600 px-3 py-2 text-sm font-semibold text-white hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-60">
+          <button disabled={loading} className="rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-white hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60">
             {loading ? "Saving..." : currentMembership.plan ? "Change plan" : "Assign plan"}
           </button>
         </form>
       ) : null}
       {error ? <p role="alert" className="mt-2 text-sm text-red-700">{error}</p> : null}
-      {success ? <p role="status" className="mt-2 text-sm text-green-700">{success}</p> : null}
+      {success ? <p role="status" className="mt-2 text-sm text-primary">{success}</p> : null}
     </div>
   );
 }

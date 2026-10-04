@@ -103,8 +103,6 @@ export default function AttendanceView({
 
   useEffect(() => {
     if (!gymId) {
-      setAttendance([]);
-      setLoading(false);
       return;
     }
 
@@ -169,7 +167,7 @@ export default function AttendanceView({
   return (
     <div className="space-y-6 py-2">
       <header>
-        <p className="text-sm font-semibold uppercase tracking-wide text-green-600">
+        <p className="text-sm font-semibold uppercase tracking-wide text-primary">
           {isMember ? "Gym" : role === "TRAINER" ? "Trainer workspace" : "Owner workspace"}
         </p>
         <h1 className="mt-1 text-3xl font-bold tracking-tight text-slate-900">{title}</h1>
@@ -188,7 +186,7 @@ export default function AttendanceView({
               setError("");
               setGymId(event.target.value);
             }}
-            className="mt-1.5 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-green-500 focus:ring-4 focus:ring-green-100"
+            className="mt-1.5 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/15"
           >
             {memberships.map((membership) => (
               <option key={membership.membershipId} value={membership.gymId}>{membership.gymName}</option>
@@ -200,7 +198,7 @@ export default function AttendanceView({
       ) : null}
 
       {error ? <div role="alert" className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">{error}</div> : null}
-      {message ? <div role="status" className="rounded-lg border border-green-200 bg-green-50 p-4 text-sm text-green-800">{message}</div> : null}
+      {message ? <div role="status" className="rounded-lg border border-primary/20 bg-primary/10 p-4 text-sm text-primary">{message}</div> : null}
 
       {isMember ? (
         <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -210,7 +208,7 @@ export default function AttendanceView({
           ) : activeAttendance ? (
             <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <p className="font-medium text-green-700">Currently checked in</p>
+                <p className="font-medium text-primary">Currently checked in</p>
                 <p className="mt-1 text-sm text-slate-600">Checked in {formatDateTime(activeAttendance.checkedInAt)}</p>
               </div>
               <button
@@ -232,7 +230,7 @@ export default function AttendanceView({
                 type="button"
                 disabled={saving || !gymId}
                 onClick={() => void handleAttendanceAction("check-in")}
-                className="rounded-lg bg-green-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-60"
+                className="rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {saving ? "Working..." : "Check In"}
               </button>
@@ -245,18 +243,18 @@ export default function AttendanceView({
           <div className="mt-4 grid gap-3 sm:grid-cols-3">
             <label className="text-sm font-medium text-slate-700">
               Member
-              <select value={memberFilter} onChange={(event) => setMemberFilter(event.target.value)} className="mt-1.5 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-green-500 focus:ring-4 focus:ring-green-100">
+              <select value={memberFilter} onChange={(event) => setMemberFilter(event.target.value)} className="mt-1.5 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/15">
                 <option value="">All authorized members</option>
                 {availableMembers.map((member) => <option key={member.membershipId} value={member.membershipId}>{member.name}</option>)}
               </select>
             </label>
             <label className="text-sm font-medium text-slate-700">
               From
-              <input type="date" value={fromFilter} onChange={(event) => setFromFilter(event.target.value)} className="mt-1.5 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-green-500 focus:ring-4 focus:ring-green-100" />
+              <input type="date" value={fromFilter} onChange={(event) => setFromFilter(event.target.value)} className="mt-1.5 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/15" />
             </label>
             <label className="text-sm font-medium text-slate-700">
               To
-              <input type="date" value={toFilter} onChange={(event) => setToFilter(event.target.value)} className="mt-1.5 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-green-500 focus:ring-4 focus:ring-green-100" />
+              <input type="date" value={toFilter} onChange={(event) => setToFilter(event.target.value)} className="mt-1.5 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/15" />
             </label>
           </div>
         </section>
@@ -289,7 +287,7 @@ export default function AttendanceView({
                   <p className="text-sm text-slate-700">{record.checkedOutAt ? formatDateTime(record.checkedOutAt) : "Not checked out"}</p>
                   <p className="mt-1 text-xs text-slate-500">Checked out</p>
                 </div>
-                <span className={`text-sm font-semibold ${record.checkedOutAt ? "text-slate-700" : "text-green-700"}`}>
+                <span className={`text-sm font-semibold ${record.checkedOutAt ? "text-slate-700" : "text-primary"}`}>
                   {durationLabel(record)}
                 </span>
               </article>

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { authClient } from "@/app/lib/auth-client";
+import { Skeleton } from "@/app/components/ui/skeleton";
 
 type Profile = {
   id: string;
@@ -40,15 +41,15 @@ type WeightEntry = {
 };
 
 const colors = {
-  page: "#f5f8fc",
+  page: "#faf7f4",
   card: "#ffffff",
   navy: "#101828",
   text: "#344054",
   muted: "#667085",
   border: "#dfe5ef",
-  blue: "#2563eb",
-  blueLight: "#eff6ff",
-  blueBorder: "#bfdbfe",
+  coral: "#e85d75",
+  coralLight: "#fff1f3",
+  coralBorder: "#f5c3cc",
   green: "#067647",
   greenLight: "#ecfdf3",
 };
@@ -334,10 +335,15 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <main style={{ padding: "40px" }}>
-        <p style={{ color: colors.muted }}>
-          Loading profile...
-        </p>
+      <main className="mx-auto max-w-4xl space-y-5 p-6 sm:p-8" aria-busy="true">
+        <p className="sr-only">Loading profile...</p>
+        <div className="space-y-3">
+          <Skeleton className="h-5 w-24 rounded-full" />
+          <Skeleton className="h-9 w-64 max-w-full" />
+          <Skeleton className="h-4 w-80 max-w-full" />
+        </div>
+        <Skeleton className="h-64 rounded-2xl" />
+        <Skeleton className="h-80 rounded-2xl" />
       </main>
     );
   }
@@ -348,10 +354,11 @@ export default function ProfilePage() {
 
   if (!profile) {
     return (
-      <main style={{ padding: "40px" }}>
-        <p style={{ color: colors.muted }}>
-          Profile could not be loaded.
-        </p>
+      <main className="mx-auto max-w-4xl p-6 sm:p-8">
+        <section role="alert" className="rounded-xl border border-red-200 bg-white p-5 text-red-800 shadow-sm">
+          <h1 className="font-semibold">Profile unavailable</h1>
+          <p className="mt-1 text-sm">{message || "Profile could not be loaded. Please try again later."}</p>
+        </section>
       </main>
     );
   }
@@ -384,8 +391,8 @@ export default function ProfilePage() {
               display: "inline-block",
               padding: "5px 10px",
               borderRadius: "20px",
-              background: colors.blueLight,
-              color: colors.blue,
+              background: colors.coralLight,
+              color: colors.coral,
               fontSize: "11px",
               fontWeight: 700,
               letterSpacing: "0.07em",
@@ -443,7 +450,7 @@ export default function ProfilePage() {
                   width: "4px",
                   minHeight: "42px",
                   borderRadius: "4px",
-                  background: colors.blue,
+                  background: colors.coral,
                 }}
               />
 
@@ -578,7 +585,7 @@ export default function ProfilePage() {
                   width: "4px",
                   minHeight: "42px",
                   borderRadius: "4px",
-                  background: colors.blue,
+                  background: colors.coral,
                 }}
               />
 
@@ -869,7 +876,7 @@ export default function ProfilePage() {
                 border: "none",
                 borderRadius: "8px",
                 padding: "12px 24px",
-                background: colors.blue,
+                background: colors.coral,
                 color: "#ffffff",
                 fontSize: "14px",
                 fontWeight: 600,
@@ -878,7 +885,7 @@ export default function ProfilePage() {
                   : "pointer",
                 opacity: saving ? 0.7 : 1,
                 boxShadow:
-                  "0 2px 5px rgba(37, 99, 235, 0.25)",
+                  "0 2px 5px rgba(232, 93, 117, 0.22)",
               }}
             >
               {saving
@@ -908,7 +915,7 @@ export default function ProfilePage() {
                 width: "4px",
                 minHeight: "42px",
                 borderRadius: "4px",
-                background: colors.blue,
+                background: colors.coral,
               }}
             />
 
@@ -942,8 +949,8 @@ export default function ProfilePage() {
               padding: "18px",
               marginBottom: "22px",
               borderRadius: "10px",
-              background: colors.blueLight,
-              border: `1px solid ${colors.blueBorder}`,
+              background: colors.coralLight,
+              border: `1px solid ${colors.coralBorder}`,
             }}
           >
             <p
@@ -1008,7 +1015,7 @@ export default function ProfilePage() {
                 border: "none",
                 borderRadius: "8px",
                 padding: "12px 20px",
-                background: colors.blue,
+                background: colors.coral,
                 color: "#ffffff",
                 fontSize: "14px",
                 fontWeight: 600,

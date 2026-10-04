@@ -215,7 +215,7 @@ export default async function ClientWorkspacePage({
     <div className="space-y-6 py-2">
       <Link
         href="/trainer"
-        className="inline-flex items-center gap-2 text-sm font-semibold text-slate-600 transition hover:text-green-700"
+        className="inline-flex items-center gap-2 text-sm font-semibold text-slate-600 transition hover:text-primary"
       >
         <ArrowLeft size={17} />
         Back to Trainer Dashboard
@@ -233,11 +233,11 @@ export default async function ClientWorkspacePage({
           <header className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
             <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
               <div className="flex items-start gap-4">
-                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-green-50 text-green-700">
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
                   <UserRound size={26} />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-sm font-semibold uppercase tracking-wide text-green-600">
+                  <p className="text-sm font-semibold uppercase tracking-wide text-primary">
                     Client Workspace
                   </p>
                   <h1 className="mt-1 truncate text-2xl font-bold tracking-tight text-slate-900">
@@ -249,7 +249,7 @@ export default async function ClientWorkspacePage({
                 </div>
               </div>
 
-              <span className="w-fit rounded-full bg-green-50 px-3 py-1.5 text-xs font-semibold text-green-700">
+              <span className="w-fit rounded-full bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary">
                 {formatLabel(response.membership.status)} membership
               </span>
             </div>
@@ -378,7 +378,7 @@ export default async function ClientWorkspacePage({
                           ) : null}
                         </div>
                         {plan.isActive ? (
-                          <span className="w-fit rounded-full bg-green-50 px-2.5 py-1 text-xs font-semibold text-green-700">
+                          <span className="w-fit rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
                             Active
                           </span>
                         ) : null}

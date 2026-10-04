@@ -31,7 +31,7 @@ export default function WorkoutPage() {
 
       {/* Page Header */}
       <div>
-        <p className="text-sm font-medium uppercase tracking-wide text-green-600">
+        <p className="text-sm font-medium uppercase tracking-wide text-primary">
           Workout
         </p>
 
@@ -57,7 +57,7 @@ export default function WorkoutPage() {
         >
           <div className="flex items-center gap-3">
 
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-green-50 text-green-600">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
               <Dumbbell size={20} />
             </div>
 
@@ -104,7 +104,7 @@ export default function WorkoutPage() {
         >
           <div className="flex items-center gap-3">
 
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-secondary/20 text-orange-700">
               <CalendarDays size={20} />
             </div>
 
@@ -153,7 +153,7 @@ export default function WorkoutPage() {
 
           <div className="flex items-center gap-3">
 
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-50 text-purple-600">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-50 text-rose-700">
               <Library size={20} />
             </div>
 

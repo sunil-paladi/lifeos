@@ -107,9 +107,9 @@ const emptyFilters: Filters = {
   to: "",
 };
 
-const inputClass = "mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-green-600 focus:ring-2 focus:ring-green-100";
+const inputClass = "mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-primary focus:ring-2 focus:ring-primary/15";
 const labelClass = "block text-sm font-medium text-slate-700";
-const buttonClass = "inline-flex items-center justify-center rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-60";
+const buttonClass = "inline-flex items-center justify-center rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60";
 const secondaryButtonClass = "inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-60";
 
 async function readResponse<T>(response: Response): Promise<T> {
@@ -403,7 +403,7 @@ export default function BillingClient({ gymId }: { gymId: string }) {
   return (
     <div className="space-y-6 py-2">
       <header>
-        <p className="text-sm font-semibold uppercase tracking-wide text-green-600">Gym management</p>
+        <p className="text-sm font-semibold uppercase tracking-wide text-primary">Gym management</p>
         <h1 className="mt-1 text-3xl font-bold tracking-tight text-slate-900">Plans & payments</h1>
         <p className="mt-2 text-slate-600">Manage membership terms, PT rates, and recorded payments.</p>
       </header>
@@ -414,14 +414,14 @@ export default function BillingClient({ gymId }: { gymId: string }) {
           ["pricing", "PT pricing"],
           ["payments", "Payments"],
         ] as const).map(([id, label]) => (
-          <button key={id} type="button" role="tab" aria-selected={view === id} onClick={() => { setView(id); setError(""); setSuccess(""); }} className={`border-b-2 px-3 py-2.5 text-sm font-semibold ${view === id ? "border-green-600 text-green-700" : "border-transparent text-slate-500 hover:text-slate-800"}`}>
+          <button key={id} type="button" role="tab" aria-selected={view === id} onClick={() => { setView(id); setError(""); setSuccess(""); }} className={`border-b-2 px-3 py-2.5 text-sm font-semibold ${view === id ? "border-primary text-primary" : "border-transparent text-slate-500 hover:text-slate-800"}`}>
             {label}
           </button>
         ))}
       </div>
 
       {error ? <p role="alert" className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">{error}</p> : null}
-      {success ? <p role="status" className="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">{success}</p> : null}
+      {success ? <p role="status" className="rounded-lg border border-primary/20 bg-primary/10 px-4 py-3 text-sm text-primary">{success}</p> : null}
 
       {loading ? (
         <div className="rounded-xl border border-slate-200 bg-white p-8 text-center text-sm text-slate-500">Loading billing data...</div>
@@ -524,7 +524,7 @@ export default function BillingClient({ gymId }: { gymId: string }) {
                 <label className={labelClass}>Currency<select required className={inputClass} value={catalogDraft.currency} onChange={(event) => setCatalogDraft({ ...catalogDraft, currency: event.target.value })}>{SUPPORTED_CURRENCIES.map(({ code, name }) => <option key={code} value={code}>{code} - {name}</option>)}</select></label>
               </div>
               <label className={labelClass}>{durationLabel}<input required type="number" min="1" step="1" inputMode="numeric" className={inputClass} value={catalogDraft.duration} onChange={(event) => setCatalogDraft({ ...catalogDraft, duration: event.target.value })} /></label>
-              <label className="flex items-center gap-2 text-sm font-medium text-slate-700"><input type="checkbox" checked={catalogDraft.isActive} onChange={(event) => setCatalogDraft({ ...catalogDraft, isActive: event.target.checked })} className="h-4 w-4 rounded border-slate-300 text-green-600 focus:ring-green-600" />Active</label>
+              <label className="flex items-center gap-2 text-sm font-medium text-slate-700"><input type="checkbox" checked={catalogDraft.isActive} onChange={(event) => setCatalogDraft({ ...catalogDraft, isActive: event.target.checked })} className="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary" />Active</label>
               <div className="flex flex-wrap gap-2"><button disabled={saving} className={buttonClass}>{saving ? "Saving..." : editing ? "Save changes" : "Create"}</button>{editing ? <button type="button" className={secondaryButtonClass} onClick={cancelEdit}>Cancel</button> : null}</div>
             </form>
           </section>
@@ -532,7 +532,7 @@ export default function BillingClient({ gymId }: { gymId: string }) {
           <section className="rounded-xl border border-slate-200 bg-white shadow-sm">
             <div className="border-b border-slate-100 px-5 py-4 sm:px-6"><h2 className="font-bold text-slate-900">{view === "plans" ? "Membership plans" : "PT pricing"}</h2><p className="mt-1 text-sm text-slate-500">{catalogItems.length} record{catalogItems.length === 1 ? "" : "s"}</p></div>
             {catalogItems.length === 0 ? <p className="p-6 text-sm text-slate-500">No {view === "plans" ? "membership plans" : "PT pricing"} found.</p> : <div className="divide-y divide-slate-100">{catalogItems.map((item) => <article key={item.id} className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-start sm:justify-between sm:px-6">
-              <div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><h3 className="font-semibold text-slate-900">{item.name}</h3><span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${item.isActive ? "bg-green-50 text-green-700" : "bg-slate-100 text-slate-600"}`}>{item.isActive ? "Active" : "Inactive"}</span></div>
+              <div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><h3 className="font-semibold text-slate-900">{item.name}</h3><span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${item.isActive ? "bg-primary/10 text-primary" : "bg-slate-100 text-slate-600"}`}>{item.isActive ? "Active" : "Inactive"}</span></div>
                 {item.description ? <p className="mt-1 text-sm text-slate-600">{item.description}</p> : null}
                 <p className="mt-2 text-sm text-slate-700">{formatMoney(item.price, item.currency)} <span className="text-slate-400">·</span> {view === "plans" ? `${item.durationDays} days` : `${item.durationMinutes} minutes`}</p>
                 <p className="mt-1 text-xs text-slate-400">Updated {formatDate(item.updatedAt)}</p>

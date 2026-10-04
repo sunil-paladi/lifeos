@@ -74,15 +74,15 @@ const statusLabels: Record<SessionStatus, string> = {
 };
 
 const statusStyles: Record<SessionStatus, string> = {
-  SCHEDULED: "bg-blue-50 text-blue-700",
-  COMPLETED: "bg-green-50 text-green-700",
+  SCHEDULED: "bg-secondary/20 text-orange-800",
+  COMPLETED: "bg-primary/10 text-primary",
   CANCELLED: "bg-slate-100 text-slate-600",
   NO_SHOW: "bg-red-50 text-red-700",
 };
 
-const inputClass = "mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-green-600 focus:ring-2 focus:ring-green-100 disabled:bg-slate-100 disabled:text-slate-500";
+const inputClass = "mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-primary focus:ring-2 focus:ring-primary/15 disabled:bg-slate-100 disabled:text-slate-500";
 const labelClass = "block text-sm font-medium text-slate-700";
-const primaryButtonClass = "inline-flex items-center justify-center gap-2 rounded-lg bg-green-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-60";
+const primaryButtonClass = "inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60";
 const secondaryButtonClass = "inline-flex items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60";
 
 async function readResponse<T>(response: Response): Promise<T> {
@@ -367,13 +367,13 @@ export default function PTSessionsClient({ gymId }: { gymId: string }) {
   return (
     <div className="space-y-6 py-2">
       <header>
-        <p className="text-sm font-semibold uppercase tracking-wide text-green-600">Gym management</p>
+        <p className="text-sm font-semibold uppercase tracking-wide text-primary">Gym management</p>
         <h1 className="mt-1 text-3xl font-bold tracking-tight text-slate-900">PT Sessions</h1>
         <p className="mt-2 text-slate-600">Schedule and manage personal training sessions.</p>
       </header>
 
       {error ? <div role="alert" className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">{error}</div> : null}
-      {message ? <div role="status" className="rounded-lg border border-green-200 bg-green-50 p-4 text-sm text-green-800">{message}</div> : null}
+      {message ? <div role="status" className="rounded-lg border border-primary/20 bg-primary/10 p-4 text-sm text-primary">{message}</div> : null}
 
       <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
         <h2 className="text-lg font-bold text-slate-900">Schedule a PT session</h2>

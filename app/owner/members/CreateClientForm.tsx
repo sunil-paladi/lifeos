@@ -81,7 +81,7 @@ export default function CreateClientForm({
             setMessage("");
             setSuccess(false);
           }}
-          className="inline-flex w-fit items-center gap-2 rounded-lg bg-green-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-green-700"
+          className="inline-flex w-fit items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-primary/90"
         >
           <UserPlus size={17} />
           {open ? "Close" : "Add Client"}
@@ -102,7 +102,7 @@ export default function CreateClientForm({
                 onChange={(event) => setName(event.target.value)}
                 required
                 autoComplete="name"
-                className="w-full rounded-lg border border-slate-300 py-2.5 pl-9 pr-3 text-sm outline-none focus:border-green-500 focus:ring-4 focus:ring-green-100"
+                className="w-full rounded-lg border border-slate-300 py-2.5 pl-9 pr-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/15"
               />
             </div>
           </div>
@@ -119,7 +119,7 @@ export default function CreateClientForm({
                 onChange={(event) => setUsername(event.target.value)}
                 required
                 autoComplete="username"
-                className="w-full rounded-lg border border-slate-300 py-2.5 pl-9 pr-3 text-sm outline-none focus:border-green-500 focus:ring-4 focus:ring-green-100"
+                className="w-full rounded-lg border border-slate-300 py-2.5 pl-9 pr-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/15"
               />
             </div>
           </div>
@@ -137,7 +137,7 @@ export default function CreateClientForm({
                 onChange={(event) => setEmail(event.target.value)}
                 required
                 autoComplete="email"
-                className="w-full rounded-lg border border-slate-300 py-2.5 pl-9 pr-3 text-sm outline-none focus:border-green-500 focus:ring-4 focus:ring-green-100"
+                className="w-full rounded-lg border border-slate-300 py-2.5 pl-9 pr-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/15"
               />
             </div>
           </div>
@@ -155,7 +155,7 @@ export default function CreateClientForm({
                 onChange={(event) => setPassword(event.target.value)}
                 required
                 autoComplete="new-password"
-                className="w-full rounded-lg border border-slate-300 py-2.5 pl-9 pr-10 text-sm outline-none focus:border-green-500 focus:ring-4 focus:ring-green-100"
+                className="w-full rounded-lg border border-slate-300 py-2.5 pl-9 pr-10 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/15"
               />
               <button
                 type="button"
@@ -175,14 +175,14 @@ export default function CreateClientForm({
               </p>
             ) : null}
             {success ? (
-              <p className="rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-800">
+              <p className="rounded-lg border border-primary/20 bg-primary/10 p-3 text-sm text-primary">
                 Client created successfully.
               </p>
             ) : null}
             <button
               type="submit"
               disabled={loading}
-              className="mt-4 inline-flex w-full items-center justify-center rounded-lg bg-green-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+              className="mt-4 inline-flex w-full items-center justify-center rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
             >
               {loading ? "Creating client..." : "Create Client"}
             </button>

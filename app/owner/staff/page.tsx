@@ -89,7 +89,7 @@ export default async function OwnerStaffPage() {
   return (
     <div className="space-y-6 py-2">
       <header>
-        <p className="text-sm font-semibold uppercase tracking-wide text-green-600">
+        <p className="text-sm font-semibold uppercase tracking-wide text-primary">
           Gym management
         </p>
         <h1 className="mt-1 text-3xl font-bold tracking-tight text-slate-900">
@@ -138,7 +138,7 @@ export default async function OwnerStaffPage() {
                 <p className="truncate text-sm text-slate-600">
                   {trainer.email ?? "Email unavailable"}
                 </p>
-                <span className="w-fit rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700">
+                <span className="w-fit rounded-full bg-secondary/20 px-2.5 py-1 text-xs font-semibold text-orange-800">
                   {formatLabel(trainer.role)}
                 </span>
                 <div className="text-sm text-slate-500 sm:text-right">

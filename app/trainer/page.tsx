@@ -89,7 +89,7 @@ export default async function TrainerPage() {
   return (
     <div className="space-y-6 py-2">
       <header>
-        <p className="text-sm font-semibold uppercase tracking-wide text-green-600">
+        <p className="text-sm font-semibold uppercase tracking-wide text-primary">
           Trainer workspace
         </p>
         <h1 className="mt-1 text-3xl font-bold tracking-tight text-slate-900">
@@ -110,7 +110,7 @@ export default async function TrainerPage() {
           <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_16rem] lg:items-stretch">
             <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
               <div className="flex h-full items-center gap-4">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-green-50 text-green-600">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
                   <UserRound size={21} strokeWidth={2} />
                 </div>
                 <div>
@@ -124,8 +124,8 @@ export default async function TrainerPage() {
               </div>
             </section>
 
-            <section className="rounded-xl border border-green-100 bg-green-50/70 p-5 shadow-sm">
-              <p className="text-xs font-semibold uppercase tracking-wide text-green-700">
+            <section className="rounded-xl border border-primary/15 bg-primary/5 p-5 shadow-sm">
+              <p className="text-xs font-semibold uppercase tracking-wide text-primary">
                 Workspace
               </p>
               <p className="mt-2 text-sm font-medium text-slate-700">
@@ -161,7 +161,7 @@ export default async function TrainerPage() {
                   <Link
                     key={assignmentId}
                     href={`/trainer/clients/${encodeURIComponent(clientMembershipId)}`}
-                    className="group rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-colors hover:border-green-200"
+                    className="group rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-colors hover:border-primary/20"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
@@ -172,7 +172,7 @@ export default async function TrainerPage() {
                           @{client.username ?? "username unavailable"}
                         </p>
                       </div>
-                      <span className="shrink-0 rounded-full bg-green-50 px-2.5 py-1 text-xs font-semibold text-green-700">
+                      <span className="shrink-0 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
                         Assigned
                       </span>
                     </div>

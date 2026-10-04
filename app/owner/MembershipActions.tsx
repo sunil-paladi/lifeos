@@ -136,7 +136,7 @@ export default function MembershipActions({
             className={`rounded-lg px-3 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${
               status === "ACTIVE"
                 ? "border border-red-200 bg-red-50 text-red-700 hover:bg-red-100"
-                : "border border-green-200 bg-green-50 text-green-700 hover:bg-green-100"
+                : "border border-primary/20 bg-primary/10 text-primary hover:bg-primary/15"
             }`}
           >
             {loading ? "Saving..." : status === "ACTIVE" ? "Deactivate" : "Reactivate"}

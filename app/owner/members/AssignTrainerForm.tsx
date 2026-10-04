@@ -92,13 +92,13 @@ export default function AssignTrainerForm({
           setMessage("");
           setSuccess(false);
         }}
-        className="mt-1 inline-flex items-center rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-sm font-semibold text-green-700 transition hover:bg-green-100"
+        className="mt-1 inline-flex items-center rounded-lg border border-primary/20 bg-primary/10 px-3 py-2 text-sm font-semibold text-primary transition hover:bg-primary/15"
       >
         {open ? "Close" : "Assign Trainer"}
       </button>
 
       {success ? (
-        <p className="mt-2 text-sm text-green-700">Trainer assigned successfully.</p>
+        <p className="mt-2 text-sm text-primary">Trainer assigned successfully.</p>
       ) : null}
 
       {message ? (
@@ -115,7 +115,7 @@ export default function AssignTrainerForm({
             value={trainerMembershipId}
             onChange={(event) => setTrainerMembershipId(event.target.value)}
             required
-            className="min-w-0 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-green-500 focus:ring-4 focus:ring-green-100"
+            className="min-w-0 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-primary focus:ring-4 focus:ring-primary/15"
           >
             <option value="">Select an active trainer</option>
             {trainers.map((trainer) => (
@@ -127,7 +127,7 @@ export default function AssignTrainerForm({
           <button
             type="submit"
             disabled={loading || trainers.length === 0}
-            className="rounded-lg bg-green-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-60"
+            className="rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {loading ? "Assigning..." : "Save"}
           </button>

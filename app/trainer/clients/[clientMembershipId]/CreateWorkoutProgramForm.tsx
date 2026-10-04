@@ -92,7 +92,7 @@ export default function CreateWorkoutProgramForm({
           setError(null);
           setOpen(true);
         }}
-        className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-green-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-green-700"
+        className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-white transition hover:bg-primary/90"
       >
         <Plus size={16} />
         Create Program
@@ -109,7 +109,7 @@ export default function CreateWorkoutProgramForm({
         <div>
           <h3 className="font-semibold text-slate-900">Create Workout Program</h3>
           <p className="mt-1 text-sm text-slate-500">
-            Set the details for the client's new training plan.
+            Set the details for the client&apos;s new training plan.
           </p>
         </div>
         <button
@@ -129,7 +129,7 @@ export default function CreateWorkoutProgramForm({
             type="text"
             value={name}
             onChange={(event) => setName(event.target.value)}
-            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-green-500 focus:ring-4 focus:ring-green-100"
+            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-primary focus:ring-4 focus:ring-primary/15"
             required
           />
         </label>
@@ -142,7 +142,7 @@ export default function CreateWorkoutProgramForm({
             step="1"
             value={totalWeeks}
             onChange={(event) => setTotalWeeks(event.target.value)}
-            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-green-500 focus:ring-4 focus:ring-green-100"
+            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-primary focus:ring-4 focus:ring-primary/15"
             required
           />
         </label>
@@ -153,7 +153,7 @@ export default function CreateWorkoutProgramForm({
             type="text"
             value={description}
             onChange={(event) => setDescription(event.target.value)}
-            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-green-500 focus:ring-4 focus:ring-green-100"
+            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-primary focus:ring-4 focus:ring-primary/15"
           />
         </label>
 
@@ -163,7 +163,7 @@ export default function CreateWorkoutProgramForm({
             type="date"
             value={startDate}
             onChange={(event) => setStartDate(event.target.value)}
-            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-green-500 focus:ring-4 focus:ring-green-100"
+            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-primary focus:ring-4 focus:ring-primary/15"
           />
         </label>
 
@@ -173,7 +173,7 @@ export default function CreateWorkoutProgramForm({
             type="date"
             value={endDate}
             onChange={(event) => setEndDate(event.target.value)}
-            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-green-500 focus:ring-4 focus:ring-green-100"
+            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-primary focus:ring-4 focus:ring-primary/15"
           />
         </label>
 
@@ -182,7 +182,7 @@ export default function CreateWorkoutProgramForm({
             type="checkbox"
             checked={isActive}
             onChange={(event) => setIsActive(event.target.checked)}
-            className="h-4 w-4 rounded border-slate-300 text-green-600 focus:ring-green-500"
+            className="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary"
           />
           Make this program active
         </label>
@@ -197,7 +197,7 @@ export default function CreateWorkoutProgramForm({
       <button
         type="submit"
         disabled={submitting}
-        className="mt-4 inline-flex items-center gap-2 rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-60"
+        className="mt-4 inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
       >
         {submitting ? <Loader2 size={16} className="animate-spin" /> : null}
         {submitting ? "Creating..." : "Create Program"}

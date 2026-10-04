@@ -151,7 +151,7 @@ export default function OwnerSettingsClient({
                   type="text"
                   value={form.gymName}
                   onChange={(event) => updateField("gymName", event.target.value)}
-                  className="mt-1 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-slate-900 outline-none focus:border-green-500"
+                  className="mt-1 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-slate-900 outline-none focus:border-primary"
                 />
               </label>
               {validationErrors.gymName ? <p className="mt-1 text-sm text-red-600">{validationErrors.gymName}</p> : null}
@@ -163,7 +163,7 @@ export default function OwnerSettingsClient({
             <div className="mt-4 grid gap-4 md:grid-cols-2">
               <label className="block text-sm font-medium text-slate-700">
                 Country
-                <select value={form.country} onChange={(event) => updateField("country", event.target.value)} className="mt-1 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-slate-900 outline-none focus:border-green-500">
+                <select value={form.country} onChange={(event) => updateField("country", event.target.value)} className="mt-1 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-slate-900 outline-none focus:border-primary">
                   <option value="IN">IN</option>
                   <option value="US">US</option>
                   <option value="GB">GB</option>
@@ -179,7 +179,7 @@ export default function OwnerSettingsClient({
 
               <label className="block text-sm font-medium text-slate-700">
                 Timezone
-                <select value={form.timezone} onChange={(event) => updateField("timezone", event.target.value)} className="mt-1 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-slate-900 outline-none focus:border-green-500">
+                <select value={form.timezone} onChange={(event) => updateField("timezone", event.target.value)} className="mt-1 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-slate-900 outline-none focus:border-primary">
                   {[
                     "UTC",
                     "Asia/Kolkata",
@@ -197,14 +197,14 @@ export default function OwnerSettingsClient({
 
               <label className="block text-sm font-medium text-slate-700">
                 Currency
-                <select value={form.currency} onChange={(event) => updateField("currency", event.target.value)} className="mt-1 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-slate-900 outline-none focus:border-green-500">
+                <select value={form.currency} onChange={(event) => updateField("currency", event.target.value)} className="mt-1 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-slate-900 outline-none focus:border-primary">
                   {SUPPORTED_CURRENCIES.map(({ code, name }) => <option key={code} value={code}>{code} - {name}</option>)}
                 </select>
               </label>
 
               <label className="block text-sm font-medium text-slate-700">
                 Language
-                <select value={form.language} onChange={(event) => updateField("language", event.target.value)} className="mt-1 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-slate-900 outline-none focus:border-green-500">
+                <select value={form.language} onChange={(event) => updateField("language", event.target.value)} className="mt-1 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-slate-900 outline-none focus:border-primary">
                   <option value="en">English</option>
                   <option value="hi">Hindi</option>
                   <option value="fr">French</option>
@@ -216,7 +216,7 @@ export default function OwnerSettingsClient({
 
               <label className="block text-sm font-medium text-slate-700">
                 Date format
-                <select value={form.dateFormat} onChange={(event) => updateField("dateFormat", event.target.value)} className="mt-1 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-slate-900 outline-none focus:border-green-500">
+                <select value={form.dateFormat} onChange={(event) => updateField("dateFormat", event.target.value)} className="mt-1 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-slate-900 outline-none focus:border-primary">
                   <option value="DD/MM/YYYY">DD/MM/YYYY</option>
                   <option value="MM/DD/YYYY">MM/DD/YYYY</option>
                   <option value="YYYY-MM-DD">YYYY-MM-DD</option>
@@ -225,7 +225,7 @@ export default function OwnerSettingsClient({
 
               <label className="block text-sm font-medium text-slate-700">
                 Time format
-                <select value={form.timeFormat} onChange={(event) => updateField("timeFormat", event.target.value)} className="mt-1 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-slate-900 outline-none focus:border-green-500">
+                <select value={form.timeFormat} onChange={(event) => updateField("timeFormat", event.target.value)} className="mt-1 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-slate-900 outline-none focus:border-primary">
                   <option value="12h">12h</option>
                   <option value="24h">24h</option>
                 </select>
@@ -238,7 +238,7 @@ export default function OwnerSettingsClient({
             <div className="mt-4 grid gap-4 md:grid-cols-2">
               <label className="block text-sm font-medium text-slate-700">
                 Weight unit
-                <select value={form.weightUnit} onChange={(event) => updateField("weightUnit", event.target.value)} className="mt-1 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-slate-900 outline-none focus:border-green-500">
+                <select value={form.weightUnit} onChange={(event) => updateField("weightUnit", event.target.value)} className="mt-1 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-slate-900 outline-none focus:border-primary">
                   <option value="kg">kg</option>
                   <option value="lb">lb</option>
                 </select>
@@ -246,7 +246,7 @@ export default function OwnerSettingsClient({
 
               <label className="block text-sm font-medium text-slate-700">
                 Distance unit
-                <select value={form.distanceUnit} onChange={(event) => updateField("distanceUnit", event.target.value)} className="mt-1 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-slate-900 outline-none focus:border-green-500">
+                <select value={form.distanceUnit} onChange={(event) => updateField("distanceUnit", event.target.value)} className="mt-1 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-slate-900 outline-none focus:border-primary">
                   <option value="km">km</option>
                   <option value="mi">mi</option>
                 </select>
@@ -255,13 +255,13 @@ export default function OwnerSettingsClient({
           </section>
 
           {error ? <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</div> : null}
-          {success ? <div className="rounded-xl border border-green-200 bg-green-50 p-3 text-sm text-green-700">{success}</div> : null}
+          {success ? <div className="rounded-xl border border-primary/20 bg-primary/10 p-3 text-sm text-primary">{success}</div> : null}
 
           <div className="flex items-center justify-end">
             <button
               type="submit"
               disabled={saving}
-              className="rounded-lg bg-green-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-green-700 disabled:cursor-not-allowed disabled:bg-green-400"
+              className="rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary/90 disabled:cursor-not-allowed disabled:bg-primary/60"
             >
               {saving ? "Saving…" : "Save settings"}
             </button>

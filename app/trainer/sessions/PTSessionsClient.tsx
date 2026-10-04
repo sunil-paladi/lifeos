@@ -25,10 +25,10 @@ const statusLabel: Record<PTSession["status"], string> = {
 };
 
 function statusClassName(status: PTSession["status"]) {
-  if (status === "COMPLETED") return "bg-green-50 text-green-700";
+  if (status === "COMPLETED") return "bg-primary/10 text-primary";
   if (status === "CANCELLED") return "bg-slate-100 text-slate-600";
   if (status === "NO_SHOW") return "bg-red-50 text-red-700";
-  return "bg-blue-50 text-blue-700";
+  return "bg-secondary/20 text-orange-800";
 }
 
 function formatSessionDate(value: string) {
@@ -205,7 +205,7 @@ export default function PTSessionsClient({ gymId }: { gymId: string }) {
           </div>
           {session.status === "SCHEDULED" ? (
             <div className="flex shrink-0 flex-wrap gap-2">
-              <button type="button" disabled={updatingId === session.id} onClick={() => void updateStatus(session.id, "COMPLETED")} className="rounded-lg border border-green-200 px-3 py-2 text-xs font-semibold text-green-700 hover:bg-green-50 disabled:opacity-50">Complete</button>
+              <button type="button" disabled={updatingId === session.id} onClick={() => void updateStatus(session.id, "COMPLETED")} className="rounded-lg border border-primary/20 px-3 py-2 text-xs font-semibold text-primary hover:bg-primary/10 disabled:opacity-50">Complete</button>
               <button type="button" disabled={updatingId === session.id} onClick={() => void updateStatus(session.id, "NO_SHOW")} className="rounded-lg border border-red-200 px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-50 disabled:opacity-50">No show</button>
               <button type="button" disabled={updatingId === session.id} onClick={() => void updateStatus(session.id, "CANCELLED")} className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-50">Cancel</button>
             </div>
@@ -218,38 +218,38 @@ export default function PTSessionsClient({ gymId }: { gymId: string }) {
   return (
     <div className="space-y-6 py-2">
       <header>
-        <p className="text-sm font-semibold uppercase tracking-wide text-green-600">Trainer workspace</p>
+        <p className="text-sm font-semibold uppercase tracking-wide text-primary">Trainer workspace</p>
         <h1 className="mt-1 text-3xl font-bold tracking-tight text-slate-900">PT Sessions</h1>
         <p className="mt-2 text-slate-600">Schedule and track sessions with your assigned clients.</p>
       </header>
 
       {error ? <div role="alert" className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">{error}</div> : null}
-      {message ? <div role="status" className="rounded-lg border border-green-200 bg-green-50 p-4 text-sm text-green-800">{message}</div> : null}
+      {message ? <div role="status" className="rounded-lg border border-primary/20 bg-primary/10 p-4 text-sm text-primary">{message}</div> : null}
 
       <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
         <h2 className="text-lg font-bold text-slate-900">Schedule a session</h2>
         <form onSubmit={handleSchedule} className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <label className="text-sm font-medium text-slate-700">
             Assigned client
-            <select required value={clientMembershipId} onChange={(event) => setClientMembershipId(event.target.value)} disabled={loading || clients.length === 0} className="mt-1.5 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-green-500 focus:ring-4 focus:ring-green-100">
+            <select required value={clientMembershipId} onChange={(event) => setClientMembershipId(event.target.value)} disabled={loading || clients.length === 0} className="mt-1.5 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/15">
               <option value="">{clients.length ? "Select a client" : "No assigned clients"}</option>
               {clients.map((client) => <option key={client.clientMembershipId} value={client.clientMembershipId}>{client.client.name}</option>)}
             </select>
           </label>
           <label className="text-sm font-medium text-slate-700">
             Date and time
-            <input required type="datetime-local" value={scheduledAt} onChange={(event) => setScheduledAt(event.target.value)} className="mt-1.5 w-full min-w-0 rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-green-500 focus:ring-4 focus:ring-green-100" />
+            <input required type="datetime-local" value={scheduledAt} onChange={(event) => setScheduledAt(event.target.value)} className="mt-1.5 w-full min-w-0 rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/15" />
           </label>
           <label className="text-sm font-medium text-slate-700">
             Duration (minutes)
-            <input required type="number" min="1" max="480" step="5" value={durationMinutes} onChange={(event) => setDurationMinutes(event.target.value)} className="mt-1.5 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-green-500 focus:ring-4 focus:ring-green-100" />
+            <input required type="number" min="1" max="480" step="5" value={durationMinutes} onChange={(event) => setDurationMinutes(event.target.value)} className="mt-1.5 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/15" />
           </label>
           <label className="text-sm font-medium text-slate-700 sm:col-span-2 lg:col-span-1">
             Notes
-            <textarea rows={1} value={notes} onChange={(event) => setNotes(event.target.value)} className="mt-1.5 w-full resize-y rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-green-500 focus:ring-4 focus:ring-green-100" />
+            <textarea rows={1} value={notes} onChange={(event) => setNotes(event.target.value)} className="mt-1.5 w-full resize-y rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/15" />
           </label>
           <div className="sm:col-span-2 lg:col-span-4">
-            <button type="submit" disabled={saving || loading || clients.length === 0} className="inline-flex items-center gap-2 rounded-lg bg-green-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-60">
+            <button type="submit" disabled={saving || loading || clients.length === 0} className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60">
               <CalendarPlus size={17} />{saving ? "Scheduling..." : "Schedule session"}
             </button>
           </div>

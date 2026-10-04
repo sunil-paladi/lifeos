@@ -66,7 +66,7 @@ function roleClassName(role: GymMember["role"]) {
   }
 
   if (role === "TRAINER") {
-    return "bg-blue-50 text-blue-700";
+    return "bg-secondary/20 text-orange-800";
   }
 
   return "bg-slate-100 text-slate-700";
@@ -235,7 +235,7 @@ export default async function OwnerMembersPage() {
   return (
     <div className="space-y-6 py-2">
       <header>
-        <p className="text-sm font-semibold uppercase tracking-wide text-green-600">
+        <p className="text-sm font-semibold uppercase tracking-wide text-primary">
           Gym management
         </p>
         <h1 className="mt-1 text-3xl font-bold tracking-tight text-slate-900">
