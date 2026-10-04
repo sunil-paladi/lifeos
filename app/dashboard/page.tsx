@@ -84,7 +84,10 @@ export default async function DashboardPage() {
 
         <div className="relative flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <Badge variant="secondary" className="border-0 bg-secondary/20 text-orange-800">
+            <Badge
+              variant="secondary"
+              className="border border-sky-500/20 bg-sky-500/10 text-sky-300"
+            >
               {today}
             </Badge>
             <h1 className="mt-2 text-3xl font-bold tracking-tight text-foreground sm:text-4xl">

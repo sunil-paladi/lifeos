@@ -113,7 +113,11 @@ export default function Sidebar({
       {/* ======================================== */}
 
       <div className="flex h-20 shrink-0 items-center border-b border-border px-6">
-        <div className="flex items-center gap-3">
+        <Link
+          href="/dashboard"
+          onClick={onNavigate}
+          className="flex items-center gap-3 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+        >
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary shadow-sm">
             <Dumbbell size={21} strokeWidth={2.2} />
           </div>
@@ -127,7 +131,7 @@ export default function Sidebar({
               Stay Consistent
             </p>
           </div>
-        </div>
+        </Link>
       </div>
 
       {/* ======================================== */}
