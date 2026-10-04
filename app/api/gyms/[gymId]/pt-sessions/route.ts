@@ -109,7 +109,8 @@ export async function POST(request: Request, context: RouteContext) {
   const scheduledAt = parseScheduledAt(body.scheduledAt);
   const status = body.status === undefined ? "SCHEDULED" : body.status;
 
-  if (typeof trainerMembershipId !== "string" || typeof clientMembershipId !== "string") {
+  if (typeof trainerMembershipId !== "string" || !trainerMembershipId.trim() || trainerMembershipId.length > 128 ||
+      typeof clientMembershipId !== "string" || !clientMembershipId.trim() || clientMembershipId.length > 128) {
     return NextResponse.json({ error: "trainerMembershipId and clientMembershipId are required" }, { status: 400 });
   }
 
@@ -121,7 +122,7 @@ export async function POST(request: Request, context: RouteContext) {
     return NextResponse.json({ error: "durationMinutes must be an integer from 1 to 480" }, { status: 400 });
   }
 
-  if (ptPricingId !== null && (typeof ptPricingId !== "string" || !ptPricingId.trim())) {
+  if (ptPricingId !== null && (typeof ptPricingId !== "string" || !ptPricingId.trim() || ptPricingId.length > 128)) {
     return NextResponse.json({ error: "ptPricingId must be a valid pricing ID or null" }, { status: 400 });
   }
 
@@ -129,8 +130,8 @@ export async function POST(request: Request, context: RouteContext) {
     return NextResponse.json({ error: "status is not a valid PT session status" }, { status: 400 });
   }
 
-  if (body.notes !== undefined && body.notes !== null && typeof body.notes !== "string") {
-    return NextResponse.json({ error: "notes must be a string or null" }, { status: 400 });
+  if (body.notes !== undefined && body.notes !== null && (typeof body.notes !== "string" || body.notes.length > 2000)) {
+    return NextResponse.json({ error: "notes must be a string of at most 2000 characters or null" }, { status: 400 });
   }
 
   const [trainerMembership, clientMembership, ptPricing] = await Promise.all([

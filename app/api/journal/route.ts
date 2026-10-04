@@ -60,16 +60,16 @@ export async function POST(request: Request) {
   const title = typeof input.title === "string" ? input.title.trim() : "";
   const content = typeof input.content === "string" ? input.content.trim() : "";
 
-  if (!title) {
+  if (!title || title.length > 200) {
     return NextResponse.json(
-      { error: "Title must be a non-empty string" },
+      { error: "Title must contain 1 to 200 characters" },
       { status: 400 }
     );
   }
 
-  if (!content) {
+  if (!content || content.length > 20000) {
     return NextResponse.json(
-      { error: "Content must be a non-empty string" },
+      { error: "Content must contain 1 to 20000 characters" },
       { status: 400 }
     );
   }

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAuthenticatedUser } from "@/app/lib/authorization";
+import { parseJsonObject } from "@/app/lib/input-validation";
 import { prisma } from "@/lib/prisma";
 
 export async function GET() {
@@ -38,37 +39,24 @@ export async function POST(request: Request) {
     return response;
   }
 
-  let body: unknown;
-
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json(
-      { error: "Request body must be valid JSON" },
-      { status: 400 }
-    );
-  }
-
-  if (!body || typeof body !== "object") {
+  const body = await parseJsonObject(request);
+  if (!body) {
     return NextResponse.json(
       { error: "Request body must be a JSON object" },
       { status: 400 }
     );
   }
 
-  const { name, description, frequency, target, unit } = body as Record<
-    string,
-    unknown
-  >;
+  const { name, description, frequency, target, unit } = body;
 
-  if (typeof name !== "string" || !name.trim()) {
+  if (typeof name !== "string" || !name.trim() || name.trim().length > 100) {
     return NextResponse.json(
-      { error: "Name must be a non-empty string" },
+      { error: "Name must contain 1 to 100 characters" },
       { status: 400 }
     );
   }
 
-  if (typeof frequency !== "string" || !frequency.trim()) {
+  if (typeof frequency !== "string" || !frequency.trim() || frequency.trim().length > 50) {
     return NextResponse.json(
       { error: "Frequency must be a non-empty string" },
       { status: 400 }
@@ -77,7 +65,7 @@ export async function POST(request: Request) {
 
   if (
     target !== undefined &&
-    (typeof target !== "number" || !Number.isInteger(target))
+    (typeof target !== "number" || !Number.isInteger(target) || target < 1 || target > 100000)
   ) {
     return NextResponse.json(
       { error: "Target must be an integer" },
@@ -88,14 +76,14 @@ export async function POST(request: Request) {
   const targetValue: number | undefined =
     typeof target === "number" ? target : undefined;
 
-  if (description !== undefined && typeof description !== "string") {
+  if (description !== undefined && (typeof description !== "string" || description.length > 1000)) {
     return NextResponse.json(
       { error: "Description must be a string" },
       { status: 400 }
     );
   }
 
-  if (unit !== undefined && typeof unit !== "string") {
+  if (unit !== undefined && (typeof unit !== "string" || unit.length > 40)) {
     return NextResponse.json(
       { error: "Unit must be a string" },
       { status: 400 }

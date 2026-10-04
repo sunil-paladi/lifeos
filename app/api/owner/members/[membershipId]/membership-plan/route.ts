@@ -1,19 +1,11 @@
 import { NextResponse } from "next/server";
 import { getAuthenticatedUser } from "@/app/lib/authorization";
+import { parseDateOnly } from "@/app/lib/input-validation";
 import { prisma } from "@/lib/prisma";
 
 type RouteContext = {
   params: Promise<{ membershipId: string }>;
 };
-
-function parseDateOnly(value: unknown): Date | null {
-  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
-    return null;
-  }
-
-  const date = new Date(`${value}T00:00:00.000Z`);
-  return Number.isNaN(date.getTime()) ? null : date;
-}
 
 export async function PATCH(request: Request, context: RouteContext) {
   const { user, response } = await getAuthenticatedUser();

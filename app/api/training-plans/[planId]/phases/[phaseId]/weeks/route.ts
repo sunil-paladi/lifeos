@@ -2,6 +2,7 @@ import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { auth } from "@/app/lib/auth";
 import { getOwnedTrainingPlan } from "@/app/lib/training-plans";
+import { parseJsonObject } from "@/app/lib/input-validation";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -33,7 +34,11 @@ export async function POST(
   }
 
   const { planId, phaseId } = await params;
-  const body = await request.json();
+  const body = await parseJsonObject(request);
+
+  if (!body) {
+    return NextResponse.json({ error: "Request body must be a valid JSON object" }, { status: 400 });
+  }
 
   const access = await getOwnedTrainingPlan(
     planId,
@@ -70,10 +75,22 @@ export async function POST(
     );
   }
 
+  if (
+    typeof body.weekNumber !== "number" ||
+    !Number.isInteger(body.weekNumber) ||
+    body.weekNumber < phase.startWeek ||
+    body.weekNumber > phase.endWeek
+  ) {
+    return NextResponse.json(
+      { error: "weekNumber must be an integer within this phase's week range" },
+      { status: 400 }
+    );
+  }
+
   const week = await prisma.programWeek.create({
     data: {
       phaseId: phase.id,
-      weekNumber: Number(body.weekNumber),
+      weekNumber: body.weekNumber,
     },
   });
 

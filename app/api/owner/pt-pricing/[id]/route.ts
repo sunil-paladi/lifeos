@@ -5,14 +5,14 @@ import { prisma } from "@/lib/prisma";
 
 function parseMoney(value: unknown): number | null {
   if (typeof value === "number") {
-    return Number.isFinite(value) && value > 0 ? value : null;
+    return Number.isFinite(value) && value > 0 && value <= 99_999_999.99 ? value : null;
   }
 
   if (typeof value === "string") {
     const trimmed = value.trim();
     if (!trimmed) return null;
     const parsed = Number(trimmed);
-    return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+    return Number.isFinite(parsed) && parsed > 0 && parsed <= 99_999_999.99 ? parsed : null;
   }
 
   return null;
@@ -79,11 +79,14 @@ export async function PATCH(request: Request, context: RouteContext) {
 
   if (payload.name !== undefined) {
     const name = typeof payload.name === "string" ? payload.name.trim() : "";
-    if (!name) return NextResponse.json({ error: "Pricing name cannot be empty" }, { status: 400 });
+    if (!name || name.length > 120) return NextResponse.json({ error: "Pricing name must contain 1 to 120 characters" }, { status: 400 });
     updateData.name = name;
   }
 
   if (payload.description !== undefined) {
+    if (payload.description !== null && (typeof payload.description !== "string" || payload.description.length > 2000)) {
+      return NextResponse.json({ error: "description must be a string of at most 2000 characters or null" }, { status: 400 });
+    }
     updateData.description = typeof payload.description === "string" ? payload.description.trim() || null : null;
   }
 
@@ -95,13 +98,13 @@ export async function PATCH(request: Request, context: RouteContext) {
 
   if (payload.currency !== undefined) {
     const value = typeof payload.currency === "string" ? payload.currency.trim().toUpperCase() : "";
-    if (!value) return NextResponse.json({ error: "Currency is required" }, { status: 400 });
+    if (!/^[A-Z]{3}$/.test(value)) return NextResponse.json({ error: "Currency must be a three-letter currency code" }, { status: 400 });
     updateData.currency = value;
   }
 
   if (payload.durationMinutes !== undefined) {
     const duration = parsePositiveInt(payload.durationMinutes);
-    if (duration === null) return NextResponse.json({ error: "durationMinutes must be a positive integer" }, { status: 400 });
+    if (duration === null || duration > 480) return NextResponse.json({ error: "durationMinutes must be an integer from 1 to 480" }, { status: 400 });
     updateData.durationMinutes = duration;
   }
 

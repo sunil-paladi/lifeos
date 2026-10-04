@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireGymRole } from "@/app/lib/authorization";
+import { parseJsonObject } from "@/app/lib/input-validation";
 
 type TrainerClientRouteContext = {
   params: Promise<{
@@ -24,12 +25,12 @@ export async function POST(
     return access.response;
   }
 
-  const body = await request.json();
+  const body = await parseJsonObject(request);
+  if (!body) {
+    return NextResponse.json({ error: "Request body must be a valid JSON object" }, { status: 400 });
+  }
 
-  const {
-    trainerMembershipId,
-    clientMembershipId,
-  } = body;
+  const { trainerMembershipId, clientMembershipId } = body;
 
   if (
     typeof trainerMembershipId !== "string" ||
@@ -197,4 +198,3 @@ export async function GET(
     })),
   });
 }
-

@@ -3,6 +3,7 @@ import { auth } from "@/app/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getAuthenticatedUser } from "@/app/lib/authorization";
 import { GymMembershipStatus } from "@/app/generated/prisma/enums";
+import { parseJsonObject } from "@/app/lib/input-validation";
 
 type RouteContext = {
   params: Promise<{
@@ -116,45 +117,15 @@ export async function POST(
     );
   }
 
-  let body: unknown;
-
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json(
-      { error: "Invalid JSON body" },
-      { status: 400 }
-    );
+  const body = await parseJsonObject(request);
+  if (!body) {
+    return NextResponse.json({ error: "Request body must be a valid JSON object" }, { status: 400 });
   }
 
-  const name =
-    typeof body === "object" &&
-    body !== null &&
-    "name" in body &&
-    typeof body.name === "string"
-      ? body.name.trim()
-      : "";
-  const username =
-    typeof body === "object" &&
-    body !== null &&
-    "username" in body &&
-    typeof body.username === "string"
-      ? body.username.trim()
-      : "";
-  const email =
-    typeof body === "object" &&
-    body !== null &&
-    "email" in body &&
-    typeof body.email === "string"
-      ? body.email.trim()
-      : "";
-  const password =
-    typeof body === "object" &&
-    body !== null &&
-    "password" in body &&
-    typeof body.password === "string"
-      ? body.password
-      : "";
+  const name = typeof body.name === "string" ? body.name.trim() : "";
+  const username = typeof body.username === "string" ? body.username.trim() : "";
+  const email = typeof body.email === "string" ? body.email.trim() : "";
+  const password = typeof body.password === "string" ? body.password : "";
 
   if (!username) {
     return NextResponse.json(
@@ -163,12 +134,23 @@ export async function POST(
     );
   }
 
+  if (username.length < 3 || username.length > 30 || !/^[A-Za-z0-9_]+$/.test(username)) {
+    return NextResponse.json({ error: "username must contain 3 to 30 letters, numbers, or underscores" }, { status: 400 });
+  }
+
   if (name || email || password) {
     if (!name || !email || !password) {
       return NextResponse.json(
         { error: "Name, username, email, and password are required" },
         { status: 400 }
       );
+    }
+
+    if (name.length > 100 || email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return NextResponse.json({ error: "Name or email is outside the supported format" }, { status: 400 });
+    }
+    if (password.length < 8 || password.length > 128) {
+      return NextResponse.json({ error: "Password must contain 8 to 128 characters" }, { status: 400 });
     }
 
     const existingUsername = await prisma.user.findUnique({

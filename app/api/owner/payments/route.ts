@@ -1,38 +1,36 @@
 import { NextResponse } from "next/server";
 import { Prisma } from "@/app/generated/prisma/client";
 import { getAuthenticatedUser } from "@/app/lib/authorization";
+import { parseDateOnly, parseJsonObject } from "@/app/lib/input-validation";
 import { prisma } from "@/lib/prisma";
+
+const PAYMENT_METHODS = ["CASH", "CARD", "UPI", "BANK_TRANSFER", "OTHER", "ONLINE"] as const;
+const PAYMENT_PROVIDERS = ["MANUAL", "STRIPE", "RAZORPAY", "OTHER"] as const;
+const PAYMENT_STATUSES = ["PENDING", "PAID", "FAILED", "REFUNDED", "CANCELLED"] as const;
+const PAYMENT_TYPES = ["MEMBERSHIP", "PT_SESSION"] as const;
+const MAX_AMOUNT = 99_999_999.99;
 
 function parseAmount(value: unknown): number | null {
   if (typeof value === "number") {
-    return Number.isFinite(value) && value > 0 ? value : null;
+    return Number.isFinite(value) && value > 0 && value <= MAX_AMOUNT ? value : null;
   }
 
   if (typeof value === "string") {
     const trimmed = value.trim();
     if (!trimmed) return null;
     const parsed = Number(trimmed);
-    return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+    return Number.isFinite(parsed) && parsed > 0 && parsed <= MAX_AMOUNT ? parsed : null;
   }
 
   return null;
 }
 
-function parseDate(value: unknown): Date | null {
-  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
-    return null;
-  }
-
-  const parsed = new Date(`${value}T00:00:00.000Z`);
-  return Number.isNaN(parsed.getTime()) ? null : parsed;
-}
-
 function isValidCurrency(value: unknown) {
-  return typeof value === "string" && value.trim().length > 0;
+  return typeof value === "string" && /^[A-Za-z]{3}$/.test(value.trim());
 }
 
-function isValidPaymentType(value: unknown) {
-  return value === "MEMBERSHIP" || value === "PT_SESSION";
+function isOneOf<T extends readonly string[]>(value: unknown, options: T): value is T[number] {
+  return typeof value === "string" && options.some((option) => option === value);
 }
 
 export async function GET(request: Request) {
@@ -60,15 +58,34 @@ export async function GET(request: Request) {
   const from = searchParams.get("from");
   const to = searchParams.get("to");
 
+  if (status !== null && !isOneOf(status, PAYMENT_STATUSES)) {
+    return NextResponse.json({ error: "Invalid payment status filter" }, { status: 400 });
+  }
+  if (paymentType !== null && !isOneOf(paymentType, PAYMENT_TYPES)) {
+    return NextResponse.json({ error: "Invalid payment type filter" }, { status: 400 });
+  }
+  if (memberId !== null && (!memberId.trim() || memberId.length > 128)) {
+    return NextResponse.json({ error: "memberMembershipId must be a valid ID" }, { status: 400 });
+  }
+
+  const fromDate = from === null ? null : parseDateOnly(from);
+  const toDate = to === null ? null : parseDateOnly(to);
+  if ((from !== null && !fromDate) || (to !== null && !toDate)) {
+    return NextResponse.json({ error: "from and to must be valid YYYY-MM-DD dates" }, { status: 400 });
+  }
+  if (fromDate && toDate && fromDate > toDate) {
+    return NextResponse.json({ error: "from must be on or before to" }, { status: 400 });
+  }
+
   const where: Record<string, unknown> = { gymId: ownerMembership.gymId };
 
-  if (status) where.status = status;
-  if (memberId) where.memberMembershipId = memberId;
-  if (paymentType) where.paymentType = paymentType;
-  if (from || to) {
+  if (status !== null) where.status = status;
+  if (memberId !== null) where.memberMembershipId = memberId;
+  if (paymentType !== null) where.paymentType = paymentType;
+  if (fromDate || toDate) {
     where.paidAt = {
-      ...(from ? { gte: parseDate(from) ?? undefined } : {}),
-      ...(to ? { lte: parseDate(to) ?? undefined } : {}),
+      ...(fromDate ? { gte: fromDate } : {}),
+      ...(toDate ? { lte: new Date(toDate.getTime() + 24 * 60 * 60 * 1000 - 1) } : {}),
     };
   }
 
@@ -113,45 +130,80 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "You are not an active owner of this gym" }, { status: 403 });
   }
 
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+  const payload = await parseJsonObject(request);
+  if (!payload) {
+    return NextResponse.json({ error: "Request body must be a valid JSON object" }, { status: 400 });
   }
 
-  if (typeof body !== "object" || body === null || Array.isArray(body)) {
-    return NextResponse.json({ error: "Request body must be an object" }, { status: 400 });
-  }
-
-  const payload = body as Record<string, unknown>;
-  const memberMembershipId = typeof payload.memberMembershipId === "string" ? payload.memberMembershipId : "";
-  const membershipPlanId = typeof payload.membershipPlanId === "string" ? payload.membershipPlanId : null;
-  const ptSessionId = typeof payload.ptSessionId === "string" ? payload.ptSessionId : null;
+  const memberMembershipId = typeof payload.memberMembershipId === "string" ? payload.memberMembershipId.trim() : "";
+  const membershipPlanId = typeof payload.membershipPlanId === "string" ? payload.membershipPlanId.trim() || null : null;
+  const ptSessionId = typeof payload.ptSessionId === "string" ? payload.ptSessionId.trim() || null : null;
   const amount = parseAmount(payload.amount);
   const currency = typeof payload.currency === "string" ? payload.currency.trim() : "";
   const paymentType = payload.paymentType;
-  const paymentMethod = (payload.paymentMethod ?? "CASH") as string;
-  const provider = (payload.provider ?? "MANUAL") as string;
-  const status = (payload.status ?? "PAID") as string;
-  const notes = typeof payload.notes === "string" ? payload.notes.trim() || null : null;
-  const providerPaymentId = typeof payload.providerPaymentId === "string" ? payload.providerPaymentId.trim() || null : null;
+  const paymentMethod = payload.paymentMethod === undefined ? "CASH" : payload.paymentMethod;
+  const provider = payload.provider === undefined ? "MANUAL" : payload.provider;
+  const status = payload.status === undefined ? "PAID" : payload.status;
+  const notes = payload.notes;
+  const providerPaymentId = payload.providerPaymentId;
   const paidAt = typeof payload.paidAt === "string" ? new Date(payload.paidAt) : null;
 
-  if (!memberMembershipId) {
-    return NextResponse.json({ error: "memberMembershipId is required" }, { status: 400 });
+  if (!memberMembershipId || memberMembershipId.length > 128) {
+    return NextResponse.json({ error: "memberMembershipId is required and must be a valid ID" }, { status: 400 });
+  }
+  if (
+    (payload.membershipPlanId !== undefined && payload.membershipPlanId !== null && typeof payload.membershipPlanId !== "string") ||
+    (payload.ptSessionId !== undefined && payload.ptSessionId !== null && typeof payload.ptSessionId !== "string") ||
+    (membershipPlanId !== null && membershipPlanId.length > 128) ||
+    (ptSessionId !== null && ptSessionId.length > 128)
+  ) {
+    return NextResponse.json({ error: "membershipPlanId and ptSessionId must be valid IDs or null" }, { status: 400 });
   }
 
   if (amount === null || amount <= 0) {
-    return NextResponse.json({ error: "Payment amount must be positive" }, { status: 400 });
+    return NextResponse.json({ error: "Payment amount must be positive and within the supported range" }, { status: 400 });
   }
 
   if (!isValidCurrency(currency)) {
-    return NextResponse.json({ error: "Currency is required" }, { status: 400 });
+    return NextResponse.json({ error: "Currency must be a three-letter currency code" }, { status: 400 });
   }
 
-  if (!isValidPaymentType(paymentType)) {
+  if (!isOneOf(paymentType, PAYMENT_TYPES)) {
     return NextResponse.json({ error: "paymentType must be MEMBERSHIP or PT_SESSION" }, { status: 400 });
+  }
+
+  if (!isOneOf(paymentMethod, PAYMENT_METHODS)) {
+    return NextResponse.json({ error: "Invalid payment method" }, { status: 400 });
+  }
+  if (!isOneOf(provider, PAYMENT_PROVIDERS)) {
+    return NextResponse.json({ error: "Invalid payment provider" }, { status: 400 });
+  }
+  if (!isOneOf(status, PAYMENT_STATUSES)) {
+    return NextResponse.json({ error: "Invalid payment status" }, { status: 400 });
+  }
+  if (
+    (payload.paymentMethod !== undefined && typeof payload.paymentMethod !== "string") ||
+    (payload.provider !== undefined && typeof payload.provider !== "string") ||
+    (payload.status !== undefined && typeof payload.status !== "string")
+  ) {
+    return NextResponse.json({ error: "Payment enums must be strings" }, { status: 400 });
+  }
+  if (notes !== undefined && notes !== null && (typeof notes !== "string" || notes.length > 2000)) {
+    return NextResponse.json({ error: "notes must be a string of at most 2000 characters" }, { status: 400 });
+  }
+  if (
+    providerPaymentId !== undefined &&
+    providerPaymentId !== null &&
+    (typeof providerPaymentId !== "string" || !providerPaymentId.trim() || providerPaymentId.length > 255)
+  ) {
+    return NextResponse.json({ error: "providerPaymentId must be a non-empty string of at most 255 characters or null" }, { status: 400 });
+  }
+  if (
+    payload.paidAt !== undefined &&
+    payload.paidAt !== null &&
+    (typeof payload.paidAt !== "string" || !paidAt || Number.isNaN(paidAt.getTime()))
+  ) {
+    return NextResponse.json({ error: "paidAt must be a valid date string or null" }, { status: 400 });
   }
 
   if (membershipPlanId && ptSessionId) {
@@ -229,12 +281,12 @@ if (paymentType === "PT_SESSION" && !ptSessionId) {
       ptSessionId,
       amount: new Prisma.Decimal(amount.toString()),
       currency: currency.toUpperCase(),
-      paymentType: paymentType as "MEMBERSHIP" | "PT_SESSION",
-      paymentMethod: paymentMethod as "CASH" | "CARD" | "UPI" | "BANK_TRANSFER" | "OTHER" | "ONLINE",
-      provider: provider as "MANUAL" | "STRIPE" | "RAZORPAY" | "OTHER",
-      status: status as "PENDING" | "PAID" | "FAILED" | "REFUNDED" | "CANCELLED",
-      providerPaymentId,
-      notes,
+      paymentType,
+      paymentMethod,
+      provider,
+      status,
+      providerPaymentId: typeof providerPaymentId === "string" ? providerPaymentId.trim() || null : null,
+      notes: typeof notes === "string" ? notes.trim() || null : null,
       paidAt: paidAt && !Number.isNaN(paidAt.getTime()) ? paidAt : null,
     },
     include: {

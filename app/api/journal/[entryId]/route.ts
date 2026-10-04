@@ -89,9 +89,9 @@ export async function PATCH(
   }
 
   if (Object.prototype.hasOwnProperty.call(input, "title")) {
-    if (typeof input.title !== "string" || !input.title.trim()) {
+    if (typeof input.title !== "string" || !input.title.trim() || input.title.trim().length > 200) {
       return NextResponse.json(
-        { error: "Title must be a non-empty string" },
+        { error: "Title must contain 1 to 200 characters" },
         { status: 400 }
       );
     }
@@ -99,9 +99,9 @@ export async function PATCH(
   }
 
   if (Object.prototype.hasOwnProperty.call(input, "content")) {
-    if (typeof input.content !== "string" || !input.content.trim()) {
+    if (typeof input.content !== "string" || !input.content.trim() || input.content.trim().length > 20000) {
       return NextResponse.json(
-        { error: "Content must be a non-empty string" },
+        { error: "Content must contain 1 to 20000 characters" },
         { status: 400 }
       );
     }

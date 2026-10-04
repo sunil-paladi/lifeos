@@ -5,14 +5,14 @@ import { prisma } from "@/lib/prisma";
 
 function parseMoney(value: unknown): number | null {
   if (typeof value === "number") {
-    return Number.isFinite(value) && value > 0 ? value : null;
+    return Number.isFinite(value) && value > 0 && value <= 99_999_999.99 ? value : null;
   }
 
   if (typeof value === "string") {
     const trimmed = value.trim();
     if (!trimmed) return null;
     const parsed = Number(trimmed);
-    return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+    return Number.isFinite(parsed) && parsed > 0 && parsed <= 99_999_999.99 ? parsed : null;
   }
 
   return null;
@@ -98,7 +98,11 @@ export async function POST(request: Request) {
   const amount = parseMoney(payload.price);
   const duration = parsePositiveInt(payload.durationMinutes);
 
-  if (!name) {
+  if (payload.description !== undefined && payload.description !== null && typeof payload.description !== "string") {
+    return NextResponse.json({ error: "description must be a string or null" }, { status: 400 });
+  }
+
+  if (!name || name.length > 120) {
     return NextResponse.json({ error: "Pricing name is required" }, { status: 400 });
   }
 
@@ -106,12 +110,20 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Price must be a positive number" }, { status: 400 });
   }
 
-  if (!currency) {
-    return NextResponse.json({ error: "Currency is required" }, { status: 400 });
+  if (!/^[A-Z]{3}$/.test(currency)) {
+    return NextResponse.json({ error: "Currency must be a three-letter currency code" }, { status: 400 });
   }
 
-  if (duration === null) {
-    return NextResponse.json({ error: "durationMinutes must be a positive integer" }, { status: 400 });
+  if (duration === null || duration > 480) {
+    return NextResponse.json({ error: "durationMinutes must be an integer from 1 to 480" }, { status: 400 });
+  }
+
+  if (description !== null && description.length > 2000) {
+    return NextResponse.json({ error: "description must be at most 2000 characters" }, { status: 400 });
+  }
+
+  if (payload.isActive !== undefined && typeof payload.isActive !== "boolean") {
+    return NextResponse.json({ error: "isActive must be a boolean" }, { status: 400 });
   }
 
   const record = await prisma.pTPricing.create({
@@ -122,7 +134,7 @@ export async function POST(request: Request) {
       price: new Prisma.Decimal(amount.toString()),
       currency,
       durationMinutes: duration,
-      isActive: payload.isActive === undefined ? true : Boolean(payload.isActive),
+      isActive: payload.isActive === undefined ? true : payload.isActive,
     },
   });
 

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAuthenticatedUser } from "@/app/lib/authorization";
+import { parseJsonObject } from "@/app/lib/input-validation";
 import { prisma } from "@/lib/prisma";
 
 export async function PATCH(
@@ -14,25 +15,14 @@ export async function PATCH(
 
   const { habitId } = await context.params;
 
-  let body: unknown;
-
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json(
-      { error: "Request body must be valid JSON" },
-      { status: 400 }
-    );
-  }
-
-  if (!body || typeof body !== "object") {
+  const input = await parseJsonObject(request);
+  if (!input) {
     return NextResponse.json(
       { error: "Request body must be a JSON object" },
       { status: 400 }
     );
   }
 
-  const input = body as Record<string, unknown>;
   const supportedFields = [
     "name",
     "description",
@@ -54,7 +44,7 @@ export async function PATCH(
 
   if (
     input.name !== undefined &&
-    (typeof input.name !== "string" || !input.name.trim())
+    (typeof input.name !== "string" || !input.name.trim() || input.name.trim().length > 100)
   ) {
     return NextResponse.json(
       { error: "Name must be a non-empty string" },
@@ -62,7 +52,7 @@ export async function PATCH(
     );
   }
 
-  if (input.description !== undefined && typeof input.description !== "string") {
+  if (input.description !== undefined && (typeof input.description !== "string" || input.description.length > 1000)) {
     return NextResponse.json(
       { error: "Description must be a string" },
       { status: 400 }
@@ -71,7 +61,7 @@ export async function PATCH(
 
   if (
     input.frequency !== undefined &&
-    (typeof input.frequency !== "string" || !input.frequency.trim())
+    (typeof input.frequency !== "string" || !input.frequency.trim() || input.frequency.trim().length > 50)
   ) {
     return NextResponse.json(
       { error: "Frequency must be a non-empty string" },
@@ -81,7 +71,7 @@ export async function PATCH(
 
   if (
     input.target !== undefined &&
-    (typeof input.target !== "number" || !Number.isInteger(input.target))
+    (typeof input.target !== "number" || !Number.isInteger(input.target) || input.target < 1 || input.target > 100000)
   ) {
     return NextResponse.json(
       { error: "Target must be an integer" },
@@ -89,7 +79,7 @@ export async function PATCH(
     );
   }
 
-  if (input.unit !== undefined && typeof input.unit !== "string") {
+  if (input.unit !== undefined && (typeof input.unit !== "string" || input.unit.length > 40)) {
     return NextResponse.json(
       { error: "Unit must be a string" },
       { status: 400 }

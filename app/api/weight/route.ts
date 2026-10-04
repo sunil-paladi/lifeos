@@ -1,6 +1,7 @@
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { auth } from "@/app/lib/auth";
+import { parseJsonObject } from "@/app/lib/input-validation";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -51,13 +52,15 @@ export async function POST(request: Request) {
     );
   }
 
-  const body = await request.json();
+  const body = await parseJsonObject(request);
+  if (!body) {
+    return NextResponse.json({ error: "Request body must be a valid JSON object" }, { status: 400 });
+  }
 
-  const weight = Number(body.weight);
-
-  if (!Number.isFinite(weight) || weight <= 0) {
+  const weight = body.weight;
+  if (typeof weight !== "number" || !Number.isFinite(weight) || weight < 1 || weight > 1000) {
     return NextResponse.json(
-      { error: "Please provide a valid weight." },
+      { error: "weight must be a number from 1 to 1000" },
       { status: 400 }
     );
   }

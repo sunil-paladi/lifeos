@@ -2,6 +2,7 @@ import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { auth } from "@/app/lib/auth";
 import { getOwnedTrainingPlan } from "@/app/lib/training-plans";
+import { parseJsonObject } from "@/app/lib/input-validation";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -113,7 +114,11 @@ export async function POST(
   const { planId, phaseId, weekId } =
     await params;
 
-  const body = await request.json();
+  const body = await parseJsonObject(request);
+
+  if (!body) {
+    return NextResponse.json({ error: "Request body must be a valid JSON object" }, { status: 400 });
+  }
 
   const access = await getOwnedTrainingPlan(
     planId,
@@ -149,7 +154,8 @@ export async function POST(
 
   if (
     body.dayOfWeek === undefined ||
-    !body.name ||
+    typeof body.name !== "string" ||
+    !body.name.trim() ||
     body.dayOrder === undefined
   ) {
     return NextResponse.json(
@@ -161,17 +167,39 @@ export async function POST(
     );
   }
 
+  if (
+    typeof body.dayOfWeek !== "number" ||
+    !Number.isInteger(body.dayOfWeek) ||
+    body.dayOfWeek < 1 ||
+    body.dayOfWeek > 7 ||
+    typeof body.dayOrder !== "number" ||
+    !Number.isInteger(body.dayOrder) ||
+    body.dayOrder < 1 ||
+    body.dayOrder > 7 ||
+    body.name.trim().length > 100
+  ) {
+    return NextResponse.json({ error: "dayOfWeek and dayOrder must be integers from 1 to 7 and name must be at most 100 characters" }, { status: 400 });
+  }
+
+  if (body.description !== undefined && body.description !== null && (typeof body.description !== "string" || body.description.length > 2000)) {
+    return NextResponse.json({ error: "description must be a string of at most 2000 characters" }, { status: 400 });
+  }
+
+  if (body.isRestDay !== undefined && typeof body.isRestDay !== "boolean") {
+    return NextResponse.json({ error: "isRestDay must be a boolean" }, { status: 400 });
+  }
+
   const workoutDay =
     await prisma.workoutDay.create({
       data: {
         weekId: week.id,
-        dayOfWeek: Number(body.dayOfWeek),
-        name: body.name,
+        dayOfWeek: body.dayOfWeek,
+        name: body.name.trim(),
         description:
-          body.description ?? null,
+          typeof body.description === "string" ? body.description.trim() || null : null,
         isRestDay:
           body.isRestDay ?? false,
-        dayOrder: Number(body.dayOrder),
+        dayOrder: body.dayOrder,
       },
     });
 

@@ -1,6 +1,7 @@
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { auth } from "@/app/lib/auth";
+import { parseJsonObject } from "@/app/lib/input-validation";
 import { getOwnedTrainingPlan } from "@/app/lib/training-plans";
 import { prisma } from "@/lib/prisma";
 
@@ -154,27 +155,38 @@ export async function POST(
       );
     }
 
-    const body = await request.json();
+    const body = await parseJsonObject(request);
+    if (!body) {
+      return NextResponse.json(
+        { error: "Request body must be a valid JSON object" },
+        { status: 400 }
+      );
+    }
 
-    const exerciseId = String(
-      body.exerciseId
-    );
+    const exerciseId = typeof body.exerciseId === "string" ? body.exerciseId.trim() : "";
 
-    const sets = Number(body.sets ?? 3);
-    const reps = Number(body.reps ?? 10);
+    const sets = body.sets ?? 3;
+    const reps = body.reps ?? 10;
     const restSeconds =
       body.restSeconds == null
         ? 60
-        : Number(body.restSeconds);
+        : body.restSeconds;
 
     if (
       !exerciseId ||
+      exerciseId.length > 128 ||
+      typeof sets !== "number" ||
       !Number.isInteger(sets) ||
       sets < 1 ||
+      sets > 100 ||
+      typeof reps !== "number" ||
       !Number.isInteger(reps) ||
       reps < 1 ||
+      reps > 1000 ||
+      typeof restSeconds !== "number" ||
       !Number.isInteger(restSeconds) ||
-      restSeconds < 0
+      restSeconds < 0 ||
+      restSeconds > 3600
     ) {
       return NextResponse.json(
         { error: "Invalid exercise settings" },
@@ -302,11 +314,18 @@ export async function PATCH(
       );
     }
 
-    const body = await request.json();
+    const body = await parseJsonObject(request);
+    if (!body) {
+      return NextResponse.json(
+        { error: "Request body must be a valid JSON object" },
+        { status: 400 }
+      );
+    }
 
-    const exerciseId = String(
-      body.exerciseId
-    );
+    const exerciseId = typeof body.exerciseId === "string" ? body.exerciseId.trim() : "";
+    if (!exerciseId || exerciseId.length > 128) {
+      return NextResponse.json({ error: "exerciseId must be a valid ID" }, { status: 400 });
+    }
 
     console.log("🔍 PATCH DEBUG:", {
       planId: resolvedParams.planId,
@@ -361,9 +380,9 @@ export async function PATCH(
     } = {};
 
     if (body.sets !== undefined) {
-      const sets = Number(body.sets);
+      const sets = body.sets;
 
-      if (!Number.isInteger(sets) || sets < 1) {
+      if (typeof sets !== "number" || !Number.isInteger(sets) || sets < 1 || sets > 100) {
         return NextResponse.json(
           { error: "Invalid sets" },
           { status: 400 }
@@ -374,9 +393,9 @@ export async function PATCH(
     }
 
     if (body.reps !== undefined) {
-      const reps = Number(body.reps);
+      const reps = body.reps;
 
-      if (!Number.isInteger(reps) || reps < 1) {
+      if (typeof reps !== "number" || !Number.isInteger(reps) || reps < 1 || reps > 1000) {
         return NextResponse.json(
           { error: "Invalid reps" },
           { status: 400 }
@@ -391,12 +410,14 @@ export async function PATCH(
       const restSeconds =
         body.restSeconds == null
           ? null
-          : Number(body.restSeconds);
+          : body.restSeconds;
 
       if (
         restSeconds !== null &&
-        (!Number.isInteger(restSeconds) ||
-          restSeconds < 0)
+        (typeof restSeconds !== "number" ||
+          !Number.isInteger(restSeconds) ||
+          restSeconds < 0 ||
+          restSeconds > 3600)
       ) {
         return NextResponse.json(
           { error: "Invalid restSeconds" },
@@ -411,11 +432,11 @@ export async function PATCH(
       const targetWeight =
         body.targetWeight == null
           ? null
-          : Number(body.targetWeight);
+          : body.targetWeight;
 
       if (
         targetWeight !== null &&
-        !Number.isFinite(targetWeight)
+        (typeof targetWeight !== "number" || !Number.isFinite(targetWeight) || targetWeight < 0 || targetWeight > 1000)
       ) {
         return NextResponse.json(
           { error: "Invalid targetWeight" },
@@ -493,11 +514,18 @@ export async function DELETE(
       );
     }
 
-    const body = await request.json();
+    const body = await parseJsonObject(request);
+    if (!body) {
+      return NextResponse.json(
+        { error: "Request body must be a valid JSON object" },
+        { status: 400 }
+      );
+    }
 
-    const exerciseId = String(
-      body.exerciseId
-    );
+    const exerciseId = typeof body.exerciseId === "string" ? body.exerciseId.trim() : "";
+    if (!exerciseId || exerciseId.length > 128) {
+      return NextResponse.json({ error: "exerciseId must be a valid ID" }, { status: 400 });
+    }
 
     const existing =
       await prisma.programExercise.findFirst({
@@ -603,11 +631,18 @@ export async function PUT(
       );
     }
 
-    const body = await request.json();
+    const body = await parseJsonObject(request);
+    if (!body) {
+      return NextResponse.json(
+        { error: "Request body must be a valid JSON object" },
+        { status: 400 }
+      );
+    }
 
-    const exerciseId = String(
-      body.exerciseId
-    );
+    const exerciseId = typeof body.exerciseId === "string" ? body.exerciseId.trim() : "";
+    if (!exerciseId || exerciseId.length > 128) {
+      return NextResponse.json({ error: "exerciseId must be a valid ID" }, { status: 400 });
+    }
 
     const direction =
       body.direction === "up" ||

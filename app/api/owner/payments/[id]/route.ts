@@ -1,25 +1,34 @@
 import { NextResponse } from "next/server";
 import { Prisma } from "@/app/generated/prisma/client";
 import { getAuthenticatedUser } from "@/app/lib/authorization";
+import { parseJsonObject } from "@/app/lib/input-validation";
 import { prisma } from "@/lib/prisma";
+
+const PAYMENT_METHODS = ["CASH", "CARD", "UPI", "BANK_TRANSFER", "OTHER", "ONLINE"] as const;
+const PAYMENT_STATUSES = ["PENDING", "PAID", "FAILED", "REFUNDED", "CANCELLED"] as const;
+const MAX_AMOUNT = 99_999_999.99;
 
 function parseAmount(value: unknown): number | null {
   if (typeof value === "number") {
-    return Number.isFinite(value) && value > 0 ? value : null;
+    return Number.isFinite(value) && value > 0 && value <= MAX_AMOUNT ? value : null;
   }
 
   if (typeof value === "string") {
     const trimmed = value.trim();
     if (!trimmed) return null;
     const parsed = Number(trimmed);
-    return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+    return Number.isFinite(parsed) && parsed > 0 && parsed <= MAX_AMOUNT ? parsed : null;
   }
 
   return null;
 }
 
-function isValidCurrency(value: unknown) {
-  return typeof value === "string" && value.trim().length > 0;
+function isValidCurrency(value: unknown): value is string {
+  return typeof value === "string" && /^[A-Za-z]{3}$/.test(value.trim());
+}
+
+function isOneOf<T extends readonly string[]>(value: unknown, options: T): value is T[number] {
+  return typeof value === "string" && options.some((option) => option === value);
 }
 
 type RouteContext = {
@@ -84,30 +93,23 @@ export async function PATCH(request: Request, context: RouteContext) {
 
   const payment = await prisma.payment.findFirst({
     where: { id, gymId: ownerMembership.gymId },
-    select: { id: true, memberMembershipId: true, membershipPlanId: true, ptSessionId: true, amount: true, paymentType: true, gymId: true },
+    select: { id: true, memberMembershipId: true, membershipPlanId: true, ptSessionId: true, amount: true, gymId: true },
   });
 
   if (!payment) {
     return NextResponse.json({ error: "Payment not found" }, { status: 404 });
   }
 
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+  const payload = await parseJsonObject(request);
+  if (!payload) {
+    return NextResponse.json({ error: "Request body must be a valid JSON object" }, { status: 400 });
   }
 
-  if (typeof body !== "object" || body === null || Array.isArray(body)) {
-    return NextResponse.json({ error: "Request body must be an object" }, { status: 400 });
-  }
-
-  const payload = body as Record<string, unknown>;
   const updateData: Record<string, unknown> = {};
 
   if (payload.amount !== undefined) {
     const amount = parseAmount(payload.amount);
-    if (amount === null) return NextResponse.json({ error: "Payment amount must be positive" }, { status: 400 });
+    if (amount === null) return NextResponse.json({ error: "Payment amount must be positive and within the supported range" }, { status: 400 });
     updateData.amount = new Prisma.Decimal(amount.toString());
   }
 
@@ -115,32 +117,35 @@ export async function PATCH(request: Request, context: RouteContext) {
     if (!isValidCurrency(payload.currency)) {
       return NextResponse.json({ error: "Currency is required" }, { status: 400 });
     }
-    updateData.currency = String(payload.currency).trim().toUpperCase();
+    updateData.currency = payload.currency.trim().toUpperCase();
   }
 
   if (payload.status !== undefined) {
-    const status = payload.status as string;
-    if (!["PENDING", "PAID", "FAILED", "REFUNDED", "CANCELLED"].includes(status)) {
+    if (!isOneOf(payload.status, PAYMENT_STATUSES)) {
       return NextResponse.json({ error: "Invalid payment status" }, { status: 400 });
     }
-    updateData.status = status;
+    updateData.status = payload.status;
   }
 
   if (payload.paymentMethod !== undefined) {
-    const method = payload.paymentMethod as string;
-    if (!["CASH", "CARD", "UPI", "BANK_TRANSFER", "OTHER", "ONLINE"].includes(method)) {
+    if (!isOneOf(payload.paymentMethod, PAYMENT_METHODS)) {
       return NextResponse.json({ error: "Invalid payment method" }, { status: 400 });
     }
-    updateData.paymentMethod = method;
+    updateData.paymentMethod = payload.paymentMethod;
   }
 
   if (payload.notes !== undefined) {
+    if (payload.notes !== null && (typeof payload.notes !== "string" || payload.notes.length > 2000)) {
+      return NextResponse.json({ error: "notes must be a string of at most 2000 characters or null" }, { status: 400 });
+    }
     updateData.notes = typeof payload.notes === "string" ? payload.notes.trim() || null : null;
   }
 
   if (payload.paidAt !== undefined) {
-    const date = typeof payload.paidAt === "string" ? new Date(payload.paidAt) : null;
-    if (date && Number.isNaN(date.getTime())) return NextResponse.json({ error: "paidAt must be a valid date" }, { status: 400 });
+    const date = payload.paidAt === null ? null : typeof payload.paidAt === "string" ? new Date(payload.paidAt) : null;
+    if (payload.paidAt !== null && (!date || Number.isNaN(date.getTime()))) {
+      return NextResponse.json({ error: "paidAt must be a valid date string or null" }, { status: 400 });
+    }
     updateData.paidAt = date;
   }
 

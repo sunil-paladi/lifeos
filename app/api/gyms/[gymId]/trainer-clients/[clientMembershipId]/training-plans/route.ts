@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { parseDateOnly, parseJsonObject } from "@/app/lib/input-validation";
 import { prisma } from "@/lib/prisma";
 import { requireGymRole } from "@/app/lib/authorization";
 
@@ -105,9 +106,16 @@ export async function POST(
     );
   }
 
-  const body = await request.json();
+  const body = await parseJsonObject(request);
 
-  if (!body.name || !body.totalWeeks) {
+  if (!body) {
+    return NextResponse.json(
+      { error: "Request body must be a valid JSON object" },
+      { status: 400 }
+    );
+  }
+
+  if (typeof body.name !== "string" || !body.name.trim() || body.totalWeeks === undefined) {
     return NextResponse.json(
       {
         error: "name and totalWeeks are required",
@@ -116,15 +124,49 @@ export async function POST(
     );
   }
 
-  const totalWeeks = Number(body.totalWeeks);
+  const totalWeeks = body.totalWeeks;
 
-  if (!Number.isInteger(totalWeeks) || totalWeeks < 1) {
+  if (typeof totalWeeks !== "number" || !Number.isInteger(totalWeeks) || totalWeeks < 1 || totalWeeks > 52) {
     return NextResponse.json(
       {
-        error: "totalWeeks must be a positive integer",
+        error: "totalWeeks must be an integer from 1 to 52",
       },
       { status: 400 }
     );
+  }
+
+  const name = body.name.trim();
+  const description = body.description;
+  const startDate = body.startDate;
+  const endDate = body.endDate;
+
+  if (name.length > 120) {
+    return NextResponse.json({ error: "name must be 120 characters or fewer" }, { status: 400 });
+  }
+
+  if (description !== undefined && description !== null && (typeof description !== "string" || description.length > 2000)) {
+    return NextResponse.json({ error: "description must be a string of at most 2000 characters" }, { status: 400 });
+  }
+
+  const parsedStartDate = startDate === undefined || startDate === null || startDate === ""
+    ? null
+    : parseDateOnly(startDate);
+  const parsedEndDate = endDate === undefined || endDate === null || endDate === ""
+    ? null
+    : parseDateOnly(endDate);
+
+  if ((startDate !== undefined && startDate !== null && startDate !== "" && !parsedStartDate) ||
+      (endDate !== undefined && endDate !== null && endDate !== "" && !parsedEndDate)) {
+    return NextResponse.json({ error: "startDate and endDate must be valid YYYY-MM-DD dates" }, { status: 400 });
+  }
+
+  if (parsedStartDate && parsedEndDate && parsedEndDate < parsedStartDate) {
+    return NextResponse.json({ error: "endDate must be on or after startDate" }, { status: 400 });
+  }
+
+  const isActive = body.isActive;
+  if (isActive !== undefined && typeof isActive !== "boolean") {
+    return NextResponse.json({ error: "isActive must be a boolean" }, { status: 400 });
   }
 
   const plan = await prisma.$transaction(async (tx) => {
@@ -132,16 +174,12 @@ export async function POST(
       data: {
         userId: assignment.clientMembership.userId,
         gymId,
-        name: body.name,
-        description: body.description ?? null,
+        name,
+        description: typeof description === "string" ? description.trim() || null : null,
         totalWeeks,
-        startDate: body.startDate
-          ? new Date(body.startDate)
-          : null,
-        endDate: body.endDate
-          ? new Date(body.endDate)
-          : null,
-        isActive: body.isActive ?? false,
+        startDate: parsedStartDate,
+        endDate: parsedEndDate,
+        isActive: isActive ?? false,
       },
     });
 

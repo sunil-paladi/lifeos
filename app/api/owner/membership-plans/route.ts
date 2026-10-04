@@ -5,14 +5,14 @@ import { prisma } from "@/lib/prisma";
 
 function parseMoney(value: unknown): number | null {
   if (typeof value === "number") {
-    return Number.isFinite(value) && value > 0 ? value : null;
+    return Number.isFinite(value) && value > 0 && value <= 99_999_999.99 ? value : null;
   }
 
   if (typeof value === "string") {
     const trimmed = value.trim();
     if (!trimmed) return null;
     const parsed = Number(trimmed);
-    return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+    return Number.isFinite(parsed) && parsed > 0 && parsed <= 99_999_999.99 ? parsed : null;
   }
 
   return null;
@@ -96,6 +96,10 @@ export async function POST(request: Request) {
   const description = typeof payload.description === "string" ? payload.description.trim() || null : null;
   const currency = typeof payload.currency === "string" ? payload.currency.trim().toUpperCase() : "";
 
+  if (payload.description !== undefined && payload.description !== null && typeof payload.description !== "string") {
+    return NextResponse.json({ error: "description must be a string or null" }, { status: 400 });
+  }
+
   const amount = parseMoney(payload.price);
   const durationDays = parsePositiveInt(payload.durationDays);
 
@@ -107,12 +111,20 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Plan price must be a positive number" }, { status: 400 });
   }
 
-  if (!currency) {
-    return NextResponse.json({ error: "Currency is required" }, { status: 400 });
+  if (!/^[A-Z]{3}$/.test(currency)) {
+    return NextResponse.json({ error: "Currency must be a three-letter currency code" }, { status: 400 });
   }
 
-  if (durationDays === null) {
+  if (durationDays === null || durationDays > 3650) {
     return NextResponse.json({ error: "durationDays must be a positive integer" }, { status: 400 });
+  }
+
+  if (name.length > 120 || (description !== null && description.length > 2000)) {
+    return NextResponse.json({ error: "Name or description is too long" }, { status: 400 });
+  }
+
+  if (payload.isActive !== undefined && typeof payload.isActive !== "boolean") {
+    return NextResponse.json({ error: "isActive must be a boolean" }, { status: 400 });
   }
 
   const plan = await prisma.gymMembershipPlan.create({
@@ -123,7 +135,7 @@ export async function POST(request: Request) {
       price: new Prisma.Decimal(amount.toString()),
       currency,
       durationDays,
-      isActive: payload.isActive === undefined ? true : Boolean(payload.isActive),
+      isActive: payload.isActive === undefined ? true : payload.isActive,
     },
   });
 

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/app/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getAuthenticatedUser } from "@/app/lib/authorization";
+import { parseJsonObject } from "@/app/lib/input-validation";
 
 type GymMembersRouteContext = {
   params: Promise<{
@@ -108,46 +109,34 @@ export async function POST(
     );
   }
 
-  let body: unknown;
-
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json(
-      { error: "Invalid JSON body" },
-      { status: 400 }
-    );
-  }
-
-  if (typeof body !== "object" || body === null) {
+  const body = await parseJsonObject(request);
+  if (!body) {
     return NextResponse.json(
       { error: "Name, username, email, and password are required" },
       { status: 400 }
     );
   }
 
-  const name =
-    "name" in body && typeof body.name === "string"
-      ? body.name.trim()
-      : "";
-  const username =
-    "username" in body && typeof body.username === "string"
-      ? body.username.trim()
-      : "";
-  const email =
-    "email" in body && typeof body.email === "string"
-      ? body.email.trim()
-      : "";
-  const password =
-    "password" in body && typeof body.password === "string"
-      ? body.password
-      : "";
+  const name = typeof body.name === "string" ? body.name.trim() : "";
+  const username = typeof body.username === "string" ? body.username.trim() : "";
+  const email = typeof body.email === "string" ? body.email.trim() : "";
+  const password = typeof body.password === "string" ? body.password : "";
 
   if (!name || !username || !email || !password) {
     return NextResponse.json(
       { error: "Name, username, email, and password are required" },
       { status: 400 }
     );
+  }
+
+  if (name.length > 100 || username.length < 3 || username.length > 30 || !/^[A-Za-z0-9_]+$/.test(username)) {
+    return NextResponse.json({ error: "Name or username is outside the supported format" }, { status: 400 });
+  }
+  if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return NextResponse.json({ error: "Email must be a valid email address" }, { status: 400 });
+  }
+  if (password.length < 8 || password.length > 128) {
+    return NextResponse.json({ error: "Password must contain 8 to 128 characters" }, { status: 400 });
   }
 
   const existingUsername = await prisma.user.findUnique({

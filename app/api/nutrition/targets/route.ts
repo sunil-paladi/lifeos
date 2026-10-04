@@ -1,6 +1,7 @@
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { auth } from "@/app/lib/auth";
+import { parseJsonObject } from "@/app/lib/input-validation";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -51,36 +52,21 @@ export async function PATCH(request: Request) {
     );
   }
 
-  const body = await request.json();
-
-  const calories = Number(body.calories);
-  const protein = Number(body.protein);
-  const carbs = Number(body.carbs);
-  const fat = Number(body.fat);
-
-  if (
-    !Number.isFinite(calories) ||
-    !Number.isFinite(protein) ||
-    !Number.isFinite(carbs) ||
-    !Number.isFinite(fat)
-  ) {
-    return NextResponse.json(
-      { error: "Nutrition targets must be valid numbers" },
-      { status: 400 }
-    );
+  const body = await parseJsonObject(request);
+  if (!body) {
+    return NextResponse.json({ error: "Request body must be a valid JSON object" }, { status: 400 });
   }
 
+  const { calories, protein, carbs, fat } = body;
+
   if (
-    calories <= 0 ||
-    protein <= 0 ||
-    carbs <= 0 ||
-    fat <= 0
+    typeof calories !== "number" || !Number.isFinite(calories) || calories <= 0 || calories > 20000 ||
+    typeof protein !== "number" || !Number.isFinite(protein) || protein <= 0 || protein > 2000 ||
+    typeof carbs !== "number" || !Number.isFinite(carbs) || carbs <= 0 || carbs > 2000 ||
+    typeof fat !== "number" || !Number.isFinite(fat) || fat <= 0 || fat > 2000
   ) {
     return NextResponse.json(
-      {
-        error:
-          "Nutrition targets must be greater than 0",
-      },
+      { error: "Nutrition targets must be positive numbers within supported ranges" },
       { status: 400 }
     );
   }

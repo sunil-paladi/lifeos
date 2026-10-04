@@ -127,7 +127,7 @@ export async function PATCH(request: Request, context: RouteContext) {
     return NextResponse.json({ error: "durationMinutes must be an integer from 1 to 480" }, { status: 400 });
   }
 
-  if (hasPTPricingId && body.ptPricingId !== null && (typeof body.ptPricingId !== "string" || !body.ptPricingId.trim())) {
+  if (hasPTPricingId && body.ptPricingId !== null && (typeof body.ptPricingId !== "string" || !body.ptPricingId.trim() || body.ptPricingId.length > 128)) {
     return NextResponse.json({ error: "ptPricingId must be a valid pricing ID or null" }, { status: 400 });
   }
 
@@ -142,8 +142,8 @@ export async function PATCH(request: Request, context: RouteContext) {
     }
   }
 
-  if (hasNotes && body.notes !== null && typeof body.notes !== "string") {
-    return NextResponse.json({ error: "notes must be a string or null" }, { status: 400 });
+  if (hasNotes && body.notes !== null && (typeof body.notes !== "string" || body.notes.length > 2000)) {
+    return NextResponse.json({ error: "notes must be a string of at most 2000 characters or null" }, { status: 400 });
   }
 
   if (hasStatus && !["SCHEDULED", "COMPLETED", "CANCELLED", "NO_SHOW"].includes(String(body.status))) {
