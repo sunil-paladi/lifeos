@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { Prisma } from "@/app/generated/prisma/client";
 import { getAuthenticatedUser } from "@/app/lib/authorization";
+import { writeAuditLog } from "@/app/lib/batch5-events";
 import { parseJsonObject } from "@/app/lib/input-validation";
 import { prisma } from "@/lib/prisma";
 
@@ -153,14 +154,29 @@ export async function PATCH(request: Request, context: RouteContext) {
     return NextResponse.json({ error: "No valid fields provided" }, { status: 400 });
   }
 
-  const updated = await prisma.payment.update({
-    where: { id },
-    data: updateData,
-    include: {
-      memberMembership: { select: { user: { select: { name: true } } } },
-      membershipPlan: { select: { name: true } },
-      ptSession: { select: { id: true } },
-    },
+  const updated = await prisma.$transaction(async (tx) => {
+    const updatedPayment = await tx.payment.update({
+      where: { id },
+      data: updateData,
+      include: {
+        memberMembership: { select: { user: { select: { name: true } } } },
+        membershipPlan: { select: { name: true } },
+        ptSession: { select: { id: true } },
+      },
+    });
+
+    await writeAuditLog(tx, {
+      gymId: ownerMembership.gymId,
+      actorUserId: user.id,
+      action: "PAYMENT_UPDATED",
+      subjectType: "Payment",
+      subjectId: updatedPayment.id,
+      metadata: {
+        fields: Object.keys(updateData),
+      },
+    });
+
+    return updatedPayment;
   });
 
   return NextResponse.json({ payment: { ...updated, amount: updated.amount.toString() } });

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { createNotifications, trainerClientPath, writeAuditLog } from "@/app/lib/batch5-events";
 import { requireGymRole } from "@/app/lib/authorization";
 import { parseJsonObject } from "@/app/lib/input-validation";
 
@@ -53,6 +54,7 @@ export async function POST(
         role: "TRAINER",
         status: "ACTIVE",
       },
+      select: { id: true, userId: true },
     });
 
   if (!trainerMembership) {
@@ -73,6 +75,7 @@ export async function POST(
         role: "MEMBER",
         status: "ACTIVE",
       },
+      select: { id: true, userId: true },
     });
 
   if (!clientMembership) {
@@ -106,14 +109,45 @@ export async function POST(
     );
   }
 
-  const assignment =
-    await prisma.trainerClient.create({
+  const assignment = await prisma.$transaction(async (tx) => {
+    const createdAssignment = await tx.trainerClient.create({
       data: {
         gymId,
         trainerMembershipId,
         clientMembershipId,
       },
     });
+
+    await writeAuditLog(tx, {
+      gymId,
+      actorUserId: access.user.id,
+      action: "TRAINER_CLIENT_ASSIGNED",
+      subjectType: "TrainerClient",
+      subjectId: createdAssignment.id,
+      metadata: { trainerMembershipId, clientMembershipId },
+    });
+
+    await createNotifications(tx, [
+      {
+        recipientUserId: trainerMembership.userId,
+        gymId,
+        type: "TRAINER_CLIENT_ASSIGNED",
+        title: "Client assigned",
+        body: "A gym owner assigned a member to you.",
+        internalLink: trainerClientPath(clientMembershipId),
+      },
+      {
+        recipientUserId: clientMembership.userId,
+        gymId,
+        type: "TRAINER_CLIENT_ASSIGNED",
+        title: "Trainer assigned",
+        body: "A trainer has been assigned to you.",
+        internalLink: "/dashboard",
+      },
+    ]);
+
+    return createdAssignment;
+  });
 
   return NextResponse.json(
     {

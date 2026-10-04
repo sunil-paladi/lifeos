@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { Prisma } from "@/app/generated/prisma/client";
 import { getAuthenticatedUser } from "@/app/lib/authorization";
+import { writeAuditLog } from "@/app/lib/batch5-events";
 import { parseDateOnly, parseJsonObject } from "@/app/lib/input-validation";
 import { prisma } from "@/lib/prisma";
 
@@ -273,29 +274,42 @@ if (paymentType === "PT_SESSION" && !ptSessionId) {
     }
   }
 
-  const payment = await prisma.payment.create({
-    data: {
-      gymId: ownerMembership.gymId,
-      memberMembershipId,
-      membershipPlanId,
-      ptSessionId,
-      amount: new Prisma.Decimal(amount.toString()),
-      currency: currency.toUpperCase(),
-      paymentType,
-      paymentMethod,
-      provider,
-      status,
-      providerPaymentId: typeof providerPaymentId === "string" ? providerPaymentId.trim() || null : null,
-      notes: typeof notes === "string" ? notes.trim() || null : null,
-      paidAt: paidAt && !Number.isNaN(paidAt.getTime()) ? paidAt : null,
-    },
-    include: {
-      memberMembership: {
-        select: { user: { select: { name: true } } },
+  const payment = await prisma.$transaction(async (tx) => {
+    const createdPayment = await tx.payment.create({
+      data: {
+        gymId: ownerMembership.gymId,
+        memberMembershipId,
+        membershipPlanId,
+        ptSessionId,
+        amount: new Prisma.Decimal(amount.toString()),
+        currency: currency.toUpperCase(),
+        paymentType,
+        paymentMethod,
+        provider,
+        status,
+        providerPaymentId: typeof providerPaymentId === "string" ? providerPaymentId.trim() || null : null,
+        notes: typeof notes === "string" ? notes.trim() || null : null,
+        paidAt: paidAt && !Number.isNaN(paidAt.getTime()) ? paidAt : null,
       },
-      membershipPlan: { select: { name: true } },
-      ptSession: { select: { id: true } },
-    },
+      include: {
+        memberMembership: {
+          select: { user: { select: { name: true } } },
+        },
+        membershipPlan: { select: { name: true } },
+        ptSession: { select: { id: true } },
+      },
+    });
+
+    await writeAuditLog(tx, {
+      gymId: ownerMembership.gymId,
+      actorUserId: user.id,
+      action: "PAYMENT_CREATED",
+      subjectType: "Payment",
+      subjectId: createdPayment.id,
+      metadata: { paymentType, status },
+    });
+
+    return createdPayment;
   });
 
   return NextResponse.json({

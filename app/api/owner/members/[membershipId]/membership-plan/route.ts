@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAuthenticatedUser } from "@/app/lib/authorization";
+import { writeAuditLog } from "@/app/lib/batch5-events";
 import { parseDateOnly } from "@/app/lib/input-validation";
 import { prisma } from "@/lib/prisma";
 
@@ -78,20 +79,33 @@ export async function PATCH(request: Request, context: RouteContext) {
   const endDate = new Date(startDate);
   endDate.setUTCDate(endDate.getUTCDate() + plan.durationDays);
 
-  const updatedMembership = await prisma.gymMembership.update({
-    where: { id: membershipId },
-    data: {
-      membershipPlanId: plan.id,
-      membershipStartDate: startDate,
-      membershipEndDate: endDate,
-    },
-    select: {
-      id: true,
-      gymId: true,
-      membershipPlan: { select: { id: true, name: true, price: true, currency: true, durationDays: true } },
-      membershipStartDate: true,
-      membershipEndDate: true,
-    },
+  const updatedMembership = await prisma.$transaction(async (tx) => {
+    const updated = await tx.gymMembership.update({
+      where: { id: membershipId },
+      data: {
+        membershipPlanId: plan.id,
+        membershipStartDate: startDate,
+        membershipEndDate: endDate,
+      },
+      select: {
+        id: true,
+        gymId: true,
+        membershipPlan: { select: { id: true, name: true, price: true, currency: true, durationDays: true } },
+        membershipStartDate: true,
+        membershipEndDate: true,
+      },
+    });
+
+    await writeAuditLog(tx, {
+      gymId: ownerMembership.gymId,
+      actorUserId: user.id,
+      action: "MEMBERSHIP_PLAN_ASSIGNED",
+      subjectType: "GymMembership",
+      subjectId: updated.id,
+      metadata: { membershipPlanId: plan.id },
+    });
+
+    return updated;
   });
 
   return NextResponse.json({ membership: updatedMembership });

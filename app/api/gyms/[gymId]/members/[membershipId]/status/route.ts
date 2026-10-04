@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { writeAuditLog } from "@/app/lib/batch5-events";
 import { getAuthenticatedUser } from "@/app/lib/authorization";
 
 type RouteContext = {
@@ -120,6 +121,15 @@ export async function PATCH(
         status,
         changedById: user.id,
       },
+    });
+
+    await writeAuditLog(tx, {
+      gymId,
+      actorUserId: user.id,
+      action: "MEMBERSHIP_STATUS_CHANGED",
+      subjectType: "GymMembership",
+      subjectId: membership.id,
+      metadata: { status },
     });
 
     return updated;

@@ -1,4 +1,9 @@
 import { NextResponse } from "next/server";
+import {
+  createNotifications,
+  type Batch5NotificationEvent,
+  writeAuditLog,
+} from "@/app/lib/batch5-events";
 import { requireGymRole } from "@/app/lib/authorization";
 import { isValidSessionDuration, parseScheduledAt } from "@/app/lib/pt-sessions";
 import { prisma } from "@/lib/prisma";
@@ -158,16 +163,81 @@ export async function PATCH(request: Request, context: RouteContext) {
     return NextResponse.json({ error: "Only scheduled sessions can change status" }, { status: 409 });
   }
 
-  const updated = await prisma.pTSession.update({
-    where: { id: session.id },
-    data: {
-      ...(hasScheduledAt ? { scheduledAt: parseScheduledAt(body.scheduledAt)! } : {}),
-      ...(hasDuration ? { durationMinutes: body.durationMinutes as number } : {}),
-      ...(hasPTPricingId ? { ptPricingId: body.ptPricingId as string | null } : {}),
-      ...(hasNotes ? { notes: typeof body.notes === "string" ? body.notes.trim() || null : null } : {}),
-      ...(hasStatus ? { status: body.status as "SCHEDULED" | "COMPLETED" | "CANCELLED" | "NO_SHOW" } : {}),
-    },
-    select: sessionSelect,
+  const scheduledAt = hasScheduledAt ? parseScheduledAt(body.scheduledAt)! : session.scheduledAt;
+  const isRescheduled = hasScheduledAt && scheduledAt.getTime() !== session.scheduledAt.getTime();
+  const isCancelled = hasStatus && body.status === "CANCELLED" && session.status !== "CANCELLED";
+  const changedFields = [
+    ...(hasScheduledAt ? ["scheduledAt"] : []),
+    ...(hasDuration ? ["durationMinutes"] : []),
+    ...(hasNotes ? ["notes"] : []),
+    ...(hasStatus ? ["status"] : []),
+    ...(hasPTPricingId ? ["ptPricingId"] : []),
+  ];
+
+  const updated = await prisma.$transaction(async (tx) => {
+    const updatedSession = await tx.pTSession.update({
+      where: { id: session.id },
+      data: {
+        ...(hasScheduledAt ? { scheduledAt } : {}),
+        ...(hasDuration ? { durationMinutes: body.durationMinutes as number } : {}),
+        ...(hasPTPricingId ? { ptPricingId: body.ptPricingId as string | null } : {}),
+        ...(hasNotes ? { notes: typeof body.notes === "string" ? body.notes.trim() || null : null } : {}),
+        ...(hasStatus ? { status: body.status as "SCHEDULED" | "COMPLETED" | "CANCELLED" | "NO_SHOW" } : {}),
+      },
+      select: sessionSelect,
+    });
+
+    await writeAuditLog(tx, {
+      gymId,
+      actorUserId: access.user.id,
+      action: isCancelled ? "PT_SESSION_CANCELLED" : "PT_SESSION_UPDATED",
+      subjectType: "PTSession",
+      subjectId: session.id,
+      metadata: {
+        fields: changedFields,
+        ...(isRescheduled ? { scheduledAt: scheduledAt.toISOString() } : {}),
+      },
+    });
+
+    const notificationType = isCancelled
+      ? "PT_SESSION_CANCELLED"
+      : isRescheduled
+        ? "PT_SESSION_RESCHEDULED"
+        : null;
+    if (notificationType) {
+      const title = notificationType === "PT_SESSION_CANCELLED"
+        ? "PT session cancelled"
+        : "PT session rescheduled";
+      const body = notificationType === "PT_SESSION_CANCELLED"
+        ? "A PT session has been cancelled."
+        : "A PT session has been rescheduled.";
+      const recipients: Batch5NotificationEvent[] = [];
+
+      if (session.trainerMembership.user.id !== access.user.id) {
+        recipients.push({
+          recipientUserId: session.trainerMembership.user.id,
+          gymId,
+          type: notificationType,
+          title,
+          body,
+          internalLink: "/trainer/sessions",
+        });
+      }
+      if (session.clientMembership.user.id !== access.user.id) {
+        recipients.push({
+          recipientUserId: session.clientMembership.user.id,
+          gymId,
+          type: notificationType,
+          title,
+          body,
+          internalLink: "/dashboard",
+        });
+      }
+
+      await createNotifications(tx, recipients);
+    }
+
+    return updatedSession;
   });
 
   return NextResponse.json({ session: updated });

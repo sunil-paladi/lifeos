@@ -49,6 +49,8 @@ model User {
   ownedGyms               Gym[]                        @relation("GymOwner")
   gymMemberships          GymMembership[]
   membershipStatusChanges GymMembershipStatusHistory[] @relation("MembershipStatusChangedBy")
+  auditLogs               AuditLog[]                   @relation("AuditLogActor")
+  notifications           Notification[]               @relation("NotificationRecipient")
 
   // Timestamps
   createdAt        DateTime          @default(now())
@@ -222,6 +224,8 @@ model Gym {
   settings                 GymSettings?
   payments                 Payment[]
   trainingPlans            TrainingPlan[]
+  auditLogs                AuditLog[]
+  notifications            Notification[]
 
   @@index([ownerId])
   @@map("gym")
@@ -315,6 +319,51 @@ model GymMembershipStatusHistory {
   @@index([gymId, membershipId, changedAt])
   @@index([membershipId, changedAt])
   @@map("gym_membership_status_history")
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  gymId       String
+  actorUserId String
+  action      String
+  subjectType String
+  subjectId   String
+  metadata    Json?    @db.JsonB
+  createdAt   DateTime @default(now())
+
+  gym   Gym  @relation(fields: [gymId], references: [id], onDelete: Restrict)
+  actor User @relation("AuditLogActor", fields: [actorUserId], references: [id], onDelete: Restrict)
+
+  @@index([gymId, createdAt])
+  @@index([gymId, subjectType, subjectId, createdAt])
+  @@index([actorUserId, createdAt])
+  @@map("audit_log")
+}
+
+enum NotificationType {
+  TRAINER_CLIENT_ASSIGNED
+  PT_SESSION_CREATED
+  PT_SESSION_RESCHEDULED
+  PT_SESSION_CANCELLED
+}
+
+model Notification {
+  id              String           @id @default(cuid())
+  recipientUserId String
+  gymId           String?
+  type            NotificationType
+  title           String
+  body            String
+  internalLink    String?
+  createdAt       DateTime         @default(now())
+  readAt          DateTime?
+
+  recipient User @relation("NotificationRecipient", fields: [recipientUserId], references: [id], onDelete: Cascade)
+  gym       Gym? @relation(fields: [gymId], references: [id], onDelete: SetNull)
+
+  @@index([recipientUserId, readAt, createdAt])
+  @@index([gymId, createdAt])
+  @@map("notification")
 }
 
 model GymSettings {

@@ -1,4 +1,9 @@
 import { NextResponse } from "next/server";
+import {
+  createNotifications,
+  type Batch5NotificationEvent,
+  writeAuditLog,
+} from "@/app/lib/batch5-events";
 import { requireGymRole } from "@/app/lib/authorization";
 import { isValidSessionDuration, parseScheduledAt } from "@/app/lib/pt-sessions";
 import { prisma } from "@/lib/prisma";
@@ -118,7 +123,8 @@ export async function POST(request: Request, context: RouteContext) {
     return NextResponse.json({ error: "scheduledAt must be a valid date and time" }, { status: 400 });
   }
 
-  if (!isValidSessionDuration(body.durationMinutes)) {
+  const durationMinutes = body.durationMinutes;
+  if (!isValidSessionDuration(durationMinutes)) {
     return NextResponse.json({ error: "durationMinutes must be an integer from 1 to 480" }, { status: 400 });
   }
 
@@ -142,7 +148,7 @@ export async function POST(request: Request, context: RouteContext) {
         role: "TRAINER",
         status: "ACTIVE",
       },
-      select: { id: true },
+      select: { id: true, userId: true },
     }),
     prisma.gymMembership.findFirst({
       where: {
@@ -151,7 +157,7 @@ export async function POST(request: Request, context: RouteContext) {
         role: "MEMBER",
         status: "ACTIVE",
       },
-      select: { id: true },
+      select: { id: true, userId: true },
     }),
     ptPricingId === null
       ? Promise.resolve(null)
@@ -184,18 +190,66 @@ export async function POST(request: Request, context: RouteContext) {
     return NextResponse.json({ error: "The client is not assigned to this trainer" }, { status: 403 });
   }
 
-  const session = await prisma.pTSession.create({
-    data: {
+  const session = await prisma.$transaction(async (tx) => {
+    const createdSession = await tx.pTSession.create({
+      data: {
+        gymId,
+        trainerMembershipId,
+        clientMembershipId,
+        ptPricingId,
+        scheduledAt,
+        durationMinutes,
+        status: status as "SCHEDULED" | "COMPLETED" | "CANCELLED" | "NO_SHOW",
+        notes: typeof body.notes === "string" ? body.notes.trim() || null : null,
+      },
+      select: sessionSelect,
+    });
+
+    await writeAuditLog(tx, {
       gymId,
-      trainerMembershipId,
-      clientMembershipId,
-      ptPricingId,
-      scheduledAt,
-      durationMinutes: body.durationMinutes,
-      status: status as "SCHEDULED" | "COMPLETED" | "CANCELLED" | "NO_SHOW",
-      notes: typeof body.notes === "string" ? body.notes.trim() || null : null,
-    },
-    select: sessionSelect,
+      actorUserId: access.user.id,
+      action: "PT_SESSION_CREATED",
+      subjectType: "PTSession",
+      subjectId: createdSession.id,
+      metadata: {
+        trainerMembershipId,
+        clientMembershipId,
+        scheduledAt: scheduledAt.toISOString(),
+      },
+    });
+
+    const type: Batch5NotificationEvent["type"] = createdSession.status === "CANCELLED"
+      ? "PT_SESSION_CANCELLED"
+      : "PT_SESSION_CREATED";
+    const recipients = [
+      trainerMembership.userId === access.user.id
+        ? null
+        : {
+            recipientUserId: trainerMembership.userId,
+            gymId,
+            type,
+            title: type === "PT_SESSION_CANCELLED" ? "PT session cancelled" : "PT session created",
+            body: type === "PT_SESSION_CANCELLED"
+              ? "A PT session was created as cancelled."
+              : "A PT session has been created.",
+            internalLink: "/trainer/sessions",
+          },
+      clientMembership.userId === access.user.id
+        ? null
+        : {
+            recipientUserId: clientMembership.userId,
+            gymId,
+            type,
+            title: type === "PT_SESSION_CANCELLED" ? "PT session cancelled" : "PT session created",
+            body: type === "PT_SESSION_CANCELLED"
+              ? "A PT session was created as cancelled."
+              : "A PT session has been created.",
+            internalLink: "/dashboard",
+          },
+    ].filter((event) => event !== null);
+
+    await createNotifications(tx, recipients);
+    return createdSession;
   });
 
   return NextResponse.json({ session }, { status: 201 });
