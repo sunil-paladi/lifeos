@@ -7,7 +7,7 @@ import {
   useTheme,
 } from "@/app/components/theme/ThemeProvider";
 
-type AccountRole = "User" | "Trainer" | "Owner";
+type AccountRole = "USER" | "TRAINER" | "OWNER";
 
 type FitnessGoal =
   | "Lose Weight"
@@ -22,7 +22,6 @@ type SettingsData = {
   weight: string;
   fitnessGoal: FitnessGoal;
   waterGoal: string;
-  role: AccountRole;
   trainerName: string;
   trainerSpecialization: string;
   trainerEmail: string;
@@ -47,7 +46,6 @@ const DEFAULT_SETTINGS: SettingsData = {
   weight: "73",
   fitnessGoal: "Build Muscle",
   waterGoal: "3000",
-  role: "User",
   trainerName: "",
   trainerSpecialization: "",
   trainerEmail: "",
@@ -63,6 +61,7 @@ const DEFAULT_NUTRITION_TARGETS: NutritionTargets = {
 
 export default function SettingsPage() {
   const { theme, setTheme } = useTheme();
+  const [accountRole, setAccountRole] = useState<AccountRole | null>(null);
   const [settings, setSettings] =
     useState<SettingsData>(DEFAULT_SETTINGS);
 
@@ -94,6 +93,12 @@ export default function SettingsPage() {
 
         const data = await response.json();
         const user = data.user;
+        if (user.role === "USER" || user.role === "TRAINER" || user.role === "OWNER") {
+          setAccountRole(user.role);
+        } else {
+          throw new Error("Profile contains an unsupported account role");
+        }
+
         setSettings((previous) => ({
           ...previous,
           name: user.name ?? "",
@@ -691,20 +696,15 @@ async function updateSetting(
                 Account Role
               </label>
 
-              <select
-                value={settings.role}
-                onChange={(event) =>
-                  updateSetting(
-                    "role",
-                    event.target.value as AccountRole
-                  )
-                }
-                className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-primary/30 focus:ring-2 focus:ring-primary/20"
-              >
-                <option value="User">User</option>
-                <option value="Trainer">Trainer</option>
-                <option value="Owner">Owner / Admin</option>
-              </select>
+              <p className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-600">
+                {accountRole === "TRAINER"
+                  ? "Trainer"
+                  : accountRole === "OWNER"
+                    ? "Owner / Admin"
+                    : accountRole === "USER"
+                      ? "User"
+                      : "Unknown"}
+              </p>
             </div>
 
             <div>

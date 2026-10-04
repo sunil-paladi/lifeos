@@ -69,6 +69,13 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: "Request body must be a valid JSON object" }, { status: 400 });
   }
 
+  if (Object.hasOwn(body, "role")) {
+    return NextResponse.json(
+      { error: "Account role cannot be changed through profile updates" },
+      { status: 403 }
+    );
+  }
+
   const data: {
     name?: string;
     phoneNumber?: string | null;
