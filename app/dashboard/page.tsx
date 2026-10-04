@@ -86,7 +86,7 @@ export default async function DashboardPage() {
           <div>
             <Badge
               variant="secondary"
-              className="border border-sky-500/20 bg-sky-500/10 text-sky-300"
+              className="border-sky-200 bg-sky-100 text-sky-700 [html[data-theme=dark]_&]:border-sky-500/20 [html[data-theme=dark]_&]:bg-sky-500/10 [html[data-theme=dark]_&]:text-sky-300 [@media(prefers-color-scheme:dark)]:[html[data-theme=system]_&]:border-sky-500/20 [@media(prefers-color-scheme:dark)]:[html[data-theme=system]_&]:bg-sky-500/10 [@media(prefers-color-scheme:dark)]:[html[data-theme=system]_&]:text-sky-300"
             >
               {today}
             </Badge>
