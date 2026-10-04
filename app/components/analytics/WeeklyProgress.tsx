@@ -649,7 +649,7 @@ export default function WeeklyProgress() {
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-green-50 text-xl">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-xl">
                 🎯
               </div>
               <div>
@@ -661,14 +661,14 @@ export default function WeeklyProgress() {
                 </p>
               </div>
             </div>
-            <span className="text-sm font-semibold text-green-600">
+            <span className="text-sm font-semibold text-primary">
               7 Days
             </span>
           </div>
 
           <div className="mt-4 h-2.5 overflow-hidden rounded-full bg-slate-100">
             <div
-              className="h-full rounded-full bg-green-500 transition-all duration-500"
+              className="h-full rounded-full bg-primary transition-all duration-500"
               style={{
                 width: `${habitAverage}%`,
               }}
@@ -742,7 +742,7 @@ export default function WeeklyProgress() {
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-xl">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-xl">
                 🍎
               </div>
               <div>
@@ -755,14 +755,14 @@ export default function WeeklyProgress() {
               </div>
             </div>
 
-            <span className="text-sm font-semibold text-emerald-600">
+            <span className="text-sm font-semibold text-primary">
               Today {todayNutritionPercentages.calories}%
             </span>
           </div>
 
           <div className="mt-4 h-2.5 overflow-hidden rounded-full bg-slate-100">
             <div
-              className="h-full rounded-full bg-emerald-500 transition-all duration-500"
+              className="h-full rounded-full bg-primary transition-all duration-500"
               style={{
                 width: `${nutritionAverage}%`,
               }}
@@ -784,7 +784,7 @@ export default function WeeklyProgress() {
 
         <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4">
           <div className="rounded-xl bg-slate-50 p-4 text-center">
-            <p className="text-2xl font-bold text-green-600">
+            <p className="text-2xl font-bold text-primary">
               {completedWorkouts}
             </p>
             <p className="mt-1 text-xs text-slate-500">
@@ -833,11 +833,11 @@ export default function WeeklyProgress() {
             </p>
           </div>
 
-          <div className="rounded-xl bg-emerald-50 px-4 py-2">
-            <p className="text-xs font-medium text-emerald-700">
+          <div className="rounded-xl bg-primary/10 px-4 py-2">
+            <p className="text-xs font-medium text-primary">
               Overall
             </p>
-            <p className="text-xl font-bold text-emerald-700">
+            <p className="text-xl font-bold text-primary">
               {todayNutritionPercentages.calories}%
             </p>
           </div>
@@ -891,7 +891,7 @@ export default function WeeklyProgress() {
 
             <div className="mt-3 h-2.5 overflow-hidden rounded-full bg-white">
               <div
-                className="h-full rounded-full bg-green-500"
+                className="h-full rounded-full bg-primary"
                 style={{
                   width: `${todayNutritionPercentages.protein}%`,
                 }}
@@ -985,7 +985,7 @@ export default function WeeklyProgress() {
             <p className="text-sm text-slate-500">
               Weekly Average
             </p>
-            <p className="text-2xl font-bold text-green-600">
+            <p className="text-2xl font-bold text-primary">
               {habitAverage}%
             </p>
           </div>
@@ -1006,7 +1006,7 @@ export default function WeeklyProgress() {
               <div className="h-3 w-full overflow-hidden rounded-full bg-slate-100">
                 {item.value !== null && (
                   <div
-                    className="h-full rounded-full bg-green-500"
+                    className="h-full rounded-full bg-primary"
                     style={{
                       width: `${item.value}%`,
                     }}
@@ -1132,7 +1132,7 @@ export default function WeeklyProgress() {
             <p className="text-sm text-slate-500">
               Weekly Average
             </p>
-            <p className="text-2xl font-bold text-emerald-600">
+            <p className="text-2xl font-bold text-primary">
               {nutritionAverage}%
             </p>
           </div>
@@ -1153,7 +1153,7 @@ export default function WeeklyProgress() {
               <div className="h-3 w-full overflow-hidden rounded-full bg-slate-100">
                 {item.value !== null && (
                   <div
-                    className="h-full rounded-full bg-emerald-500"
+                    className="h-full rounded-full bg-primary"
                     style={{
                       width: `${item.value}%`,
                     }}

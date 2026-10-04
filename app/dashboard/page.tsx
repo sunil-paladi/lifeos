@@ -35,7 +35,7 @@ const dailyActions = [
     description: "Check in for your gym visit or review attendance.",
     href: "/attendance",
     icon: ClipboardCheck,
-    accent: "bg-rose-50 text-rose-600",
+    accent: "bg-primary/10 text-primary",
   },
   {
     title: "Habits",

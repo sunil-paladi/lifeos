@@ -174,7 +174,7 @@ export default function MuscleBadge({
             onClick={() =>
               setExerciseOpen(true)
             }
-            className="flex items-center gap-1 rounded-lg bg-green-600 px-3 py-1.5 text-sm text-white hover:bg-green-700"
+            className="flex items-center gap-1 rounded-lg bg-primary px-3 py-1.5 text-sm text-white hover:bg-primary/90"
           >
             <Plus size={15} />
             Edit Exercises
@@ -436,7 +436,7 @@ function ExerciseSettings({
   onChange={(e) =>
     setDuration(e.target.value)
   }
-  className="mt-1 h-11 w-full min-w-0 appearance-none rounded-lg border border-slate-300 bg-white px-0.5 text-center text-sm font-medium text-slate-900 outline-none focus:border-green-500 focus:ring-2 focus:ring-green-100"
+  className="mt-1 h-11 w-full min-w-0 appearance-none rounded-lg border border-slate-300 bg-white px-0.5 text-center text-sm font-medium text-slate-900 outline-none focus:border-primary/30 focus:ring-2 focus:ring-primary/20"
 />
           </label>
 
@@ -451,7 +451,7 @@ function ExerciseSettings({
     });
   }
 }}
-            className="mt-3 w-full rounded-lg bg-green-600 py-2 text-sm font-semibold text-white hover:bg-green-700"
+            className="mt-3 w-full rounded-lg bg-primary py-2 text-sm font-semibold text-white hover:bg-primary/90"
           >
             Save Settings
           </button>
@@ -478,7 +478,7 @@ function ExerciseSettings({
                     e.target.value.replace(/\D/g, "")
                   )
                 }
-                className="mt-1 h-11 w-full min-w-0 appearance-none rounded-lg border border-slate-300 bg-white px-0.5 text-center text-sm font-medium text-slate-900 outline-none focus:border-green-500 focus:ring-2 focus:ring-green-100"
+                className="mt-1 h-11 w-full min-w-0 appearance-none rounded-lg border border-slate-300 bg-white px-0.5 text-center text-sm font-medium text-slate-900 outline-none focus:border-primary/30 focus:ring-2 focus:ring-primary/20"
               />
             </label>
 
@@ -496,7 +496,7 @@ function ExerciseSettings({
                     e.target.value.replace(/\D/g, "")
                   )
                 }
-                className="mt-1 h-11 w-full min-w-0 appearance-none rounded-lg border border-slate-300 bg-white px-0.5 text-center text-sm font-medium text-slate-900 outline-none focus:border-green-500 focus:ring-2 focus:ring-green-100"
+                className="mt-1 h-11 w-full min-w-0 appearance-none rounded-lg border border-slate-300 bg-white px-0.5 text-center text-sm font-medium text-slate-900 outline-none focus:border-primary/30 focus:ring-2 focus:ring-primary/20"
               />
             </label>
 
@@ -532,7 +532,7 @@ function ExerciseSettings({
                 }
               )
             }
-            className="mt-3 w-full rounded-lg bg-green-600 py-2 text-sm font-semibold text-white hover:bg-green-700"
+            className="mt-3 w-full rounded-lg bg-primary py-2 text-sm font-semibold text-white hover:bg-primary/90"
           >
             Save Settings
           </button>

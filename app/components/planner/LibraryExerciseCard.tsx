@@ -10,7 +10,7 @@ export default function LibraryExerciseCard({
   exercise,
 }: Props) {
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-3 shadow-sm transition hover:border-green-300 hover:shadow-md">
+    <div className="rounded-lg border border-slate-200 bg-white p-3 shadow-sm transition hover:border-primary/30 hover:shadow-md">
       {/* Exercise Name */}
       <div className="flex items-start justify-between gap-3">
         <div>
@@ -23,7 +23,7 @@ export default function LibraryExerciseCard({
           </p>
         </div>
 
-        <span className="shrink-0 rounded-md bg-green-50 px-2 py-1 text-[10px] font-semibold text-green-700">
+        <span className="shrink-0 rounded-md bg-primary/10 px-2 py-1 text-[10px] font-semibold text-primary">
           {exercise.difficulty}
         </span>
       </div>
@@ -54,7 +54,7 @@ export default function LibraryExerciseCard({
       {/* Add Exercise */}
       <button
         type="button"
-        className="mt-3 w-full rounded-md bg-green-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-green-700"
+        className="mt-3 w-full rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-primary/90"
       >
         + Add Exercise
       </button>

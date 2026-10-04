@@ -154,7 +154,7 @@ export default function Sidebar({
                   className={`group flex min-h-11 w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
                     active
                       ? "bg-primary text-primary-foreground shadow-sm"
-                      : "text-slate-600 hover:bg-rose-50 hover:text-slate-900"
+                      : "text-slate-600 hover:bg-primary/10 hover:text-slate-900"
                   }`}
                 >
                   {typeof Icon === "string" ? (
@@ -199,7 +199,7 @@ export default function Sidebar({
                   className={`group flex min-h-11 w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
                     active
                       ? "bg-primary text-primary-foreground shadow-sm"
-                      : "text-slate-600 hover:bg-rose-50 hover:text-slate-900"
+                      : "text-slate-600 hover:bg-primary/10 hover:text-slate-900"
                   }`}
                 >
                   <Icon
@@ -231,7 +231,7 @@ export default function Sidebar({
               className={`group flex min-h-11 w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
                 isActive("/trainer")
                   ? "bg-primary text-primary-foreground shadow-sm"
-                  : "text-slate-600 hover:bg-rose-50 hover:text-slate-900"
+                  : "text-slate-600 hover:bg-primary/10 hover:text-slate-900"
               }`}
             >
               <ShieldCheck
@@ -253,7 +253,7 @@ export default function Sidebar({
               className={`group mt-1 flex min-h-11 w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
                 isActive("/trainer/sessions")
                   ? "bg-primary text-primary-foreground shadow-sm"
-                  : "text-slate-600 hover:bg-rose-50 hover:text-slate-900"
+                  : "text-slate-600 hover:bg-primary/10 hover:text-slate-900"
               }`}
             >
               <CalendarDays
@@ -274,7 +274,7 @@ export default function Sidebar({
               className={`group mt-1 flex min-h-11 w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
                 isActive("/trainer/attendance")
                   ? "bg-primary text-primary-foreground shadow-sm"
-                  : "text-slate-600 hover:bg-rose-50 hover:text-slate-900"
+                  : "text-slate-600 hover:bg-primary/10 hover:text-slate-900"
               }`}
             >
               <ClipboardCheck
@@ -303,7 +303,7 @@ export default function Sidebar({
               className={`group flex min-h-11 w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
                 isActive("/owner/members")
                   ? "bg-primary text-primary-foreground shadow-sm"
-                  : "text-slate-600 hover:bg-rose-50 hover:text-slate-900"
+                  : "text-slate-600 hover:bg-primary/10 hover:text-slate-900"
               }`}
             >
               <Users
@@ -325,7 +325,7 @@ export default function Sidebar({
               className={`group mt-1 flex min-h-11 w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
                 isActive("/owner/attendance")
                   ? "bg-primary text-primary-foreground shadow-sm"
-                  : "text-slate-600 hover:bg-rose-50 hover:text-slate-900"
+                  : "text-slate-600 hover:bg-primary/10 hover:text-slate-900"
               }`}
             >
               <ClipboardCheck
@@ -346,7 +346,7 @@ export default function Sidebar({
               className={`group mt-1 flex min-h-11 w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
                 isActive("/owner/pt-sessions")
                   ? "bg-primary text-primary-foreground shadow-sm"
-                  : "text-slate-600 hover:bg-rose-50 hover:text-slate-900"
+                  : "text-slate-600 hover:bg-primary/10 hover:text-slate-900"
               }`}
             >
               <CalendarDays
@@ -367,7 +367,7 @@ export default function Sidebar({
               className={`group mt-1 flex min-h-11 w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
                 isActive("/owner/statistics")
                   ? "bg-primary text-primary-foreground shadow-sm"
-                  : "text-slate-600 hover:bg-rose-50 hover:text-slate-900"
+                  : "text-slate-600 hover:bg-primary/10 hover:text-slate-900"
               }`}
             >
               <BarChart3
@@ -388,7 +388,7 @@ export default function Sidebar({
               className={`group mt-1 flex min-h-11 w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
                 isActive("/owner/billing")
                   ? "bg-primary text-primary-foreground shadow-sm"
-                  : "text-slate-600 hover:bg-rose-50 hover:text-slate-900"
+                  : "text-slate-600 hover:bg-primary/10 hover:text-slate-900"
               }`}
             >
               <CreditCard
@@ -409,7 +409,7 @@ export default function Sidebar({
               className={`group mt-1 flex min-h-11 w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
                 isActive("/owner/settings")
                   ? "bg-primary text-primary-foreground shadow-sm"
-                  : "text-slate-600 hover:bg-rose-50 hover:text-slate-900"
+                  : "text-slate-600 hover:bg-primary/10 hover:text-slate-900"
               }`}
             >
               <Settings
@@ -431,7 +431,7 @@ export default function Sidebar({
               className={`group flex min-h-11 w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
                 isActive("/owner/staff")
                   ? "bg-primary text-primary-foreground shadow-sm"
-                  : "text-slate-600 hover:bg-rose-50 hover:text-slate-900"
+                  : "text-slate-600 hover:bg-primary/10 hover:text-slate-900"
               }`}
             >
               <UserCog
@@ -461,7 +461,7 @@ export default function Sidebar({
             className={`group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
               isActive("/settings")
                 ? "bg-primary text-primary-foreground shadow-sm"
-                : "text-slate-600 hover:bg-rose-50 hover:text-slate-900"
+                : "text-slate-600 hover:bg-primary/10 hover:text-slate-900"
             }`}
           >
             <Settings

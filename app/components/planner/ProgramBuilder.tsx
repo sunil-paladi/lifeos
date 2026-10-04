@@ -110,9 +110,9 @@ export default function ProgramBuilder() {
             <>
               <Check
                 size={12}
-                className="text-green-600"
+                className="text-primary"
               />
-              <span className="font-semibold text-green-600">
+              <span className="font-semibold text-primary">
                 Saved
               </span>
             </>
@@ -176,7 +176,7 @@ export default function ProgramBuilder() {
                   }
                   className={`flex w-full items-center justify-between rounded-md px-2.5 py-1.5 text-xs transition ${
                     durationWeeks === weeks
-                      ? "bg-green-50 font-semibold text-green-700"
+                      ? "bg-primary/10 font-semibold text-primary"
                       : "text-slate-700 hover:bg-slate-50"
                   }`}
                 >
@@ -185,7 +185,7 @@ export default function ProgramBuilder() {
                   {durationWeeks === weeks && (
                     <Check
                       size={13}
-                      className="text-green-600"
+                      className="text-primary"
                     />
                   )}
                 </button>
@@ -281,9 +281,9 @@ export default function ProgramBuilder() {
                 }
                 className={`h-1 flex-1 rounded-full transition ${
                   isActive
-                    ? "bg-green-600"
+                    ? "bg-primary"
                     : isCompleted
-                    ? "bg-green-200"
+                    ? "bg-primary/10"
                     : "bg-slate-200"
                 }`}
               />

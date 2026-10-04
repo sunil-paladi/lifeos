@@ -41,17 +41,17 @@ type WeightEntry = {
 };
 
 const colors = {
-  page: "#faf7f4",
-  card: "#ffffff",
-  navy: "#101828",
-  text: "#344054",
-  muted: "#667085",
-  border: "#dfe5ef",
-  coral: "#e85d75",
-  coralLight: "#fff1f3",
-  coralBorder: "#f5c3cc",
-  green: "#067647",
-  greenLight: "#ecfdf3",
+  page: "hsl(var(--background))",
+  card: "hsl(var(--card))",
+  navy: "hsl(var(--foreground))",
+  text: "hsl(var(--foreground))",
+  muted: "hsl(var(--muted-foreground))",
+  border: "hsl(var(--border))",
+  primary: "hsl(var(--primary))",
+  primarySurface: "hsl(var(--primary) / 0.1)",
+  primaryBorder: "hsl(var(--primary) / 0.25)",
+  success: "hsl(var(--success))",
+  successSurface: "hsl(var(--success-surface))",
 };
 
 const inputStyle: React.CSSProperties = {
@@ -59,7 +59,7 @@ const inputStyle: React.CSSProperties = {
   padding: "12px 13px",
   border: `1px solid ${colors.border}`,
   borderRadius: "8px",
-  background: "#ffffff",
+  background: "hsl(var(--card))",
   color: colors.navy,
   fontSize: "14px",
   boxSizing: "border-box",
@@ -391,8 +391,8 @@ export default function ProfilePage() {
               display: "inline-block",
               padding: "5px 10px",
               borderRadius: "20px",
-              background: colors.coralLight,
-              color: colors.coral,
+              background: colors.primarySurface,
+              color: colors.primary,
               fontSize: "11px",
               fontWeight: 700,
               letterSpacing: "0.07em",
@@ -450,7 +450,7 @@ export default function ProfilePage() {
                   width: "4px",
                   minHeight: "42px",
                   borderRadius: "4px",
-                  background: colors.coral,
+                  background: colors.primary,
                 }}
               />
 
@@ -514,7 +514,7 @@ export default function ProfilePage() {
                   disabled
                   style={{
                     ...inputStyle,
-                    background: "#f8fafc",
+                    background: "hsl(var(--muted))",
                     color: colors.muted,
                   }}
                 />
@@ -523,7 +523,7 @@ export default function ProfilePage() {
                   style={{
                     display: "block",
                     marginTop: "5px",
-                    color: "#98a2b3",
+                    color: "hsl(var(--muted-foreground))",
                   }}
                 >
                   Username cannot be changed.
@@ -542,7 +542,7 @@ export default function ProfilePage() {
                   disabled
                   style={{
                     ...inputStyle,
-                    background: "#f8fafc",
+                    background: "hsl(var(--muted))",
                     color: colors.muted,
                   }}
                 />
@@ -585,7 +585,7 @@ export default function ProfilePage() {
                   width: "4px",
                   minHeight: "42px",
                   borderRadius: "4px",
-                  background: colors.coral,
+                  background: colors.primary,
                 }}
               />
 
@@ -854,13 +854,13 @@ export default function ProfilePage() {
                   background: message.includes(
                     "success"
                   )
-                    ? colors.greenLight
-                    : "#fef3f2",
+                    ? colors.successSurface
+                    : "hsl(var(--destructive-surface))",
                   color: message.includes(
                     "success"
                   )
-                    ? colors.green
-                    : "#b42318",
+                    ? colors.success
+                    : "hsl(var(--destructive))",
                   fontSize: "13px",
                   fontWeight: 600,
                 }}
@@ -876,7 +876,7 @@ export default function ProfilePage() {
                 border: "none",
                 borderRadius: "8px",
                 padding: "12px 24px",
-                background: colors.coral,
+                background: colors.primary,
                 color: "#ffffff",
                 fontSize: "14px",
                 fontWeight: 600,
@@ -885,7 +885,7 @@ export default function ProfilePage() {
                   : "pointer",
                 opacity: saving ? 0.7 : 1,
                 boxShadow:
-                  "0 2px 5px rgba(232, 93, 117, 0.22)",
+                  "0 2px 5px hsl(var(--primary) / 0.22)",
               }}
             >
               {saving
@@ -915,7 +915,7 @@ export default function ProfilePage() {
                 width: "4px",
                 minHeight: "42px",
                 borderRadius: "4px",
-                background: colors.coral,
+                background: colors.primary,
               }}
             />
 
@@ -949,8 +949,8 @@ export default function ProfilePage() {
               padding: "18px",
               marginBottom: "22px",
               borderRadius: "10px",
-              background: colors.coralLight,
-              border: `1px solid ${colors.coralBorder}`,
+              background: colors.primarySurface,
+              border: `1px solid ${colors.primaryBorder}`,
             }}
           >
             <p
@@ -1015,7 +1015,7 @@ export default function ProfilePage() {
                 border: "none",
                 borderRadius: "8px",
                 padding: "12px 20px",
-                background: colors.coral,
+                background: colors.primary,
                 color: "#ffffff",
                 fontSize: "14px",
                 fontWeight: 600,
@@ -1043,13 +1043,13 @@ export default function ProfilePage() {
                 background: weightMessage.includes(
                   "success"
                 )
-                  ? colors.greenLight
-                  : "#fef3f2",
+                  ? colors.successSurface
+                  : "hsl(var(--destructive-surface))",
                 color: weightMessage.includes(
                   "success"
                 )
-                  ? colors.green
-                  : "#b42318",
+                  ? colors.success
+                  : "hsl(var(--destructive))",
                 fontSize: "13px",
                 fontWeight: 600,
               }}
@@ -1088,7 +1088,7 @@ export default function ProfilePage() {
                   margin: 0,
                   padding: "16px",
                   borderRadius: "8px",
-                  background: "#f8fafc",
+                  background: "hsl(var(--muted))",
                   color: colors.muted,
                   fontSize: "13px",
                 }}
@@ -1115,7 +1115,7 @@ export default function ProfilePage() {
                         alignItems: "center",
                         padding: "12px 14px",
                         borderRadius: "8px",
-                        background: "#f8fafc",
+                        background: "hsl(var(--muted))",
                         border: `1px solid ${colors.border}`,
                       }}
                     >

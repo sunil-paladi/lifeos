@@ -70,8 +70,8 @@ export default function StatCard({
 
   if (progress >= 80) {
     status = "🟢 Excellent";
-    statusColor = "text-green-600";
-    progressColor = "bg-green-500";
+    statusColor = "text-primary";
+    progressColor = "bg-primary";
   } else if (progress >= 50) {
     status = "🟡 Keep Going";
     statusColor = "text-yellow-600";

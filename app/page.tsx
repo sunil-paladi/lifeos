@@ -52,7 +52,7 @@ export default function Home() {
       <section className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
 
         {/* Background decoration */}
-        <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-green-100/60 blur-3xl" />
+        <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-primary/10 blur-3xl" />
 
         <div className="absolute -bottom-20 -left-20 h-64 w-64 rounded-full bg-blue-100/50 blur-3xl" />
 
@@ -61,13 +61,13 @@ export default function Home() {
           {/* Hero Content */}
           <div>
 
-            <div className="inline-flex items-center gap-2 rounded-full border border-green-200 bg-green-50 px-3 py-1.5 text-xs font-semibold text-green-700">
+            <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary">
               🌱 Your Personal Operating System
             </div>
 
             <h1 className="mt-5 max-w-3xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-4xl lg:text-5xl">
               Build a better life,
-              <span className="text-green-600">
+              <span className="text-primary">
                 {" "}one day at a time.
               </span>
             </h1>
@@ -115,9 +115,9 @@ export default function Home() {
 
             <div className="relative flex h-64 w-64 items-center justify-center">
 
-              <div className="absolute inset-0 rounded-full bg-green-100/70" />
+              <div className="absolute inset-0 rounded-full bg-primary/10" />
 
-              <div className="absolute inset-5 rounded-full bg-green-200/50" />
+              <div className="absolute inset-5 rounded-full bg-primary/10" />
 
               <div className="relative flex h-48 w-48 flex-col items-center justify-center rounded-full border border-white bg-white shadow-xl">
 
@@ -151,7 +151,7 @@ export default function Home() {
 
         <div className="text-center">
 
-          <p className="text-xs font-semibold uppercase tracking-wider text-green-600">
+          <p className="text-xs font-semibold uppercase tracking-wider text-primary">
             Why LifeOS?
           </p>
 
@@ -174,7 +174,7 @@ export default function Home() {
 
             <div
               key={feature.title}
-              className="rounded-xl border border-slate-100 bg-slate-50/70 p-4 transition-all duration-200 hover:-translate-y-0.5 hover:border-green-200 hover:bg-green-50/40"
+              className="rounded-xl border border-slate-100 bg-slate-50/70 p-4 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/20 hover:bg-primary/10"
             >
 
               <div className="flex items-start gap-3">
@@ -251,13 +251,13 @@ export default function Home() {
       {/* MOTIVATION */}
       {/* ========================================= */}
 
-      <section className="overflow-hidden rounded-2xl border border-green-200 bg-green-50">
+      <section className="overflow-hidden rounded-2xl border border-primary/20 bg-primary/10">
 
         <div className="flex flex-col items-center justify-between gap-4 px-6 py-6 text-center sm:flex-row sm:text-left">
 
           <div>
 
-            <p className="text-xs font-semibold uppercase tracking-wider text-green-600">
+            <p className="text-xs font-semibold uppercase tracking-wider text-primary">
               Today's Reminder
             </p>
 

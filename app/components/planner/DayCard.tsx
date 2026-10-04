@@ -54,7 +54,7 @@ export default function DayCard({
           <span
             className={`rounded-full px-2 py-1 text-[10px] font-semibold ${
               muscleGroups.length > 0
-                ? "bg-green-100 text-green-700"
+                ? "bg-primary/10 text-primary"
                 : "bg-slate-100 text-slate-600"
             }`}
           >
@@ -94,7 +94,7 @@ export default function DayCard({
           onClick={() =>
             setDrawerOpen(true)
           }
-          className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-md bg-green-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-green-700"
+          className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-primary/90"
         >
           {muscleGroups.length > 0 ? (
             <>

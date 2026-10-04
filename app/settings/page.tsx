@@ -2,6 +2,10 @@
 
 import { ChangeEvent, useEffect, useState } from "react";
 import { authClient } from "@/app/lib/auth-client";
+import {
+  type ThemeMode,
+  useTheme,
+} from "@/app/components/theme/ThemeProvider";
 
 type AccountRole = "User" | "Trainer" | "Owner";
 
@@ -58,6 +62,7 @@ const DEFAULT_NUTRITION_TARGETS: NutritionTargets = {
 };
 
 export default function SettingsPage() {
+  const { theme, setTheme } = useTheme();
   const [settings, setSettings] =
     useState<SettingsData>(DEFAULT_SETTINGS);
 
@@ -489,7 +494,7 @@ async function updateSetting(
     <main className="space-y-6">
       {/* HEADER */}
       <div>
-        <p className="text-sm font-medium uppercase tracking-wide text-green-600">
+        <p className="text-sm font-medium uppercase tracking-wide text-primary">
           Settings
         </p>
 
@@ -502,6 +507,41 @@ async function updateSetting(
           profile, and targets.
         </p>
       </div>
+
+      <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+        <div>
+          <h2 className="text-lg font-bold text-card-foreground">
+            Appearance
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Choose how LifeOS looks on this device.
+          </p>
+        </div>
+
+        <fieldset className="mt-4 grid gap-3 sm:grid-cols-3">
+          <legend className="sr-only">Theme</legend>
+          {(["light", "dark", "system"] as const).map((mode: ThemeMode) => (
+            <label
+              key={mode}
+              className={`flex min-h-12 cursor-pointer items-center gap-3 rounded-xl border px-4 py-3 text-sm font-medium capitalize transition ${
+                theme === mode
+                  ? "border-primary bg-primary/10 text-foreground"
+                  : "border-border bg-background text-muted-foreground hover:bg-muted"
+              }`}
+            >
+              <input
+                type="radio"
+                name="appearance"
+                value={mode}
+                checked={theme === mode}
+                onChange={() => setTheme(mode)}
+                className="accent-primary"
+              />
+              {mode}
+            </label>
+          ))}
+        </fieldset>
+      </section>
 
       {/* PROFILE */}
       <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -574,7 +614,7 @@ async function updateSetting(
                     event.target.value
                   )
                 }
-                className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-100"
+                className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-primary/30 focus:ring-2 focus:ring-primary/20"
                 placeholder="Your name"
               />
             </div>
@@ -595,7 +635,7 @@ async function updateSetting(
                     event.target.value
                   )
                 }
-                className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-100"
+                className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-primary/30 focus:ring-2 focus:ring-primary/20"
                 placeholder="Age"
               />
 
@@ -620,7 +660,7 @@ async function updateSetting(
                     event.target.value
                   )
                 }
-                className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-100"
+                className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-primary/30 focus:ring-2 focus:ring-primary/20"
                 placeholder="Height"
               />
             </div>
@@ -641,7 +681,7 @@ async function updateSetting(
                     event.target.value
                   )
                 }
-                className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-100"
+                className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-primary/30 focus:ring-2 focus:ring-primary/20"
                 placeholder="Weight"
               />
             </div>
@@ -659,7 +699,7 @@ async function updateSetting(
                     event.target.value as AccountRole
                   )
                 }
-                className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-100"
+                className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-primary/30 focus:ring-2 focus:ring-primary/20"
               >
                 <option value="User">User</option>
                 <option value="Trainer">Trainer</option>
@@ -680,7 +720,7 @@ async function updateSetting(
                     event.target.value as FitnessGoal
                   )
                 }
-                className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-100"
+                className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-primary/30 focus:ring-2 focus:ring-primary/20"
               >
                 <option value="Lose Weight">
                   Lose Weight
@@ -731,7 +771,7 @@ async function updateSetting(
                   event.target.value
                 )
               }
-              className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-100"
+              className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-primary/30 focus:ring-2 focus:ring-primary/20"
               placeholder="e.g. Rahul Sharma"
             />
           </div>
@@ -750,7 +790,7 @@ async function updateSetting(
                   event.target.value
                 )
               }
-              className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-100"
+              className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-primary/30 focus:ring-2 focus:ring-primary/20"
               placeholder="e.g. Strength & Fitness"
             />
           </div>
@@ -769,7 +809,7 @@ async function updateSetting(
                   event.target.value
                 )
               }
-              className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-100"
+              className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-primary/30 focus:ring-2 focus:ring-primary/20"
               placeholder="trainer@example.com"
             />
           </div>
@@ -817,8 +857,8 @@ async function updateSetting(
             />
           </div>
 
-          <div className="rounded-xl bg-green-50 p-4">
-            <label className="text-xs font-semibold text-green-700">
+          <div className="rounded-xl bg-primary/10 p-4">
+            <label className="text-xs font-semibold text-primary">
               💪 Protein (g) <span className="text-red-500">*</span>
             </label>
 
@@ -833,7 +873,7 @@ async function updateSetting(
                   event.target.value
                 )
               }
-              className="mt-2 w-full rounded-lg border border-green-100 bg-white px-3 py-2 text-sm outline-none focus:border-green-400 focus:ring-2 focus:ring-green-100"
+              className="mt-2 w-full rounded-lg border border-primary/20 bg-white px-3 py-2 text-sm outline-none focus:border-primary/30 focus:ring-2 focus:ring-primary/20"
             />
           </div>
 
@@ -924,7 +964,7 @@ async function updateSetting(
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             {saved && (
-              <p className="text-sm font-semibold text-green-600">
+              <p className="text-sm font-semibold text-primary">
                 ✓ Settings saved successfully.
               </p>
             )}
@@ -954,7 +994,7 @@ async function updateSetting(
             <button
               type="button"
               onClick={saveSettings}
-              className="rounded-lg bg-green-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-green-700"
+              className="rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-primary/90"
             >
               {saved ? "✓ Saved" : "Save Settings"}
             </button>
@@ -963,8 +1003,8 @@ async function updateSetting(
       </section>
 
       {/* INFO */}
-      <section className="rounded-2xl border border-green-100 bg-green-50 p-5">
-        <p className="text-sm leading-relaxed text-green-800">
+      <section className="rounded-2xl border border-primary/20 bg-primary/10 p-5">
+        <p className="text-sm leading-relaxed text-primary">
           💡 Your nutrition targets are shared with the
           Nutrition and Analytics sections. Your water goal
           is also saved for LifeOS hydration tracking.

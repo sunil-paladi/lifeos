@@ -75,7 +75,7 @@ export default function ResetPasswordPage() {
               <p className="text-sm text-slate-700">Your password has been updated.</p>
               <Link
                 href="/login"
-                className="inline-flex w-full justify-center rounded-xl bg-green-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-green-700"
+                className="inline-flex w-full justify-center rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-primary/90"
               >
                 Continue to login
               </Link>
@@ -95,7 +95,7 @@ export default function ResetPasswordPage() {
                   maxLength={128}
                   autoComplete="new-password"
                   required
-                  className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-green-500 focus:ring-4 focus:ring-green-100"
+                  className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-primary/30 focus:ring-4 focus:ring-primary/20"
                 />
                 <p className="mt-1.5 text-xs text-slate-400">Use 12 to 128 characters.</p>
               </div>
@@ -113,7 +113,7 @@ export default function ResetPasswordPage() {
                   maxLength={128}
                   autoComplete="new-password"
                   required
-                  className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-green-500 focus:ring-4 focus:ring-green-100"
+                  className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-primary/30 focus:ring-4 focus:ring-primary/20"
                 />
               </div>
 
@@ -126,7 +126,7 @@ export default function ResetPasswordPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full rounded-xl bg-green-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-green-700 focus:outline-none focus:ring-4 focus:ring-green-100 disabled:cursor-not-allowed disabled:opacity-60"
+                className="w-full rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-primary/90 focus:outline-none focus:ring-4 focus:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {loading ? "Updating password..." : "Update password"}
               </button>
@@ -134,7 +134,7 @@ export default function ResetPasswordPage() {
           ) : (
             <div className="space-y-4 text-center">
               <p role="alert" className="text-sm text-slate-700">{message}</p>
-              <Link href="/forgot-password" className="font-semibold text-green-600 hover:text-green-700">
+              <Link href="/forgot-password" className="font-semibold text-primary hover:text-primary">
                 Request a new reset link
               </Link>
             </div>

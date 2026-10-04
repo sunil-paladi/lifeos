@@ -74,7 +74,7 @@ export default function ForgotPasswordPage() {
                   maxLength={254}
                   autoComplete="email"
                   required
-                  className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-green-500 focus:ring-4 focus:ring-green-100"
+                  className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-primary/30 focus:ring-4 focus:ring-primary/20"
                 />
               </div>
 
@@ -87,7 +87,7 @@ export default function ForgotPasswordPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full rounded-xl bg-green-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-green-700 focus:outline-none focus:ring-4 focus:ring-green-100 disabled:cursor-not-allowed disabled:opacity-60"
+                className="w-full rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-primary/90 focus:outline-none focus:ring-4 focus:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {loading ? "Requesting link..." : "Send reset link"}
               </button>
@@ -95,7 +95,7 @@ export default function ForgotPasswordPage() {
           )}
 
           <div className="mt-6 border-t border-slate-100 pt-6 text-center">
-            <Link href="/login" className="inline-flex items-center gap-2 text-sm font-semibold text-green-600 hover:text-green-700">
+            <Link href="/login" className="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:text-primary">
               <ArrowLeft size={16} />
               Back to login
             </Link>

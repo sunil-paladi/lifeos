@@ -78,7 +78,7 @@ export default function ExerciseSelector({
                   onClick={() => toggleExercise(exercise.id)}
                   className={`w-full rounded-xl border p-4 text-left transition ${
                     isSelected
-                      ? "border-green-500 bg-green-50"
+                      ? "border-primary/30 bg-primary/10"
                       : "border-slate-200 bg-white hover:bg-slate-50"
                   }`}
                 >
@@ -98,7 +98,7 @@ export default function ExerciseSelector({
                     <span
                       className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-md border text-sm font-bold ${
                         isSelected
-                          ? "border-green-600 bg-green-600 text-white"
+                          ? "border-primary/30 bg-primary text-white"
                           : "border-slate-300 bg-white text-transparent"
                       }`}
                     >
@@ -127,7 +127,7 @@ export default function ExerciseSelector({
           <button
             type="button"
             onClick={handleSave}
-            className="w-full rounded-xl bg-green-600 py-3 font-semibold text-white transition hover:bg-green-700"
+            className="w-full rounded-xl bg-primary py-3 font-semibold text-white transition hover:bg-primary/90"
           >
             Save Exercises
           </button>

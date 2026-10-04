@@ -29,7 +29,7 @@ export default function MuscleGroupList({
           onClick={() => onSelect(muscle)}
           className={`rounded-full px-4 py-2 transition ${
             selected === muscle
-              ? "bg-green-600 text-white"
+              ? "bg-primary text-white"
               : "bg-slate-100 hover:bg-slate-200"
           }`}
         >

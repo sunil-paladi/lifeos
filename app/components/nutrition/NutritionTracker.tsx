@@ -886,7 +886,7 @@ async function handleSaveMeal() {
         <div className="mt-3 h-2.5 w-full overflow-hidden rounded-full bg-slate-200">
 
           <div
-            className="h-full rounded-full bg-green-600 transition-all duration-500"
+            className="h-full rounded-full bg-primary transition-all duration-500"
             style={{
               width: `${percentage}%`,
             }}
@@ -905,7 +905,7 @@ async function handleSaveMeal() {
               {remaining} {unit} remaining
             </span>
           ) : (
-            <span className="font-semibold text-green-600">
+            <span className="font-semibold text-primary">
               Goal reached
             </span>
           )}
@@ -1472,7 +1472,7 @@ async function handleSaveMeal() {
                       e.target.value
                     )
                   }
-                  className="mt-1.5 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-100"
+                  className="mt-1.5 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-primary/30 focus:ring-2 focus:ring-primary/20"
                 />
               </div>
 
@@ -1492,7 +1492,7 @@ async function handleSaveMeal() {
                         e.target.value
                       )
                     }
-                    className="mt-1.5 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-100"
+                    className="mt-1.5 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-primary/30 focus:ring-2 focus:ring-primary/20"
                   />
                 </div>
 
@@ -1511,7 +1511,7 @@ async function handleSaveMeal() {
                         e.target.value
                       )
                     }
-                    className="mt-1.5 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-100"
+                    className="mt-1.5 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-primary/30 focus:ring-2 focus:ring-primary/20"
                   />
                 </div>
 
@@ -1530,7 +1530,7 @@ async function handleSaveMeal() {
                         e.target.value
                       )
                     }
-                    className="mt-1.5 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-100"
+                    className="mt-1.5 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-primary/30 focus:ring-2 focus:ring-primary/20"
                   />
                 </div>
               </div>
@@ -1554,7 +1554,7 @@ async function handleSaveMeal() {
               <button
                 type="button"
                 onClick={saveNutritionGoals}
-                className="flex-1 rounded-lg bg-green-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-green-700"
+                className="flex-1 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-primary/90"
               >
                 Save Goals
               </button>
@@ -1622,10 +1622,10 @@ async function handleSaveMeal() {
                     onClick={() =>
                       setAddMealMode("photo")
                     }
-                    className="group flex w-full items-center gap-4 rounded-xl border border-slate-200 bg-white p-4 text-left transition hover:border-green-300 hover:bg-green-50"
+                    className="group flex w-full items-center gap-4 rounded-xl border border-slate-200 bg-white p-4 text-left transition hover:border-primary/30 hover:bg-primary/10"
                   >
 
-                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-green-50 text-xl group-hover:bg-green-100">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-xl group-hover:bg-primary/10">
                       📸
                     </div>
 
@@ -1740,7 +1740,7 @@ async function handleSaveMeal() {
                       }
                       placeholder="e.g. Breakfast"
                       autoFocus
-                      className="mt-1.5 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-100"
+                      className="mt-1.5 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-primary/30 focus:ring-2 focus:ring-primary/20"
                     />
 
                   </div>
@@ -1766,7 +1766,7 @@ async function handleSaveMeal() {
                           )
                         }
                         placeholder="500"
-                        className="mt-1.5 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-100"
+                        className="mt-1.5 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-primary/30 focus:ring-2 focus:ring-primary/20"
                       />
 
                     </div>
@@ -1789,7 +1789,7 @@ async function handleSaveMeal() {
                           )
                         }
                         placeholder="25"
-                        className="mt-1.5 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-100"
+                        className="mt-1.5 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-primary/30 focus:ring-2 focus:ring-primary/20"
                       />
 
                     </div>
@@ -1812,7 +1812,7 @@ async function handleSaveMeal() {
                           )
                         }
                         placeholder="60"
-                        className="mt-1.5 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-100"
+                        className="mt-1.5 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-primary/30 focus:ring-2 focus:ring-primary/20"
                       />
 
                     </div>
@@ -1835,7 +1835,7 @@ async function handleSaveMeal() {
                           )
                         }
                         placeholder="15"
-                        className="mt-1.5 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-100"
+                        className="mt-1.5 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-primary/30 focus:ring-2 focus:ring-primary/20"
                       />
 
                     </div>
@@ -1871,7 +1871,7 @@ async function handleSaveMeal() {
                   <button
                     type="button"
                     onClick={handleSaveMeal}
-                    className="flex-1 rounded-lg bg-green-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-green-700"
+                    className="flex-1 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-primary/90"
                   >
                     {editingMealId !== null
                       ? "Update Meal"
@@ -1938,7 +1938,7 @@ async function handleSaveMeal() {
                       onClick={() =>
                         fileInputRef.current?.click()
                       }
-                      className="flex w-full flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 px-4 py-10 text-center transition hover:border-green-400 hover:bg-green-50"
+                      className="flex w-full flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 px-4 py-10 text-center transition hover:border-primary/30 hover:bg-primary/10"
                     >
 
                       <div className="text-4xl">
@@ -2015,7 +2015,7 @@ async function handleSaveMeal() {
                         setPhotoError("");
                       }}
                       placeholder="250"
-                      className="w-full rounded-l-lg border border-r-0 border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-100"
+                      className="w-full rounded-l-lg border border-r-0 border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-primary/30 focus:ring-2 focus:ring-primary/20"
                     />
 
                     <span className="rounded-r-lg border border-slate-300 bg-slate-50 px-4 py-2.5 text-sm font-medium text-slate-500">
@@ -2063,7 +2063,7 @@ async function handleSaveMeal() {
                       handleAnalyzeFood
                     }
                     disabled={isAnalyzing}
-                    className="flex-1 rounded-lg bg-green-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="flex-1 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {isAnalyzing
                       ? "Analyzing..."

@@ -97,7 +97,7 @@ export default function WorkoutTracker() {
         {/* Title */}
         <div className="flex items-start gap-3">
 
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-green-50 text-xl">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-xl">
             🏋️
           </div>
 
@@ -123,7 +123,7 @@ export default function WorkoutTracker() {
           <select
             value={selectedWorkout}
             onChange={(e) => setSelectedWorkout(e.target.value)}
-            className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-100"
+            className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 outline-none transition focus:border-primary/30 focus:ring-2 focus:ring-primary/20"
           >
             {Object.keys(workoutData).map((day) => (
               <option key={day} value={day}>
@@ -152,12 +152,12 @@ export default function WorkoutTracker() {
           </p>
         </div>
 
-        <div className="rounded-xl bg-green-50 px-4 py-3">
+        <div className="rounded-xl bg-primary/10 px-4 py-3">
           <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">
             Completed
           </p>
 
-          <p className="mt-1 text-lg font-bold text-green-700">
+          <p className="mt-1 text-lg font-bold text-primary">
             {completedCount}
           </p>
         </div>
@@ -202,7 +202,7 @@ export default function WorkoutTracker() {
               onClick={() => toggleExercise(exercise.id)}
               className={`group flex w-full items-center gap-3 rounded-xl border px-3 py-3 text-left transition-all duration-200 sm:px-4 ${
                 exercise.completed
-                  ? "border-green-100 bg-green-50 hover:border-green-200 hover:bg-green-100"
+                  ? "border-primary/20 bg-primary/10 hover:border-primary/20 hover:bg-primary/10"
                   : "border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-slate-100"
               }`}
             >
@@ -211,7 +211,7 @@ export default function WorkoutTracker() {
               <div
                 className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold transition-all ${
                   exercise.completed
-                    ? "bg-green-600 text-white"
+                    ? "bg-primary text-white"
                     : "border border-slate-300 bg-white text-slate-500"
                 }`}
               >
@@ -241,7 +241,7 @@ export default function WorkoutTracker() {
               <div className="shrink-0">
 
                 {exercise.completed ? (
-                  <span className="rounded-full bg-green-100 px-2.5 py-1 text-[11px] font-semibold text-green-700">
+                  <span className="rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-semibold text-primary">
                     Done
                   </span>
                 ) : (
@@ -278,7 +278,7 @@ export default function WorkoutTracker() {
             </p>
           </div>
 
-          <span className="text-lg font-bold text-green-600">
+          <span className="text-lg font-bold text-primary">
             {progress}%
           </span>
 
@@ -288,7 +288,7 @@ export default function WorkoutTracker() {
         <div className="mt-3 h-2.5 w-full overflow-hidden rounded-full bg-slate-200">
 
           <div
-            className="h-full rounded-full bg-green-600 transition-all duration-500"
+            className="h-full rounded-full bg-primary transition-all duration-500"
             style={{ width: `${progress}%` }}
           />
 
@@ -298,7 +298,7 @@ export default function WorkoutTracker() {
         <div className="mt-3 flex items-center justify-between text-xs">
 
           {progress === 100 ? (
-            <span className="font-medium text-green-600">
+            <span className="font-medium text-primary">
               🎉 Workout completed! Great job.
             </span>
           ) : progress > 0 ? (

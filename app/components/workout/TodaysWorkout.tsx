@@ -890,7 +890,7 @@ export default function TodaysWorkout() {
 
         <div>
 
-          <p className="text-sm font-medium text-green-600">
+          <p className="text-sm font-medium text-primary">
             TODAY'S WORKOUT
           </p>
 
@@ -954,10 +954,10 @@ export default function TodaysWorkout() {
               <>
                 <Check
                   size={14}
-                  className="text-green-600"
+                  className="text-primary"
                 />
 
-                <span className="text-green-600">
+                <span className="text-primary">
                   Saved
                 </span>
               </>
@@ -984,7 +984,7 @@ export default function TodaysWorkout() {
                   totalExercises ===
                   0
                 }
-                className="flex items-center gap-2 rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+                className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:bg-slate-300"
               >
 
                 <Play
@@ -999,11 +999,11 @@ export default function TodaysWorkout() {
           {/* In Progress */}
           {started &&
             !completed && (
-              <div className="flex items-center gap-2 rounded-lg bg-green-50 px-3 py-2">
+              <div className="flex items-center gap-2 rounded-lg bg-primary/10 px-3 py-2">
 
-                <span className="h-2 w-2 animate-pulse rounded-full bg-green-600" />
+                <span className="h-2 w-2 animate-pulse rounded-full bg-primary" />
 
-                <span className="text-sm font-semibold text-green-700">
+                <span className="text-sm font-semibold text-primary">
                   Workout In Progress
                 </span>
 
@@ -1012,14 +1012,14 @@ export default function TodaysWorkout() {
 
           {/* Completed */}
           {completed && (
-            <div className="flex items-center gap-2 rounded-lg bg-green-50 px-3 py-2">
+            <div className="flex items-center gap-2 rounded-lg bg-primary/10 px-3 py-2">
 
               <Check
                 size={16}
-                className="text-green-600"
+                className="text-primary"
               />
 
-              <span className="text-sm font-semibold text-green-700">
+              <span className="text-sm font-semibold text-primary">
                 Workout Updated
               </span>
 
@@ -1041,7 +1041,7 @@ export default function TodaysWorkout() {
 
             <Clock
               size={20}
-              className="text-green-600"
+              className="text-primary"
             />
 
             <div>
@@ -1116,7 +1116,7 @@ export default function TodaysWorkout() {
   <div
     className={`mt-3 rounded-lg border px-3 py-2.5 ${
       completed || progress === 100
-        ? "border-green-300 bg-green-50"
+        ? "border-primary/30 bg-primary/10"
         : "border-slate-200 bg-slate-50"
     }`}
   >
@@ -1126,8 +1126,8 @@ export default function TodaysWorkout() {
         <div
           className={`flex h-7 w-7 items-center justify-center rounded-full ${
             completed || progress === 100
-              ? "bg-green-600 text-white"
-              : "bg-white text-green-600"
+              ? "bg-primary text-white"
+              : "bg-white text-primary"
           }`}
         >
           {completed || progress === 100 ? (
@@ -1156,7 +1156,7 @@ export default function TodaysWorkout() {
         </div>
       </div>
 
-      <p className="text-xl font-bold text-green-600">
+      <p className="text-xl font-bold text-primary">
         {progress}%
       </p>
     </div>
@@ -1165,7 +1165,7 @@ export default function TodaysWorkout() {
     <div className="mt-2">
       <div className="h-2 overflow-hidden rounded-full bg-white">
         <div
-          className="h-full rounded-full bg-green-600 transition-all duration-500"
+          className="h-full rounded-full bg-primary transition-all duration-500"
           style={{ width: `${progress}%` }}
         />
       </div>
@@ -1174,7 +1174,7 @@ export default function TodaysWorkout() {
     {/* Statistics */}
     <div className="mt-2 grid grid-cols-3 gap-2">
       <div className="rounded-md bg-white px-2 py-1.5 text-center">
-        <p className="text-base font-bold text-green-600">
+        <p className="text-base font-bold text-primary">
           {completedSetCount}
         </p>
         <p className="text-[10px] text-slate-500">
@@ -1207,7 +1207,7 @@ export default function TodaysWorkout() {
         <button
           type="button"
           onClick={finishWorkout}
-          className="w-full rounded-lg bg-green-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-green-700"
+          className="w-full rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-white transition hover:bg-primary/90"
         >
           ✓ Finish & Update Workout
         </button>
@@ -1220,8 +1220,8 @@ export default function TodaysWorkout() {
 
     {/* Finalized */}
     {completed && (
-      <div className="mt-3 rounded-md border border-green-200 bg-white px-3 py-2 text-center">
-        <p className="text-sm font-semibold text-green-700">
+      <div className="mt-3 rounded-md border border-primary/20 bg-white px-3 py-2 text-center">
+        <p className="text-sm font-semibold text-primary">
           ✓ Workout successfully updated
         </p>
 
@@ -1307,7 +1307,7 @@ export default function TodaysWorkout() {
                   id={`today-exercise-${exerciseIndex}`}
                   className={`overflow-hidden rounded-lg border transition ${
                     exerciseCompleted
-                      ? "border-green-300 bg-green-50/30"
+                      ? "border-primary/30 bg-primary/10"
                       : "border-slate-200"
                   }`}
                 >
@@ -1322,8 +1322,8 @@ export default function TodaysWorkout() {
                     <div
                       className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${
                         exerciseCompleted
-                          ? "bg-green-100 text-green-600"
-                          : "bg-green-50 text-green-600"
+                          ? "bg-primary/10 text-primary"
+                          : "bg-primary/10 text-primary"
                       }`}
                     >
                       {exerciseCompleted ? (
@@ -1356,14 +1356,14 @@ export default function TodaysWorkout() {
                         <p className="text-[10px] text-slate-400">
                           Progress
                         </p>
-                        <p className="text-xs font-semibold text-green-600">
+                        <p className="text-xs font-semibold text-primary">
                           {completedSetsForExercise}/{exercise.sets}
                         </p>
                       </div>
 
                       <div className="h-1.5 w-16 overflow-hidden rounded-full bg-slate-100">
                         <div
-                          className="h-full rounded-full bg-green-600 transition-all duration-300"
+                          className="h-full rounded-full bg-primary transition-all duration-300"
                           style={{ width: `${exerciseProgress}%` }}
                         />
                       </div>
@@ -1386,7 +1386,7 @@ export default function TodaysWorkout() {
                         Exercise Progress
                       </p>
 
-                      <p className="text-sm font-bold text-green-600">
+                      <p className="text-sm font-bold text-primary">
                         {exerciseProgress}%
                       </p>
 
@@ -1395,7 +1395,7 @@ export default function TodaysWorkout() {
                     <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-white">
 
                       <div
-                        className="h-full rounded-full bg-green-600 transition-all duration-300"
+                        className="h-full rounded-full bg-primary transition-all duration-300"
                         style={{
                           width: `${exerciseProgress}%`,
                         }}
@@ -1504,7 +1504,7 @@ export default function TodaysWorkout() {
                               }
                               className={`rounded-lg border px-2 py-1.5 transition ${
                                 currentSet.completed
-                                  ? "border-green-300 bg-green-50"
+                                  ? "border-primary/30 bg-primary/10"
                                   : "border-slate-200 bg-slate-50"
                               }`}
                             >
@@ -1516,7 +1516,7 @@ export default function TodaysWorkout() {
                                   <div
                                     className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[9px] font-semibold ${
                                       currentSet.completed
-                                        ? "bg-green-600 text-white"
+                                        ? "bg-primary text-white"
                                         : "bg-white text-slate-600"
                                     }`}
                                   >
@@ -1552,7 +1552,7 @@ export default function TodaysWorkout() {
                                         exercise.reps
                                       )
                                     }
-                                    className="w-full rounded-md border border-slate-300 bg-white px-2 py-1.5 text-[11px] outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 disabled:cursor-not-allowed disabled:bg-slate-100 sm:rounded-lg sm:text-sm"
+                                    className="w-full rounded-md border border-slate-300 bg-white px-2 py-1.5 text-[11px] outline-none focus:border-primary/30 focus:ring-1 focus:ring-primary/20 disabled:cursor-not-allowed disabled:bg-slate-100 sm:rounded-lg sm:text-sm"
                                   />
                                 </div>
 
@@ -1578,7 +1578,7 @@ export default function TodaysWorkout() {
                                         exercise.reps
                                       )
                                     }
-                                    className="w-full rounded-md border border-slate-300 bg-white px-2 py-1.5 text-[11px] outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 disabled:cursor-not-allowed disabled:bg-slate-100 sm:rounded-lg sm:text-sm"
+                                    className="w-full rounded-md border border-slate-300 bg-white px-2 py-1.5 text-[11px] outline-none focus:border-primary/30 focus:ring-1 focus:ring-primary/20 disabled:cursor-not-allowed disabled:bg-slate-100 sm:rounded-lg sm:text-sm"
                                   />
                                 </div>
 
@@ -1595,7 +1595,7 @@ export default function TodaysWorkout() {
                                   disabled={completed}
                                   className={`h-[30px] w-full shrink-0 rounded-md px-1 text-[9px] font-semibold transition sm:mt-4 sm:h-[34px] sm:rounded-lg sm:px-2.5 sm:text-xs ${
                                     currentSet.completed
-                                      ? "bg-green-600 text-white hover:bg-green-700"
+                                      ? "bg-primary text-white hover:bg-primary/90"
                                       : "border border-slate-300 bg-white text-slate-600 hover:bg-slate-100"
                                   } disabled:cursor-not-allowed disabled:opacity-60`}
                                 >
@@ -1637,7 +1637,7 @@ export default function TodaysWorkout() {
                             onClick={() =>
                               goToNextExercise(exerciseIndex)
                             }
-                            className="rounded-md bg-green-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-green-700"
+                            className="rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-primary/90"
                           >
                             Next Exercise →
                           </button>

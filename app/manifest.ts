@@ -9,7 +9,7 @@ export default function manifest(): MetadataRoute.Manifest {
     scope: "/",
     display: "standalone",
     background_color: "#faf7f4",
-    theme_color: "#faf7f4",
+    theme_color: "#7546c8",
     icons: [
       {
         src: "/lifeos-logo.svg",

@@ -235,7 +235,7 @@ export default function WorkoutHistory() {
         </div>
 
         {history.length > 0 && (
-          <div className="shrink-0 rounded-md bg-green-50 px-2.5 py-1.5 text-xs font-semibold text-green-700">
+          <div className="shrink-0 rounded-md bg-primary/10 px-2.5 py-1.5 text-xs font-semibold text-primary">
             {history.length}{" "}
             {history.length === 1
               ? "Workout"
@@ -284,7 +284,7 @@ export default function WorkoutHistory() {
             return (
               <div
                 key={sessionId}
-                className="overflow-hidden rounded-lg border border-slate-200 transition hover:border-green-300"
+                className="overflow-hidden rounded-lg border border-slate-200 transition hover:border-primary/30"
               >
 
                 {/* WORKOUT SUMMARY */}
@@ -327,7 +327,7 @@ export default function WorkoutHistory() {
                       <div
                         className={`rounded-md px-2.5 py-1.5 text-xs font-bold ${
                           stats.percentage === 100
-                            ? "bg-green-50 text-green-700"
+                            ? "bg-primary/10 text-primary"
                             : "bg-slate-100 text-slate-700"
                         }`}
                       >
@@ -354,7 +354,7 @@ export default function WorkoutHistory() {
                   <div className="mt-3">
                     <div className="h-1.5 overflow-hidden rounded-full bg-slate-100">
                       <div
-                        className="h-full rounded-full bg-green-600 transition-all"
+                        className="h-full rounded-full bg-primary transition-all"
                         style={{
                           width: `${stats.percentage}%`,
                         }}
@@ -370,7 +370,7 @@ export default function WorkoutHistory() {
 
                         <Dumbbell
                           size={13}
-                          className="text-green-600"
+                          className="text-primary"
                         />
 
                         <p className="text-[10px] font-medium text-slate-600">
@@ -392,7 +392,7 @@ export default function WorkoutHistory() {
                         {stats.percentage === 100 ? (
                           <CheckCircle2
                             size={13}
-                            className="text-green-600"
+                            className="text-primary"
                           />
                         ) : (
                           <Circle
@@ -423,7 +423,7 @@ export default function WorkoutHistory() {
                       <p
                         className={`mt-0.5 text-sm font-bold ${
                           workout.completed
-                            ? "text-green-600"
+                            ? "text-primary"
                             : "text-slate-700"
                         }`}
                       >
@@ -460,7 +460,7 @@ export default function WorkoutHistory() {
 
                       <Dumbbell
                         size={16}
-                        className="text-green-600"
+                        className="text-primary"
                       />
 
                       <h4 className="text-sm font-bold text-slate-900">
@@ -535,7 +535,7 @@ export default function WorkoutHistory() {
                                   className={`shrink-0 rounded-md px-2 py-1 text-[10px] font-semibold ${
                                     completedSets ===
                                     sets.length
-                                      ? "bg-green-50 text-green-700"
+                                      ? "bg-primary/10 text-primary"
                                       : "bg-slate-100 text-slate-600"
                                   }`}
                                 >
@@ -569,7 +569,7 @@ export default function WorkoutHistory() {
                                       key={setNumber}
                                       className={`rounded-md border px-2.5 py-2 ${
                                         set.completed
-                                          ? "border-green-200 bg-green-50/50"
+                                          ? "border-primary/20 bg-primary/10"
                                           : "border-slate-200 bg-slate-50"
                                       }`}
                                     >
@@ -614,7 +614,7 @@ export default function WorkoutHistory() {
                                           </p>
 
                                           {set.completed ? (
-                                            <span className="flex items-center gap-1 text-xs font-semibold text-green-600">
+                                            <span className="flex items-center gap-1 text-xs font-semibold text-primary">
                                               <CheckCircle2
                                                 size={14}
                                               />

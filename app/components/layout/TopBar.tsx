@@ -355,7 +355,7 @@ export default function TopBar({
                             {notifications.map((notification) => (
                               <li
                                 key={notification.id}
-                                className={`px-4 py-3 ${notification.readAt ? "bg-card" : "bg-rose-50/70"}`}
+                                className={`px-4 py-3 ${notification.readAt ? "bg-card" : "bg-primary/10"}`}
                               >
                                 <div className="flex items-start gap-2">
                                   {!notification.readAt ? (

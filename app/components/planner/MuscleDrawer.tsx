@@ -378,8 +378,8 @@ export default function MuscleDrawer({
                       key={muscle}
                       className={`flex items-center gap-1 rounded-lg border transition ${
                         alreadyAdded
-                          ? "border-green-200 bg-green-50"
-                          : "border-slate-200 bg-white hover:border-green-300 hover:bg-green-50"
+                          ? "border-primary/20 bg-primary/10"
+                          : "border-slate-200 bg-white hover:border-primary/30 hover:bg-primary/10"
                       }`}
                     >
 
@@ -399,7 +399,7 @@ export default function MuscleDrawer({
                           <p
                             className={`truncate text-sm font-semibold ${
                               alreadyAdded
-                                ? "text-green-700"
+                                ? "text-primary"
                                 : "text-slate-800"
                             }`}
                           >
@@ -407,7 +407,7 @@ export default function MuscleDrawer({
                           </p>
 
                           {alreadyAdded && (
-                            <p className="mt-0.5 text-[9px] font-medium text-green-600">
+                            <p className="mt-0.5 text-[9px] font-medium text-primary">
                               {
                                 existingMuscle
                                   ?.exercises
@@ -430,7 +430,7 @@ export default function MuscleDrawer({
                         {alreadyAdded && (
                           <Check
                             size={15}
-                            className="shrink-0 text-green-600"
+                            className="shrink-0 text-primary"
                           />
                         )}
 
@@ -469,13 +469,13 @@ export default function MuscleDrawer({
             <div>
 
               {isEditing && (
-                <div className="mb-3 rounded-lg border border-green-100 bg-green-50 px-3 py-2">
+                <div className="mb-3 rounded-lg border border-primary/20 bg-primary/10 px-3 py-2">
 
-                  <p className="text-[11px] font-semibold text-green-700">
+                  <p className="text-[11px] font-semibold text-primary">
                     Editing {selectedMuscle}
                   </p>
 
-                  <p className="mt-0.5 text-[10px] text-green-600">
+                  <p className="mt-0.5 text-[10px] text-primary">
                     Select or remove exercises, then
                     save your changes.
                   </p>
@@ -522,8 +522,8 @@ export default function MuscleDrawer({
                           }
                           className={`flex w-full items-center justify-between rounded-lg border px-3 py-3 text-left transition ${
                             isSelected
-                              ? "border-green-500 bg-green-50"
-                              : "border-slate-200 bg-white hover:border-green-300 hover:bg-slate-50"
+                              ? "border-primary/30 bg-primary/10"
+                              : "border-slate-200 bg-white hover:border-primary/30 hover:bg-slate-50"
                           }`}
                         >
 
@@ -544,7 +544,7 @@ export default function MuscleDrawer({
                           <div
                             className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border ${
                               isSelected
-                                ? "border-green-600 bg-green-600 text-white"
+                                ? "border-primary/30 bg-primary text-white"
                                 : "border-slate-300 bg-white"
                             }`}
                           >
@@ -584,7 +584,7 @@ export default function MuscleDrawer({
               }
               className={`w-full rounded-lg py-2.5 text-sm font-semibold transition ${
                 selectedExercises.length > 0
-                  ? "bg-green-600 text-white hover:bg-green-700"
+                  ? "bg-primary text-white hover:bg-primary/90"
                   : "cursor-not-allowed bg-slate-100 text-slate-400"
               }`}
             >

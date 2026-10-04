@@ -378,7 +378,7 @@ export default function WaterTracker() {
               {remaining} ml remaining
             </span>
           ) : (
-            <span className="font-semibold text-green-600">
+            <span className="font-semibold text-primary">
               🎉 Goal reached
             </span>
           )}

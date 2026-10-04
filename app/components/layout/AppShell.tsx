@@ -150,13 +150,13 @@ export default function AppShell({
               <div className="grid items-center gap-12 lg:grid-cols-2">
 
                 <div>
-                  <div className="inline-flex items-center gap-2 rounded-full border border-green-200 bg-green-50 px-4 py-2 text-sm font-semibold text-green-700">
+                  <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-4 py-2 text-sm font-semibold text-primary">
                     🌱 Your Personal Operating System
                   </div>
 
                   <h1 className="mt-6 text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl lg:text-6xl">
                     Build a better life,
-                    <span className="text-green-600">
+                    <span className="text-primary">
                       {" "}one day at a time.
                     </span>
                   </h1>
@@ -171,7 +171,7 @@ export default function AppShell({
                     <button
                       type="button"
                       onClick={() => router.push("/signup")}
-                      className="rounded-xl bg-green-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-green-700"
+                      className="rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-primary/90"
                     >
                       Get Started
                     </button>
@@ -188,9 +188,9 @@ export default function AppShell({
 
                 <div className="flex justify-center">
                   <div className="relative flex h-72 w-72 items-center justify-center">
-                    <div className="absolute inset-0 rounded-full bg-green-100" />
+                    <div className="absolute inset-0 rounded-full bg-primary/10" />
 
-                    <div className="absolute inset-6 rounded-full bg-green-200/60" />
+                    <div className="absolute inset-6 rounded-full bg-primary/10" />
 
                     <div className="relative flex h-56 w-56 flex-col items-center justify-center rounded-full border border-white bg-white shadow-xl">
                       <div className="text-7xl">

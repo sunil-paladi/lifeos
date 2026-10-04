@@ -1,26 +1,145 @@
 @import "tailwindcss";
 
 :root {
-  --background: 30 50% 98%;
+  --background: 30 40% 98%;
   --foreground: 222 47% 11%;
   --card: 0 0% 100%;
   --card-foreground: 222 47% 11%;
   --popover: 0 0% 100%;
   --popover-foreground: 222 47% 11%;
-  --primary: 350 89% 60%;
+  --primary: 263 70% 55%;
   --primary-foreground: 0 0% 100%;
-  --secondary: 28 96% 61%;
+  --secondary: 25 95% 62%;
   --secondary-foreground: 222 47% 11%;
-  --accent: 28 96% 61%;
+  --accent: 25 95% 62%;
   --accent-foreground: 222 47% 11%;
   --muted: 30 33% 96%;
   --muted-foreground: 215 16% 47%;
   --border: 214 32% 91%;
   --input: 214 32% 91%;
-  --ring: 350 89% 60%;
+  --ring: 263 70% 55%;
   --destructive: 0 84% 60%;
   --destructive-foreground: 0 0% 100%;
+  --destructive-surface: 0 86% 97%;
+  --success: 142 72% 29%;
+  --success-surface: 138 76% 97%;
+  --slate-50: 210 40% 98%;
+  --slate-100: 210 40% 96%;
+  --slate-200: 214 32% 91%;
+  --slate-300: 213 27% 84%;
+  --slate-400: 215 20% 65%;
+  --slate-500: 215 16% 47%;
+  --slate-600: 215 19% 35%;
+  --slate-700: 215 25% 27%;
+  --slate-800: 217 33% 17%;
+  --slate-900: 222 47% 11%;
+  --slate-950: 222 47% 7%;
+  --gray-50: 210 20% 98%;
+  --gray-100: 220 14% 96%;
+  --gray-200: 220 13% 91%;
+  --gray-300: 216 12% 84%;
+  --gray-400: 218 11% 65%;
+  --gray-500: 220 9% 46%;
+  --gray-600: 215 14% 34%;
+  --gray-700: 217 19% 27%;
+  --gray-800: 215 28% 17%;
+  --gray-900: 221 39% 11%;
+  --gray-950: 224 71% 4%;
   --radius: 0.75rem;
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+  --background: 222 47% 7%;
+  --foreground: 210 40% 96%;
+  --card: 222 38% 10%;
+  --card-foreground: 210 40% 96%;
+  --popover: 222 38% 10%;
+  --popover-foreground: 210 40% 96%;
+  --primary: 263 80% 72%;
+  --primary-foreground: 222 47% 9%;
+  --secondary: 25 90% 66%;
+  --secondary-foreground: 222 47% 9%;
+  --accent: 25 90% 66%;
+  --accent-foreground: 222 47% 9%;
+  --muted: 217 32% 15%;
+  --muted-foreground: 215 20% 68%;
+  --border: 217 25% 21%;
+  --input: 217 25% 21%;
+  --ring: 263 80% 72%;
+  --destructive-surface: 0 45% 16%;
+  --success: 142 69% 60%;
+  --success-surface: 143 64% 13%;
+  --slate-50: 222 38% 10%;
+  --slate-100: 222 35% 13%;
+  --slate-200: 217 28% 19%;
+  --slate-300: 217 22% 27%;
+  --slate-400: 215 18% 42%;
+  --slate-500: 215 17% 58%;
+  --slate-600: 215 20% 70%;
+  --slate-700: 213 25% 82%;
+  --slate-800: 210 30% 90%;
+  --slate-900: 210 40% 96%;
+  --slate-950: 0 0% 100%;
+  --gray-50: 222 38% 10%;
+  --gray-100: 222 35% 13%;
+  --gray-200: 217 28% 19%;
+  --gray-300: 217 22% 27%;
+  --gray-400: 215 18% 42%;
+  --gray-500: 215 17% 58%;
+  --gray-600: 215 20% 70%;
+  --gray-700: 213 25% 82%;
+  --gray-800: 210 30% 90%;
+  --gray-900: 210 40% 96%;
+  --gray-950: 0 0% 100%;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]):not([data-theme="dark"]) {
+    color-scheme: dark;
+    --background: 222 47% 7%;
+    --foreground: 210 40% 96%;
+    --card: 222 38% 10%;
+    --card-foreground: 210 40% 96%;
+    --popover: 222 38% 10%;
+    --popover-foreground: 210 40% 96%;
+    --primary: 263 80% 72%;
+    --primary-foreground: 222 47% 9%;
+    --secondary: 25 90% 66%;
+    --secondary-foreground: 222 47% 9%;
+    --accent: 25 90% 66%;
+    --accent-foreground: 222 47% 9%;
+    --muted: 217 32% 15%;
+    --muted-foreground: 215 20% 68%;
+    --border: 217 25% 21%;
+    --input: 217 25% 21%;
+    --ring: 263 80% 72%;
+    --destructive-surface: 0 45% 16%;
+    --success: 142 69% 60%;
+    --success-surface: 143 64% 13%;
+    --slate-50: 222 38% 10%;
+    --slate-100: 222 35% 13%;
+    --slate-200: 217 28% 19%;
+    --slate-300: 217 22% 27%;
+    --slate-400: 215 18% 42%;
+    --slate-500: 215 17% 58%;
+    --slate-600: 215 20% 70%;
+    --slate-700: 213 25% 82%;
+    --slate-800: 210 30% 90%;
+    --slate-900: 210 40% 96%;
+    --slate-950: 0 0% 100%;
+    --gray-50: 222 38% 10%;
+    --gray-100: 222 35% 13%;
+    --gray-200: 217 28% 19%;
+    --gray-300: 217 22% 27%;
+    --gray-400: 215 18% 42%;
+    --gray-500: 215 17% 58%;
+    --gray-600: 215 20% 70%;
+    --gray-700: 213 25% 82%;
+    --gray-800: 210 30% 90%;
+    --gray-900: 210 40% 96%;
+    --gray-950: 0 0% 100%;
+  }
 }
 
 @theme inline {
@@ -43,6 +162,28 @@
   --color-ring: hsl(var(--ring));
   --color-destructive: hsl(var(--destructive));
   --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-slate-50: hsl(var(--slate-50));
+  --color-slate-100: hsl(var(--slate-100));
+  --color-slate-200: hsl(var(--slate-200));
+  --color-slate-300: hsl(var(--slate-300));
+  --color-slate-400: hsl(var(--slate-400));
+  --color-slate-500: hsl(var(--slate-500));
+  --color-slate-600: hsl(var(--slate-600));
+  --color-slate-700: hsl(var(--slate-700));
+  --color-slate-800: hsl(var(--slate-800));
+  --color-slate-900: hsl(var(--slate-900));
+  --color-slate-950: hsl(var(--slate-950));
+  --color-gray-50: hsl(var(--gray-50));
+  --color-gray-100: hsl(var(--gray-100));
+  --color-gray-200: hsl(var(--gray-200));
+  --color-gray-300: hsl(var(--gray-300));
+  --color-gray-400: hsl(var(--gray-400));
+  --color-gray-500: hsl(var(--gray-500));
+  --color-gray-600: hsl(var(--gray-600));
+  --color-gray-700: hsl(var(--gray-700));
+  --color-gray-800: hsl(var(--gray-800));
+  --color-gray-900: hsl(var(--gray-900));
+  --color-gray-950: hsl(var(--gray-950));
   --font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
   --radius-sm: calc(var(--radius) - 4px);
@@ -56,6 +197,11 @@ body {
   background-color: hsl(var(--background));
   color: hsl(var(--foreground));
   font-family: var(--font-sans);
+}
+
+[data-theme="dark"] .bg-white,
+[data-theme="system"] .bg-white {
+  background-color: hsl(var(--card));
 }
 
 @media (pointer: coarse) {

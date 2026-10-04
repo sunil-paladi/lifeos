@@ -652,7 +652,7 @@ export default function ReportsPage() {
 
       {/* HEADER */}
       <div>
-        <p className="text-sm font-medium uppercase tracking-wide text-green-600">
+        <p className="text-sm font-medium uppercase tracking-wide text-primary">
           Reports
         </p>
 
@@ -674,7 +674,7 @@ export default function ReportsPage() {
         <button
           type="button"
           onClick={handleGeneratePDF}
-          className="rounded-lg bg-green-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-green-700"
+          className="rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-primary/90"
         >
           📄 Generate PDF
         </button>
@@ -693,7 +693,7 @@ export default function ReportsPage() {
           }
           className={`flex-1 rounded-lg px-4 py-2.5 text-sm font-semibold transition ${
             period === "weekly"
-              ? "bg-green-600 text-white"
+              ? "bg-primary text-white"
               : "text-slate-500 hover:bg-slate-50"
           }`}
         >
@@ -707,7 +707,7 @@ export default function ReportsPage() {
           }
           className={`flex-1 rounded-lg px-4 py-2.5 text-sm font-semibold transition ${
             period === "monthly"
-              ? "bg-green-600 text-white"
+              ? "bg-primary text-white"
               : "text-slate-500 hover:bg-slate-50"
           }`}
         >
@@ -735,12 +735,12 @@ export default function ReportsPage() {
             </p>
           </div>
 
-          <div className="flex h-28 w-28 items-center justify-center rounded-full bg-green-50">
+          <div className="flex h-28 w-28 items-center justify-center rounded-full bg-primary/10">
             <div className="text-center">
-              <p className="text-3xl font-bold text-green-600">
+              <p className="text-3xl font-bold text-primary">
                 {overallScore}
               </p>
-              <p className="text-xs font-semibold text-green-600">
+              <p className="text-xs font-semibold text-primary">
                 / 100
               </p>
             </div>
@@ -749,7 +749,7 @@ export default function ReportsPage() {
 
         <div className="mt-5 h-3 overflow-hidden rounded-full bg-slate-100">
           <div
-            className="h-full rounded-full bg-green-500 transition-all duration-500"
+            className="h-full rounded-full bg-primary transition-all duration-500"
             style={{
               width: `${overallScore}%`,
             }}
@@ -772,7 +772,7 @@ export default function ReportsPage() {
 
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           <div className="text-2xl">🎯</div>
-          <p className="mt-3 text-2xl font-bold text-green-600">
+          <p className="mt-3 text-2xl font-bold text-primary">
             {summary.habitAverage === null
               ? "—"
               : `${summary.habitAverage}%`}
@@ -796,7 +796,7 @@ export default function ReportsPage() {
 
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           <div className="text-2xl">🍎</div>
-          <p className="mt-3 text-2xl font-bold text-emerald-600">
+          <p className="mt-3 text-2xl font-bold text-primary">
             {summary.nutritionAverage === null
               ? "—"
               : `${summary.nutritionAverage}%`}
@@ -887,8 +887,8 @@ export default function ReportsPage() {
             </p>
           </div>
 
-          <div className="rounded-xl bg-green-50 p-4">
-            <p className="text-xs font-medium text-green-700">
+          <div className="rounded-xl bg-primary/10 p-4">
+            <p className="text-xs font-medium text-primary">
               💪 Protein
             </p>
             <p className="mt-1 text-xl font-bold text-slate-900">
@@ -939,7 +939,7 @@ export default function ReportsPage() {
 
           <div className="mt-5">
             <div className="flex items-end justify-between">
-              <span className="text-3xl font-bold text-green-600">
+              <span className="text-3xl font-bold text-primary">
                 {summary.habitAverage === null
                   ? "—"
                   : `${summary.habitAverage}%`}
@@ -951,7 +951,7 @@ export default function ReportsPage() {
 
             <div className="mt-3 h-3 overflow-hidden rounded-full bg-slate-100">
               <div
-                className="h-full rounded-full bg-green-500"
+                className="h-full rounded-full bg-primary"
                 style={{
                   width: `${summary.habitAverage ?? 0}%`,
                 }}

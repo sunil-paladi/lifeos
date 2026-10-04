@@ -6,7 +6,7 @@ export default function JournalPage() {
 
       {/* Page Header */}
       <div>
-        <p className="text-xs font-semibold uppercase tracking-wider text-green-600">
+        <p className="text-xs font-semibold uppercase tracking-wider text-primary">
           Journal
         </p>
 

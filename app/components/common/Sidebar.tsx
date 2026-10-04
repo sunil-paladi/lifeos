@@ -36,7 +36,7 @@ export default function Sidebar() {
 
   if (profile.consistency >= 100) {
     badge = "💎 Diamond";
-    badgeColor = "text-cyan-400";
+    badgeColor = "text-primary";
   } else if (profile.consistency >= 90) {
     badge = "🥇 Gold";
     badgeColor = "text-yellow-400";
@@ -48,7 +48,7 @@ export default function Sidebar() {
     badgeColor = "text-orange-400";
   } else {
     badge = "🌱 Beginner";
-    badgeColor = "text-green-400";
+    badgeColor = "text-primary";
   }
 
   // ==========================
@@ -61,7 +61,7 @@ export default function Sidebar() {
   } else if (profile.fireDays >= 30) {
     streakColor = "text-blue-400";
   } else if (profile.fireDays >= 7) {
-    streakColor = "text-green-400";
+    streakColor = "text-primary";
   }
 
   return (
@@ -81,7 +81,7 @@ export default function Sidebar() {
           LifeOS
         </h1>
 
-        <p className="mt-1 text-xs font-medium tracking-wide text-green-400">
+        <p className="mt-1 text-xs font-medium tracking-wide text-primary">
           Stay Consistent
         </p>
       </div>
@@ -97,7 +97,7 @@ export default function Sidebar() {
               key={item.title}
               className={`mb-2 flex w-full items-center gap-4 rounded-xl px-4 py-3 text-left transition-all duration-200 ${
                 isActive
-                  ? "bg-green-600 text-white shadow-md"
+                  ? "bg-primary text-white shadow-md"
                   : "hover:translate-x-1 hover:bg-slate-800"
               }`}
             >
@@ -114,10 +114,10 @@ export default function Sidebar() {
 
       {/* ================= User Card ================= */}
       <div className="border-t border-slate-700 p-6">
-        <div className="rounded-2xl border border-slate-700 bg-gradient-to-br from-slate-800 to-slate-900 p-5 shadow-lg transition-all duration-300 hover:scale-[1.02] hover:border-green-500">
+        <div className="rounded-2xl border border-slate-700 bg-gradient-to-br from-slate-800 to-slate-900 p-5 shadow-lg transition-all duration-300 hover:scale-[1.02] hover:border-primary/30">
           {/* Online */}
           <div className="flex items-center gap-2">
-            <div className="h-2.5 w-2.5 animate-pulse rounded-full bg-green-400"></div>
+            <div className="h-2.5 w-2.5 animate-pulse rounded-full bg-primary/20"></div>
 
             <span className="text-xs text-slate-400">Online</span>
           </div>
@@ -147,7 +147,7 @@ export default function Sidebar() {
                   : profile.fireDays >= 30
                   ? "text-blue-400"
                   : profile.fireDays >= 7
-                  ? "text-green-400"
+                  ? "text-primary"
                   : "text-orange-400"
               }`}
             >
