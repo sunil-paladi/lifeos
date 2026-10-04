@@ -7,12 +7,19 @@ import AppShell from "./components/layout/AppShell";
 
 export const metadata: Metadata = {
   title: "LifeOS",
-  description: "Your Personal Operating System",
+  applicationName: "LifeOS",
+  description: "Your personal fitness and wellness companion.",
+  appleWebApp: {
+    capable: true,
+    title: "LifeOS",
+    statusBarStyle: "default",
+  },
 };
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
+  themeColor: "#faf7f4",
 };
 
 export default function RootLayout({

@@ -273,7 +273,7 @@ export default async function OwnerMembersPage() {
             {members.map((member) => (
               <article
                 key={member.id}
-                className="grid gap-4 px-5 py-4 sm:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_auto_auto] sm:items-center sm:px-6"
+                className="grid gap-4 px-4 py-4 md:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_auto_auto] md:items-center sm:px-6"
               >
                 <div className="min-w-0">
                   <p className="truncate font-semibold text-slate-900">

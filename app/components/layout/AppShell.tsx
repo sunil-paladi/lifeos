@@ -300,8 +300,8 @@ export default function AppShell({
         </div>
 
         {/* Page Content */}
-        <main className="relative z-0 px-4 py-5 sm:px-6 lg:px-8">
-          <div className="mx-auto w-full max-w-[1600px]">
+        <main className="relative z-0 min-w-0 px-3 py-4 sm:px-6 sm:py-5 lg:px-8">
+          <div className="mx-auto w-full min-w-0 max-w-[1600px]">
             {children}
           </div>
         </main>

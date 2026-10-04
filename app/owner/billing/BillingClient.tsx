@@ -494,7 +494,12 @@ export default function BillingClient({ gymId }: { gymId: string }) {
               <div className="sm:col-span-2 lg:col-span-5 flex gap-2"><button className={buttonClass}>Apply filters</button><button type="button" className={secondaryButtonClass} onClick={() => { setFilters(emptyFilters); void loadPayments(emptyFilters); }}>Clear</button></div>
             </form>
             {payments.length === 0 ? <p className="mt-5 rounded-lg border border-dashed border-slate-300 p-6 text-center text-sm text-slate-500">No payment records found.</p> : (
-              <div className="mt-5 overflow-x-auto">
+              <div
+                aria-label="Payment history table"
+                className="-mx-5 mt-5 overflow-x-auto px-5 sm:mx-0 sm:px-0"
+                role="region"
+                tabIndex={0}
+              >
                 <table className="w-full min-w-[1050px] text-left text-sm">
                   <thead className="border-b border-slate-200 text-xs uppercase tracking-wide text-slate-500"><tr>{["Member", "Type", "Amount", "Method / provider", "Status", "Plan / session", "Paid", "Created"].map((heading) => <th key={heading} className="px-3 py-3 font-semibold">{heading}</th>)}</tr></thead>
                   <tbody className="divide-y divide-slate-100">{payments.map((payment) => <tr key={payment.id}>

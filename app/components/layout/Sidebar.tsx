@@ -104,7 +104,7 @@ export default function Sidebar({
     <aside
       className={
         mobile
-          ? "flex h-full w-72 flex-col overflow-hidden bg-card text-foreground"
+          ? "flex h-full min-h-0 w-full flex-col overflow-hidden bg-card text-foreground"
           : "fixed inset-y-0 left-0 z-40 hidden w-64 flex-col border-r border-border bg-card text-foreground lg:flex"
       }
     >
@@ -151,7 +151,7 @@ export default function Sidebar({
                   key={item.label}
                   href={item.path}
                   onClick={onNavigate}
-                  className={`group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
+                  className={`group flex min-h-11 w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
                     active
                       ? "bg-primary text-primary-foreground shadow-sm"
                       : "text-slate-600 hover:bg-rose-50 hover:text-slate-900"
@@ -196,7 +196,7 @@ export default function Sidebar({
                   key={item.label}
                   href={item.path}
                   onClick={onNavigate}
-                  className={`group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
+                  className={`group flex min-h-11 w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
                     active
                       ? "bg-primary text-primary-foreground shadow-sm"
                       : "text-slate-600 hover:bg-rose-50 hover:text-slate-900"
@@ -228,7 +228,7 @@ export default function Sidebar({
             <Link
               href="/trainer"
               onClick={onNavigate}
-              className={`group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
+              className={`group flex min-h-11 w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
                 isActive("/trainer")
                   ? "bg-primary text-primary-foreground shadow-sm"
                   : "text-slate-600 hover:bg-rose-50 hover:text-slate-900"
@@ -250,7 +250,7 @@ export default function Sidebar({
             <Link
               href="/trainer/sessions"
               onClick={onNavigate}
-              className={`group mt-1 flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
+              className={`group mt-1 flex min-h-11 w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
                 isActive("/trainer/sessions")
                   ? "bg-primary text-primary-foreground shadow-sm"
                   : "text-slate-600 hover:bg-rose-50 hover:text-slate-900"
@@ -271,7 +271,7 @@ export default function Sidebar({
             <Link
               href="/trainer/attendance"
               onClick={onNavigate}
-              className={`group mt-1 flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
+              className={`group mt-1 flex min-h-11 w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
                 isActive("/trainer/attendance")
                   ? "bg-primary text-primary-foreground shadow-sm"
                   : "text-slate-600 hover:bg-rose-50 hover:text-slate-900"
@@ -300,7 +300,7 @@ export default function Sidebar({
             <Link
               href="/owner/members"
               onClick={onNavigate}
-              className={`group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
+              className={`group flex min-h-11 w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
                 isActive("/owner/members")
                   ? "bg-primary text-primary-foreground shadow-sm"
                   : "text-slate-600 hover:bg-rose-50 hover:text-slate-900"
@@ -322,7 +322,7 @@ export default function Sidebar({
             <Link
               href="/owner/attendance"
               onClick={onNavigate}
-              className={`group mt-1 flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
+              className={`group mt-1 flex min-h-11 w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
                 isActive("/owner/attendance")
                   ? "bg-primary text-primary-foreground shadow-sm"
                   : "text-slate-600 hover:bg-rose-50 hover:text-slate-900"
@@ -343,7 +343,7 @@ export default function Sidebar({
             <Link
               href="/owner/pt-sessions"
               onClick={onNavigate}
-              className={`group mt-1 flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
+              className={`group mt-1 flex min-h-11 w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
                 isActive("/owner/pt-sessions")
                   ? "bg-primary text-primary-foreground shadow-sm"
                   : "text-slate-600 hover:bg-rose-50 hover:text-slate-900"
@@ -364,7 +364,7 @@ export default function Sidebar({
             <Link
               href="/owner/statistics"
               onClick={onNavigate}
-              className={`group mt-1 flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
+              className={`group mt-1 flex min-h-11 w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
                 isActive("/owner/statistics")
                   ? "bg-primary text-primary-foreground shadow-sm"
                   : "text-slate-600 hover:bg-rose-50 hover:text-slate-900"
@@ -385,7 +385,7 @@ export default function Sidebar({
             <Link
               href="/owner/billing"
               onClick={onNavigate}
-              className={`group mt-1 flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
+              className={`group mt-1 flex min-h-11 w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
                 isActive("/owner/billing")
                   ? "bg-primary text-primary-foreground shadow-sm"
                   : "text-slate-600 hover:bg-rose-50 hover:text-slate-900"
@@ -406,7 +406,7 @@ export default function Sidebar({
             <Link
               href="/owner/settings"
               onClick={onNavigate}
-              className={`group mt-1 flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
+              className={`group mt-1 flex min-h-11 w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
                 isActive("/owner/settings")
                   ? "bg-primary text-primary-foreground shadow-sm"
                   : "text-slate-600 hover:bg-rose-50 hover:text-slate-900"
@@ -428,7 +428,7 @@ export default function Sidebar({
             <Link
               href="/owner/staff"
               onClick={onNavigate}
-              className={`group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
+              className={`group flex min-h-11 w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
                 isActive("/owner/staff")
                   ? "bg-primary text-primary-foreground shadow-sm"
                   : "text-slate-600 hover:bg-rose-50 hover:text-slate-900"

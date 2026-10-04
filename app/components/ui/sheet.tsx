@@ -31,10 +31,10 @@ function SheetContent({
       <DialogPrimitive.Content
         className={cn(
           "fixed z-50 bg-card text-card-foreground shadow-xl focus:outline-none",
-          side === "left" && "inset-y-0 left-0 h-full w-3/4 border-r border-border sm:max-w-sm",
-          side === "right" && "inset-y-0 right-0 h-full w-3/4 border-l border-border sm:max-w-sm",
-          side === "top" && "inset-x-0 top-0 border-b border-border",
-          side === "bottom" && "inset-x-0 bottom-0 border-t border-border",
+          side === "left" && "inset-y-0 left-0 h-dvh max-h-dvh w-3/4 overflow-y-auto overscroll-contain border-r border-border sm:max-w-sm",
+          side === "right" && "inset-y-0 right-0 h-dvh max-h-dvh w-3/4 overflow-y-auto overscroll-contain border-l border-border sm:max-w-sm",
+          side === "top" && "inset-x-0 top-0 max-h-[90dvh] overflow-y-auto overscroll-contain border-b border-border",
+          side === "bottom" && "inset-x-0 bottom-0 max-h-[90dvh] overflow-y-auto overscroll-contain border-t border-border",
           className,
         )}
         {...props}

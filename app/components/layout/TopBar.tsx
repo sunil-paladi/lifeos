@@ -88,13 +88,17 @@ export default function TopBar({
   }, []);
 
   useEffect(() => {
-    if (authenticated) {
-      void loadNotifications();
-    } else {
-      setNotifications([]);
-      setUnreadCount(0);
-      setNotificationsError("");
-    }
+    const timeoutId = window.setTimeout(() => {
+      if (authenticated) {
+        void loadNotifications();
+      } else {
+        setNotifications([]);
+        setUnreadCount(0);
+        setNotificationsError("");
+      }
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
   }, [authenticated, loadNotifications]);
 
   async function markNotificationRead(notificationId: string) {
@@ -195,7 +199,7 @@ export default function TopBar({
               <SheetTrigger asChild>
                 <button
                   type="button"
-                  className="mr-3 rounded-lg p-2 text-slate-600 transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:hidden"
+                  className="mr-2 flex min-h-11 min-w-11 items-center justify-center rounded-lg text-slate-600 transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:mr-3 lg:hidden"
                   aria-label="Open navigation menu"
                 >
                   <Menu size={24} />
@@ -203,7 +207,7 @@ export default function TopBar({
               </SheetTrigger>
               <SheetContent
                 side="left"
-                className="w-72 max-w-[85vw] p-0 lg:hidden"
+                className="h-dvh w-72 max-w-[85vw] overflow-y-auto overscroll-contain p-0 pb-[env(safe-area-inset-bottom)] lg:hidden"
               >
                 <SheetTitle className="sr-only">Navigation menu</SheetTitle>
                 <Sidebar
@@ -294,7 +298,7 @@ export default function TopBar({
                   <button
                     type="button"
                     onClick={() => setNotificationsOpen((open) => !open)}
-                    className="relative rounded-full p-2 text-slate-600 transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    className="relative flex min-h-11 min-w-11 items-center justify-center rounded-full text-slate-600 transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     aria-label={`Notifications${unreadCount ? `, ${unreadCount} unread` : ""}`}
                     aria-expanded={notificationsOpen}
                     aria-controls="notifications-panel"
@@ -318,7 +322,7 @@ export default function TopBar({
                       <section
                         id="notifications-panel"
                         aria-label="Recent notifications"
-                        className="absolute right-0 top-12 z-50 w-80 max-w-[calc(100vw-2rem)] overflow-hidden rounded-xl border border-border bg-popover text-popover-foreground shadow-xl sm:w-96"
+                          className="absolute right-0 top-12 z-50 max-h-[calc(100dvh-5rem)] w-80 max-w-[calc(100vw-1.5rem)] overflow-y-auto overscroll-contain rounded-xl border border-border bg-popover text-popover-foreground shadow-xl sm:w-96"
                       >
                         <div className="flex items-center justify-between border-b border-border px-4 py-3">
                           <h2 className="text-sm font-semibold text-foreground">Notifications</h2>

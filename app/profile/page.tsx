@@ -372,7 +372,7 @@ export default function ProfilePage() {
       style={{
         minHeight: "100vh",
         background: colors.page,
-        padding: "40px 28px 60px",
+        padding: "clamp(1rem, 5vw, 2.5rem) clamp(0.75rem, 5vw, 1.75rem) 3.75rem",
       }}
     >
       <div
@@ -481,7 +481,7 @@ export default function ProfilePage() {
               style={{
                 display: "grid",
                 gridTemplateColumns:
-                  "repeat(auto-fit, minmax(260px, 1fr))",
+                  "repeat(auto-fit, minmax(min(100%, 260px), 1fr))",
                 gap: "20px",
               }}
             >
@@ -617,7 +617,7 @@ export default function ProfilePage() {
               style={{
                 display: "grid",
                 gridTemplateColumns:
-                  "repeat(auto-fit, minmax(260px, 1fr))",
+                  "repeat(auto-fit, minmax(min(100%, 260px), 1fr))",
                 gap: "20px",
               }}
             >
