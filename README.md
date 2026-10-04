@@ -63,6 +63,17 @@ The `http://localhost:3000` values in `.env.example` are for local development o
 
 **Migration warning:** `20260825130540_add_better_auth` drops the legacy `"User"` table and creates Better Auth's lowercase `"user"` table. This is safe when applying the complete migration history to a genuinely empty new Render database. Do not apply this migration history to a database containing existing user data unless that data has first been backed up and a deliberate data migration has been planned. No production migration should be run against a non-empty database without reviewing its impact.
 
+### First Owner initialization
+
+This procedure is only for initializing the first Owner in a new deployment. It is intentionally one-time and refuses to run if an Owner, Owner gym membership, or any gym already exists.
+
+1. Create the intended Owner account normally through the public signup flow.
+2. From a trusted local or administrator environment configured with the target database's `DATABASE_URL`, run `npm run bootstrap:owner`.
+3. Enter the existing user's email and the first gym's name when prompted. Do not run the command against the wrong database.
+4. Verify the user can log in as Owner and access the newly created gym.
+
+The command is not exposed through the application or a public endpoint.
+
 ### Post-deployment verification
 
 - Confirm the health endpoint returns HTTP 200 without authentication or sensitive details.

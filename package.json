@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "prisma generate && next build && node scripts/prepare-standalone.mjs",
     "start": "node .next/standalone/server.js",
-    "lint": "eslint"
+    "lint": "eslint",
+    "bootstrap:owner": "tsx scripts/bootstrap-owner.ts"
   },
   "dependencies": {
     "@better-auth/prisma-adapter": "^1.7.1",
