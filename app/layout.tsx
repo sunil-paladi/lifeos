@@ -25,7 +25,7 @@ export default function RootLayout({
       lang="en"
       className="h-full antialiased"
     >
-      <body className="min-h-full">
+      <body className="min-h-full bg-background font-sans text-foreground">
 
         <ProgramProvider>
           <WorkoutProvider>

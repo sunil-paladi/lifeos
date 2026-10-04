@@ -12,6 +12,10 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/app/lib/auth-client";
+import { Button } from "@/app/components/ui/button";
+import { Card } from "@/app/components/ui/card";
+import { Input } from "@/app/components/ui/input";
+import { Label } from "@/app/components/ui/label";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -89,7 +93,7 @@ export default function LoginPage() {
     return (
       <main className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-4">
         <div className="text-center">
-          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-green-600" />
+          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-primary" />
 
           <p className="mt-3 text-sm text-slate-500">
             Checking your session...
@@ -109,8 +113,8 @@ export default function LoginPage() {
 
         {/* Brand */}
         <div className="mb-6 text-center">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-white text-3xl shadow-md">
-            🌈
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-white text-primary shadow-md">
+            <Sparkles size={26} />
           </div>
 
           <h1 className="mt-4 text-2xl font-bold tracking-tight text-slate-900">
@@ -123,13 +127,13 @@ export default function LoginPage() {
         </div>
 
         {/* Login Card */}
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-lg sm:p-8">
+        <Card className="rounded-2xl p-6 shadow-lg sm:p-8">
 
           <div className="mb-6">
             <div className="flex items-center gap-2">
               <Sparkles
                 size={18}
-                className="text-green-600"
+                className="text-primary"
               />
 
               <h2 className="text-lg font-semibold text-slate-900">
@@ -149,12 +153,12 @@ export default function LoginPage() {
 
             {/* Email / Username */}
             <div>
-              <label
+              <Label
                 htmlFor="identifier"
-                className="mb-2 block text-sm font-medium text-slate-700"
+                className="mb-2 block text-slate-700"
               >
                 Email or Username
-              </label>
+              </Label>
 
               <div className="relative">
                 {identifier.includes("@") ? (
@@ -169,7 +173,7 @@ export default function LoginPage() {
                   />
                 )}
 
-                <input
+                <Input
                   id="identifier"
                   type="text"
                   placeholder="you@example.com or username"
@@ -179,19 +183,19 @@ export default function LoginPage() {
                   }
                   required
                   autoComplete="username"
-                  className="w-full rounded-xl border border-slate-300 bg-white py-3 pl-10 pr-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-green-500 focus:ring-4 focus:ring-green-100"
+                  className="h-12 rounded-xl pl-10 pr-4 focus-visible:ring-offset-0"
                 />
               </div>
             </div>
 
             {/* Password */}
             <div>
-              <label
+              <Label
                 htmlFor="password"
-                className="mb-2 block text-sm font-medium text-slate-700"
+                className="mb-2 block text-slate-700"
               >
                 Password
-              </label>
+              </Label>
 
               <div className="relative">
                 <LockKeyhole
@@ -199,7 +203,7 @@ export default function LoginPage() {
                   className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
                 />
 
-                <input
+                <Input
                   id="password"
                   type={
                     showPassword
@@ -213,7 +217,7 @@ export default function LoginPage() {
                   }
                   required
                   autoComplete="current-password"
-                  className="w-full rounded-xl border border-slate-300 bg-white py-3 pl-10 pr-12 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-green-500 focus:ring-4 focus:ring-green-100"
+                  className="h-12 rounded-xl pl-10 pr-12 focus-visible:ring-offset-0"
                 />
 
                 <button
@@ -223,7 +227,7 @@ export default function LoginPage() {
                       (visible) => !visible
                     )
                   }
-                  className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-1 text-slate-400 hover:text-slate-700"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-1 text-slate-400 hover:text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   aria-label={
                     showPassword
                       ? "Hide password"
@@ -247,21 +251,21 @@ export default function LoginPage() {
             )}
 
             {/* Login Button */}
-            <button
+            <Button
               type="submit"
               disabled={loading}
-              className="w-full rounded-xl bg-green-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-green-700 focus:outline-none focus:ring-4 focus:ring-green-100 disabled:cursor-not-allowed disabled:opacity-60"
+              className="h-12 w-full rounded-xl"
             >
               {loading
                 ? "Logging in..."
                 : "Login"}
-            </button>
+            </Button>
           </form>
 
           <div className="mt-4 text-right">
             <Link
               href="/forgot-password"
-              className="text-sm font-semibold text-green-600 hover:text-green-700"
+              className="text-sm font-semibold text-primary hover:text-primary/80 focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               Forgot password?
             </Link>
@@ -273,13 +277,13 @@ export default function LoginPage() {
               Don't have an account?{" "}
               <Link
                 href="/signup"
-                className="font-semibold text-green-600 hover:text-green-700"
+                className="font-semibold text-primary hover:text-primary/80 focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 Create one
               </Link>
             </p>
           </div>
-        </div>
+        </Card>
 
         {/* Footer */}
         <p className="mt-5 text-center text-xs text-slate-400">

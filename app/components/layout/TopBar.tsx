@@ -8,11 +8,24 @@ import {
   Settings,
   Shield,
   User,
-  X,
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import Sidebar from "./Sidebar";
 import type { AppUser } from "./AppShell";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/app/components/ui/dropdown-menu";
+import {
+  Sheet,
+  SheetContent,
+  SheetTitle,
+  SheetTrigger,
+} from "@/app/components/ui/sheet";
 
 type AppNotification = {
   id: string;
@@ -170,7 +183,7 @@ export default function TopBar({
 
   return (
     <>
-      <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur">
+      <header className="sticky top-0 z-30 border-b border-border bg-card/95 backdrop-blur">
         <div className="flex h-16 items-center px-4 sm:px-6 lg:px-8">
 
           {/* ======================================== */}
@@ -178,16 +191,30 @@ export default function TopBar({
           {/* ======================================== */}
 
           {authenticated && (
-            <button
-              type="button"
-              onClick={() =>
-                setMobileMenuOpen(true)
-              }
-              className="mr-3 rounded-lg p-2 text-slate-600 transition hover:bg-slate-100 lg:hidden"
-              aria-label="Open navigation menu"
-            >
-              <Menu size={24} />
-            </button>
+            <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+              <SheetTrigger asChild>
+                <button
+                  type="button"
+                  className="mr-3 rounded-lg p-2 text-slate-600 transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:hidden"
+                  aria-label="Open navigation menu"
+                >
+                  <Menu size={24} />
+                </button>
+              </SheetTrigger>
+              <SheetContent
+                side="left"
+                className="w-72 max-w-[85vw] p-0 lg:hidden"
+              >
+                <SheetTitle className="sr-only">Navigation menu</SheetTitle>
+                <Sidebar
+                  mobile
+                  user={user!}
+                  hasTrainerMembership={hasTrainerMembership}
+                  hasOwnerMembership={hasOwnerMembership}
+                  onNavigate={() => setMobileMenuOpen(false)}
+                />
+              </SheetContent>
+            </Sheet>
           )}
 
           {/* ======================================== */}
@@ -195,11 +222,11 @@ export default function TopBar({
           {/* ======================================== */}
 
           <div className="hidden lg:block">
-            <p className="text-xs font-medium text-slate-400">
+            <p className="text-xs font-medium text-muted-foreground">
               PERSONAL OPERATING SYSTEM
             </p>
 
-            <p className="text-sm font-semibold text-slate-800">
+            <p className="text-sm font-semibold text-foreground">
               {authenticated
                 ? "Your daily progress"
                 : "Build a better life"}
@@ -211,7 +238,7 @@ export default function TopBar({
           {/* ======================================== */}
 
           <div className="lg:hidden">
-            <p className="text-base font-bold text-slate-900">
+            <p className="text-base font-bold text-foreground">
               LifeOS
             </p>
           </div>
@@ -236,7 +263,7 @@ export default function TopBar({
                     window.location.href =
                       "/login";
                   }}
-                  className="rounded-lg px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 sm:px-4"
+                  className="rounded-lg px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:px-4"
                 >
                   Login
                 </button>
@@ -248,7 +275,7 @@ export default function TopBar({
                     window.location.href =
                       "/signup";
                   }}
-                  className="rounded-lg bg-green-600 px-3 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-green-700 sm:px-4"
+                  className="rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:px-4"
                 >
                   Sign Up
                 </button>
@@ -267,14 +294,14 @@ export default function TopBar({
                   <button
                     type="button"
                     onClick={() => setNotificationsOpen((open) => !open)}
-                    className="relative rounded-full p-2 text-slate-600 transition hover:bg-slate-100"
+                    className="relative rounded-full p-2 text-slate-600 transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     aria-label={`Notifications${unreadCount ? `, ${unreadCount} unread` : ""}`}
                     aria-expanded={notificationsOpen}
                     aria-controls="notifications-panel"
                   >
                     <Bell size={20} />
                     {unreadCount > 0 ? (
-                      <span className="absolute -right-1 -top-1 min-w-4 rounded-full bg-green-600 px-1 text-center text-[10px] font-bold leading-4 text-white">
+                      <span className="absolute -right-1 -top-1 min-w-4 rounded-full bg-primary px-1 text-center text-[10px] font-bold leading-4 text-primary-foreground">
                         {unreadCount > 99 ? "99+" : unreadCount}
                       </span>
                     ) : null}
@@ -291,10 +318,10 @@ export default function TopBar({
                       <section
                         id="notifications-panel"
                         aria-label="Recent notifications"
-                        className="absolute right-0 top-12 z-50 w-80 max-w-[calc(100vw-2rem)] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl sm:w-96"
+                        className="absolute right-0 top-12 z-50 w-80 max-w-[calc(100vw-2rem)] overflow-hidden rounded-xl border border-border bg-popover text-popover-foreground shadow-xl sm:w-96"
                       >
-                        <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
-                          <h2 className="text-sm font-semibold text-slate-900">Notifications</h2>
+                        <div className="flex items-center justify-between border-b border-border px-4 py-3">
+                          <h2 className="text-sm font-semibold text-foreground">Notifications</h2>
                           {unreadCount > 0 ? (
                             <span className="text-xs text-slate-500">{unreadCount} unread</span>
                           ) : null}
@@ -306,11 +333,11 @@ export default function TopBar({
                           </p>
                         ) : notificationsError ? (
                           <div className="px-4 py-5 text-center">
-                            <p role="alert" className="text-sm text-red-700">{notificationsError}</p>
+                            <p role="alert" className="text-sm text-destructive">{notificationsError}</p>
                             <button
                               type="button"
                               onClick={() => void loadNotifications()}
-                              className="mt-2 text-sm font-semibold text-green-700 hover:underline"
+                              className="mt-2 rounded-sm text-sm font-semibold text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                             >
                               Try again
                             </button>
@@ -324,20 +351,20 @@ export default function TopBar({
                             {notifications.map((notification) => (
                               <li
                                 key={notification.id}
-                                className={`px-4 py-3 ${notification.readAt ? "bg-white" : "bg-green-50/70"}`}
+                                className={`px-4 py-3 ${notification.readAt ? "bg-card" : "bg-rose-50/70"}`}
                               >
                                 <div className="flex items-start gap-2">
                                   {!notification.readAt ? (
                                     <span
                                       aria-label="Unread"
-                                      className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-green-600"
+                                      className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-primary"
                                     />
                                   ) : null}
                                   <div className="min-w-0 flex-1">
-                                    <p className="text-sm font-semibold text-slate-900">
+                                    <p className="text-sm font-semibold text-foreground">
                                       {notification.title}
                                     </p>
-                                    <p className="mt-1 text-sm text-slate-600">
+                                    <p className="mt-1 text-sm text-muted-foreground">
                                       {notification.body}
                                     </p>
                                     <p className="mt-1 text-xs text-slate-400">
@@ -358,7 +385,7 @@ export default function TopBar({
                                               });
                                             }
                                           }}
-                                          className="text-xs font-semibold text-green-700 hover:underline"
+                                          className="rounded-sm text-xs font-semibold text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                                         >
                                           Open
                                         </a>
@@ -367,7 +394,7 @@ export default function TopBar({
                                         <button
                                           type="button"
                                           onClick={() => void markNotificationRead(notification.id)}
-                                          className="text-xs font-semibold text-slate-600 hover:underline"
+                                          className="rounded-sm text-xs font-semibold text-slate-600 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                                         >
                                           Mark as read
                                         </button>
@@ -387,197 +414,72 @@ export default function TopBar({
                 </div>
 
                 {/* User Menu */}
-                <div className="relative">
-
-                  {/* User Button */}
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setUserMenuOpen(
-                        (open) => !open
-                      )
-                    }
-                    className="flex items-center gap-2 rounded-full p-1.5 transition hover:bg-slate-100"
-                    aria-label="Open user menu"
-                    aria-expanded={
-                      userMenuOpen
-                    }
-                  >
-                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-green-600 text-sm font-bold text-white shadow-sm">
-                      {initials || "U"}
-                    </div>
-
-                    <ChevronDown
-                      size={16}
-                      className={`hidden text-slate-500 transition sm:block ${
-                        userMenuOpen
-                          ? "rotate-180"
-                          : ""
-                      }`}
-                    />
-                  </button>
-
-                  {/* ======================================== */}
-                  {/* USER DROPDOWN */}
-                  {/* ======================================== */}
-
-                  {userMenuOpen && (
-                    <>
-                      {/* Click-away layer */}
-                      <button
-                        type="button"
-                        aria-label="Close user menu"
-                        onClick={() =>
-                          setUserMenuOpen(false)
-                        }
-                        className="fixed inset-0 z-40 cursor-default"
-                      />
-
-                      <div className="absolute right-0 top-12 z-50 w-72 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl">
-
-                        {/* User Information */}
-                        <div className="border-b border-slate-100 bg-slate-50 px-4 py-4">
-                          <div className="flex items-center gap-3">
-
-                            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-green-600 text-sm font-bold text-white">
-                              {initials ||
-                                "U"}
-                            </div>
-
-                            <div className="min-w-0">
-                              <p className="truncate text-sm font-semibold text-slate-900">
-                                {displayName}
-                              </p>
-
-                              <p className="truncate text-xs text-slate-500">
-                                {user?.username
-                                  ? `@${user.username}`
-                                  : user?.email ||
-                                    "Personal Account"}
-                              </p>
-                            </div>
-
-                          </div>
-                        </div>
-
-                        {/* Menu Items */}
-                        <div className="p-2">
-
-                          {/* Profile */}
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setUserMenuOpen(
-                                false
-                              );
-                              window.location.href =
-                                "/profile";
-                            }}
-                            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm text-slate-700 transition hover:bg-slate-100"
-                          >
-                            <User
-                              size={18}
-                              className="text-slate-500"
-                            />
-
-                            <div>
-                              <p className="font-medium">
-                                Profile
-                              </p>
-
-                              <p className="text-xs text-slate-400">
-                                Personal information
-                              </p>
-                            </div>
-                          </button>
-
-                          {/* Settings */}
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setUserMenuOpen(
-                                false
-                              );
-                              window.location.href =
-                                "/settings";
-                            }}
-                            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm text-slate-700 transition hover:bg-slate-100"
-                          >
-                            <Settings
-                              size={18}
-                              className="text-slate-500"
-                            />
-
-                            <div>
-                              <p className="font-medium">
-                                Settings
-                              </p>
-
-                              <p className="text-xs text-slate-400">
-                                Manage preferences
-                              </p>
-                            </div>
-                          </button>
-
-                          {/* Security */}
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setUserMenuOpen(
-                                false
-                              );
-                              window.location.href =
-                                "/settings";
-                            }}
-                            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm text-slate-700 transition hover:bg-slate-100"
-                          >
-                            <Shield
-                              size={18}
-                              className="text-slate-500"
-                            />
-
-                            <div>
-                              <p className="font-medium">
-                                Security
-                              </p>
-
-                              <p className="text-xs text-slate-400">
-                                Account and password
-                              </p>
-                            </div>
-                          </button>
-
-                        </div>
-
-                        {/* Logout */}
-                        <div className="border-t border-slate-100 p-2">
-                          <button
-                            type="button"
-                            onClick={
-                              handleLogout
-                            }
-                            disabled={
-                              loggingOut
-                            }
-                            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium text-red-600 transition hover:bg-red-50 disabled:opacity-50"
-                          >
-                            <LogOut
-                              size={18}
-                            />
-
-                            <span>
-                              {loggingOut
-                                ? "Logging out..."
-                                : "Logout"}
-                            </span>
-                          </button>
-                        </div>
-
-                      </div>
-                    </>
-                  )}
-
-                </div>
+                <DropdownMenu open={userMenuOpen} onOpenChange={setUserMenuOpen}>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      type="button"
+                      className="flex items-center gap-2 rounded-full p-1.5 transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      aria-label="Open user menu"
+                    >
+                      <span className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground shadow-sm">
+                        {initials || "U"}
+                      </span>
+                      <ChevronDown size={16} className="hidden text-slate-500 sm:block" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-72">
+                    <DropdownMenuLabel className="px-3 py-3">
+                      <span className="block truncate text-sm font-semibold text-foreground">
+                        {displayName}
+                      </span>
+                      <span className="mt-1 block truncate text-xs font-normal text-muted-foreground">
+                        {user?.username
+                          ? `@${user.username}`
+                          : user?.email || "Personal Account"}
+                      </span>
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      className="px-3 py-2.5"
+                      onSelect={() => {
+                        window.location.href = "/profile";
+                      }}
+                    >
+                      <User size={18} className="text-muted-foreground" />
+                      <span>Profile</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="px-3 py-2.5"
+                      onSelect={() => {
+                        window.location.href = "/settings";
+                      }}
+                    >
+                      <Settings size={18} className="text-muted-foreground" />
+                      <span>Settings</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="px-3 py-2.5"
+                      onSelect={() => {
+                        window.location.href = "/settings";
+                      }}
+                    >
+                      <Shield size={18} className="text-muted-foreground" />
+                      <span>Security</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      className="px-3 py-2.5 text-destructive focus:bg-destructive/10 focus:text-destructive"
+                      disabled={loggingOut}
+                      onSelect={(event) => {
+                        event.preventDefault();
+                        void handleLogout();
+                      }}
+                    >
+                      <LogOut size={18} />
+                      <span>{loggingOut ? "Logging out..." : "Logout"}</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </>
             )}
 
@@ -585,52 +487,6 @@ export default function TopBar({
         </div>
       </header>
 
-      {/* ======================================== */}
-      {/* MOBILE NAVIGATION */}
-      {/* ======================================== */}
-
-      {authenticated &&
-        mobileMenuOpen && (
-          <div className="fixed inset-0 z-[100] lg:hidden">
-
-            {/* Dark Background */}
-            <button
-              type="button"
-              aria-label="Close navigation"
-              onClick={() =>
-                setMobileMenuOpen(false)
-              }
-              className="absolute inset-0 bg-black/50"
-            />
-
-            {/* Mobile Sidebar */}
-            <div className="relative z-[101] h-full w-72 max-w-[85vw]">
-
-              {/* Close Button */}
-              <button
-                type="button"
-                onClick={() =>
-                  setMobileMenuOpen(false)
-                }
-                className="absolute right-3 top-3 z-[102] rounded-full bg-slate-700 p-2 text-white shadow-lg"
-                aria-label="Close navigation menu"
-              >
-                <X size={20} />
-              </button>
-
-              <Sidebar
-                mobile={true}
-                user={user!}
-                hasTrainerMembership={hasTrainerMembership}
-                hasOwnerMembership={hasOwnerMembership}
-                onNavigate={() =>
-                  setMobileMenuOpen(false)
-                }
-              />
-
-            </div>
-          </div>
-        )}
     </>
   );
 }

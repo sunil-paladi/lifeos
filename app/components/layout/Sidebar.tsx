@@ -12,6 +12,7 @@ import {
   Dumbbell,
   FileText,
   LayoutDashboard,
+  Salad,
   Settings,
   ShieldCheck,
   Users,
@@ -24,7 +25,7 @@ const mainMenu = [
   {
     label: "Dashboard",
     icon: LayoutDashboard,
-    path: "/",
+    path: "/dashboard",
   },
   {
     label: "Workout",
@@ -38,7 +39,7 @@ const mainMenu = [
   },
   {
     label: "Nutrition",
-    icon: "🍽️",
+    icon: Salad,
     path: "/nutrition",
   },
   {
@@ -103,18 +104,18 @@ export default function Sidebar({
     <aside
       className={
         mobile
-          ? "flex h-full w-72 flex-col overflow-hidden bg-slate-950 text-white"
-          : "fixed inset-y-0 left-0 z-40 hidden w-64 flex-col border-r border-slate-800 bg-slate-950 text-white lg:flex"
+          ? "flex h-full w-72 flex-col overflow-hidden bg-card text-foreground"
+          : "fixed inset-y-0 left-0 z-40 hidden w-64 flex-col border-r border-border bg-card text-foreground lg:flex"
       }
     >
       {/* ======================================== */}
       {/* BRAND */}
       {/* ======================================== */}
 
-      <div className="flex h-20 shrink-0 items-center border-b border-slate-800 px-6">
+      <div className="flex h-20 shrink-0 items-center border-b border-border px-6">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-xl shadow-sm">
-            🌈
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary shadow-sm">
+            <Dumbbell size={21} strokeWidth={2.2} />
           </div>
 
           <div>
@@ -122,7 +123,7 @@ export default function Sidebar({
               LifeOS
             </h1>
 
-            <p className="mt-0.5 text-[10px] font-medium uppercase tracking-wide text-green-400">
+            <p className="mt-0.5 text-[10px] font-medium uppercase tracking-wide text-primary">
               Stay Consistent
             </p>
           </div>
@@ -133,10 +134,10 @@ export default function Sidebar({
       {/* NAVIGATION */}
       {/* ======================================== */}
 
-      <nav className="flex-1 overflow-y-auto px-3 py-5">
+      <nav className="flex-1 overflow-y-auto px-3 py-5 [&_a:focus-visible]:outline-none [&_a:focus-visible]:ring-2 [&_a:focus-visible]:ring-primary [&_a:focus-visible]:ring-offset-2">
         {/* Main */}
         <div>
-          <p className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+          <p className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
             Main
           </p>
 
@@ -152,8 +153,8 @@ export default function Sidebar({
                   onClick={onNavigate}
                   className={`group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
                     active
-                      ? "bg-green-600 text-white shadow-sm"
-                      : "text-slate-300 hover:bg-slate-800 hover:text-white"
+                      ? "bg-primary text-primary-foreground shadow-sm"
+                      : "text-slate-600 hover:bg-rose-50 hover:text-slate-900"
                   }`}
                 >
                   {typeof Icon === "string" ? (
@@ -166,8 +167,8 @@ export default function Sidebar({
                       strokeWidth={active ? 2.2 : 1.8}
                       className={
                         active
-                          ? "text-white"
-                          : "text-slate-400 transition-colors group-hover:text-white"
+                          ? "text-primary-foreground"
+                          : "text-slate-500 transition-colors group-hover:text-slate-900"
                       }
                     />
                   )}
@@ -181,7 +182,7 @@ export default function Sidebar({
 
         {/* Insights */}
         <div className="mt-7">
-          <p className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+          <p className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
             Insights
           </p>
 
@@ -197,8 +198,8 @@ export default function Sidebar({
                   onClick={onNavigate}
                   className={`group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
                     active
-                      ? "bg-green-600 text-white shadow-sm"
-                      : "text-slate-300 hover:bg-slate-800 hover:text-white"
+                      ? "bg-primary text-primary-foreground shadow-sm"
+                      : "text-slate-600 hover:bg-rose-50 hover:text-slate-900"
                   }`}
                 >
                   <Icon
@@ -206,8 +207,8 @@ export default function Sidebar({
                     strokeWidth={active ? 2.2 : 1.8}
                     className={
                       active
-                        ? "text-white"
-                        : "text-slate-400 transition-colors group-hover:text-white"
+                        ? "text-primary-foreground"
+                        : "text-slate-500 transition-colors group-hover:text-slate-900"
                     }
                   />
 
@@ -220,7 +221,7 @@ export default function Sidebar({
 
         {hasTrainerMembership ? (
           <div className="mt-7">
-            <p className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+            <p className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
               Gym
             </p>
 
@@ -229,8 +230,8 @@ export default function Sidebar({
               onClick={onNavigate}
               className={`group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
                 isActive("/trainer")
-                  ? "bg-green-600 text-white shadow-sm"
-                  : "text-slate-300 hover:bg-slate-800 hover:text-white"
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-slate-600 hover:bg-rose-50 hover:text-slate-900"
               }`}
             >
               <ShieldCheck
@@ -238,8 +239,8 @@ export default function Sidebar({
                 strokeWidth={isActive("/trainer") ? 2.2 : 1.8}
                 className={
                   isActive("/trainer")
-                    ? "text-white"
-                    : "text-slate-400 transition-colors group-hover:text-white"
+                    ? "text-primary-foreground"
+                    : "text-slate-500 transition-colors group-hover:text-slate-900"
                 }
               />
 
@@ -251,8 +252,8 @@ export default function Sidebar({
               onClick={onNavigate}
               className={`group mt-1 flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
                 isActive("/trainer/sessions")
-                  ? "bg-green-600 text-white shadow-sm"
-                  : "text-slate-300 hover:bg-slate-800 hover:text-white"
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-slate-600 hover:bg-rose-50 hover:text-slate-900"
               }`}
             >
               <CalendarDays
@@ -260,8 +261,8 @@ export default function Sidebar({
                 strokeWidth={isActive("/trainer/sessions") ? 2.2 : 1.8}
                 className={
                   isActive("/trainer/sessions")
-                    ? "text-white"
-                    : "text-slate-400 transition-colors group-hover:text-white"
+                    ? "text-primary-foreground"
+                    : "text-slate-500 transition-colors group-hover:text-slate-900"
                 }
               />
               <span>PT Sessions</span>
@@ -272,8 +273,8 @@ export default function Sidebar({
               onClick={onNavigate}
               className={`group mt-1 flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
                 isActive("/trainer/attendance")
-                  ? "bg-green-600 text-white shadow-sm"
-                  : "text-slate-300 hover:bg-slate-800 hover:text-white"
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-slate-600 hover:bg-rose-50 hover:text-slate-900"
               }`}
             >
               <ClipboardCheck
@@ -281,8 +282,8 @@ export default function Sidebar({
                 strokeWidth={isActive("/trainer/attendance") ? 2.2 : 1.8}
                 className={
                   isActive("/trainer/attendance")
-                    ? "text-white"
-                    : "text-slate-400 transition-colors group-hover:text-white"
+                    ? "text-primary-foreground"
+                    : "text-slate-500 transition-colors group-hover:text-slate-900"
                 }
               />
               <span>Client Attendance</span>
@@ -292,7 +293,7 @@ export default function Sidebar({
 
         {hasOwnerMembership ? (
           <div className="mt-7">
-            <p className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+            <p className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
               Owner
             </p>
 
@@ -301,8 +302,8 @@ export default function Sidebar({
               onClick={onNavigate}
               className={`group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
                 isActive("/owner/members")
-                  ? "bg-green-600 text-white shadow-sm"
-                  : "text-slate-300 hover:bg-slate-800 hover:text-white"
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-slate-600 hover:bg-rose-50 hover:text-slate-900"
               }`}
             >
               <Users
@@ -310,8 +311,8 @@ export default function Sidebar({
                 strokeWidth={isActive("/owner/members") ? 2.2 : 1.8}
                 className={
                   isActive("/owner/members")
-                    ? "text-white"
-                    : "text-slate-400 transition-colors group-hover:text-white"
+                    ? "text-primary-foreground"
+                    : "text-slate-500 transition-colors group-hover:text-slate-900"
                 }
               />
 
@@ -323,8 +324,8 @@ export default function Sidebar({
               onClick={onNavigate}
               className={`group mt-1 flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
                 isActive("/owner/attendance")
-                  ? "bg-green-600 text-white shadow-sm"
-                  : "text-slate-300 hover:bg-slate-800 hover:text-white"
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-slate-600 hover:bg-rose-50 hover:text-slate-900"
               }`}
             >
               <ClipboardCheck
@@ -332,8 +333,8 @@ export default function Sidebar({
                 strokeWidth={isActive("/owner/attendance") ? 2.2 : 1.8}
                 className={
                   isActive("/owner/attendance")
-                    ? "text-white"
-                    : "text-slate-400 transition-colors group-hover:text-white"
+                    ? "text-primary-foreground"
+                    : "text-slate-500 transition-colors group-hover:text-slate-900"
                 }
               />
               <span>Attendance</span>
@@ -344,8 +345,8 @@ export default function Sidebar({
               onClick={onNavigate}
               className={`group mt-1 flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
                 isActive("/owner/pt-sessions")
-                  ? "bg-green-600 text-white shadow-sm"
-                  : "text-slate-300 hover:bg-slate-800 hover:text-white"
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-slate-600 hover:bg-rose-50 hover:text-slate-900"
               }`}
             >
               <CalendarDays
@@ -353,8 +354,8 @@ export default function Sidebar({
                 strokeWidth={isActive("/owner/pt-sessions") ? 2.2 : 1.8}
                 className={
                   isActive("/owner/pt-sessions")
-                    ? "text-white"
-                    : "text-slate-400 transition-colors group-hover:text-white"
+                    ? "text-primary-foreground"
+                    : "text-slate-500 transition-colors group-hover:text-slate-900"
                 }
               />
               <span>PT Sessions</span>
@@ -365,8 +366,8 @@ export default function Sidebar({
               onClick={onNavigate}
               className={`group mt-1 flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
                 isActive("/owner/statistics")
-                  ? "bg-green-600 text-white shadow-sm"
-                  : "text-slate-300 hover:bg-slate-800 hover:text-white"
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-slate-600 hover:bg-rose-50 hover:text-slate-900"
               }`}
             >
               <BarChart3
@@ -374,8 +375,8 @@ export default function Sidebar({
                 strokeWidth={isActive("/owner/statistics") ? 2.2 : 1.8}
                 className={
                   isActive("/owner/statistics")
-                    ? "text-white"
-                    : "text-slate-400 transition-colors group-hover:text-white"
+                    ? "text-primary-foreground"
+                    : "text-slate-500 transition-colors group-hover:text-slate-900"
                 }
               />
               <span>Owner Statistics</span>
@@ -386,8 +387,8 @@ export default function Sidebar({
               onClick={onNavigate}
               className={`group mt-1 flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
                 isActive("/owner/billing")
-                  ? "bg-green-600 text-white shadow-sm"
-                  : "text-slate-300 hover:bg-slate-800 hover:text-white"
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-slate-600 hover:bg-rose-50 hover:text-slate-900"
               }`}
             >
               <CreditCard
@@ -395,8 +396,8 @@ export default function Sidebar({
                 strokeWidth={isActive("/owner/billing") ? 2.2 : 1.8}
                 className={
                   isActive("/owner/billing")
-                    ? "text-white"
-                    : "text-slate-400 transition-colors group-hover:text-white"
+                    ? "text-primary-foreground"
+                    : "text-slate-500 transition-colors group-hover:text-slate-900"
                 }
               />
               <span>Billing</span>
@@ -407,8 +408,8 @@ export default function Sidebar({
               onClick={onNavigate}
               className={`group mt-1 flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
                 isActive("/owner/settings")
-                  ? "bg-green-600 text-white shadow-sm"
-                  : "text-slate-300 hover:bg-slate-800 hover:text-white"
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-slate-600 hover:bg-rose-50 hover:text-slate-900"
               }`}
             >
               <Settings
@@ -416,8 +417,8 @@ export default function Sidebar({
                 strokeWidth={isActive("/owner/settings") ? 2.2 : 1.8}
                 className={
                   isActive("/owner/settings")
-                    ? "text-white"
-                    : "text-slate-400 transition-colors group-hover:text-white"
+                    ? "text-primary-foreground"
+                    : "text-slate-500 transition-colors group-hover:text-slate-900"
                 }
               />
 
@@ -429,8 +430,8 @@ export default function Sidebar({
               onClick={onNavigate}
               className={`group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
                 isActive("/owner/staff")
-                  ? "bg-green-600 text-white shadow-sm"
-                  : "text-slate-300 hover:bg-slate-800 hover:text-white"
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-slate-600 hover:bg-rose-50 hover:text-slate-900"
               }`}
             >
               <UserCog
@@ -438,8 +439,8 @@ export default function Sidebar({
                 strokeWidth={isActive("/owner/staff") ? 2.2 : 1.8}
                 className={
                   isActive("/owner/staff")
-                    ? "text-white"
-                    : "text-slate-400 transition-colors group-hover:text-white"
+                    ? "text-primary-foreground"
+                    : "text-slate-500 transition-colors group-hover:text-slate-900"
                 }
               />
 
@@ -450,7 +451,7 @@ export default function Sidebar({
 
         {/* Settings */}
         <div className="mt-7">
-          <p className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+          <p className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
             System
           </p>
 
@@ -459,8 +460,8 @@ export default function Sidebar({
             onClick={onNavigate}
             className={`group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
               isActive("/settings")
-                ? "bg-green-600 text-white shadow-sm"
-                : "text-slate-300 hover:bg-slate-800 hover:text-white"
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : "text-slate-600 hover:bg-rose-50 hover:text-slate-900"
             }`}
           >
             <Settings
@@ -470,8 +471,8 @@ export default function Sidebar({
               }
               className={
                 isActive("/settings")
-                  ? "text-white"
-                  : "text-slate-400 transition-colors group-hover:text-white"
+                  ? "text-primary-foreground"
+                  : "text-slate-500 transition-colors group-hover:text-slate-900"
               }
             />
 
@@ -484,10 +485,10 @@ export default function Sidebar({
       {/* USER PROFILE */}
       {/* ======================================== */}
 
-      <div className="shrink-0 border-t border-slate-800 p-3">
-        <div className="rounded-xl border border-slate-800 bg-slate-900/80 p-3">
+      <div className="shrink-0 border-t border-border p-3">
+        <div className="rounded-xl border border-border bg-muted/60 p-3">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-green-600 text-xs font-bold text-white">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
               {user.name
                 .split(" ")
                 .filter(Boolean)
@@ -499,14 +500,14 @@ export default function Sidebar({
 
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5">
-                <span className="h-2 w-2 rounded-full bg-green-500" />
+                <span className="h-2 w-2 rounded-full bg-primary" />
 
-                <p className="truncate text-sm font-semibold text-white">
+                <p className="truncate text-sm font-semibold text-foreground">
                   {user.name}
                 </p>
               </div>
 
-              <p className="mt-0.5 truncate text-xs text-slate-400">
+              <p className="mt-0.5 truncate text-xs text-muted-foreground">
                 {user.username
                   ? `@${user.username}`
                   : "Personal Account"}
@@ -514,9 +515,9 @@ export default function Sidebar({
             </div>
           </div>
 
-          <div className="mt-3 grid grid-cols-2 gap-2 border-t border-slate-800 pt-3">
-            <div className="rounded-lg bg-slate-800/60 px-2 py-2 text-center">
-              <p className="text-[10px] uppercase tracking-wide text-slate-500">
+          <div className="mt-3 grid grid-cols-2 gap-2 border-t border-border pt-3">
+            <div className="rounded-lg bg-card px-2 py-2 text-center">
+              <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
                 Streak
               </p>
 
@@ -525,12 +526,12 @@ export default function Sidebar({
               </p>
             </div>
 
-            <div className="rounded-lg bg-slate-800/60 px-2 py-2 text-center">
-              <p className="text-[10px] uppercase tracking-wide text-slate-500">
+            <div className="rounded-lg bg-card px-2 py-2 text-center">
+              <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
                 Status
               </p>
 
-              <p className="mt-0.5 text-xs font-bold text-green-400">
+              <p className="mt-0.5 text-xs font-bold text-primary">
                 Active
               </p>
             </div>

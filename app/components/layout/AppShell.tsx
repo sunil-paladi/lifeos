@@ -99,9 +99,9 @@ export default function AppShell({
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-100">
+      <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="text-center">
-          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-green-600" />
+          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-primary" />
 
           <p className="mt-3 text-sm text-slate-500">
             Loading LifeOS...
@@ -119,7 +119,7 @@ export default function AppShell({
     // Login / Signup pages
     if (isPublicRoute) {
       return (
-        <div className="min-h-screen bg-slate-100">
+        <div className="min-h-screen bg-background">
           <TopBar
             authenticated={false}
             user={null}
@@ -137,7 +137,7 @@ export default function AppShell({
     // Public landing page at "/"
     if (pathname === "/") {
       return (
-        <div className="min-h-screen bg-slate-100">
+        <div className="min-h-screen bg-background">
           <TopBar
             authenticated={false}
             user={null}
@@ -275,7 +275,7 @@ export default function AppShell({
   // ========================================
 
   return (
-    <div className="min-h-screen bg-slate-100">
+    <div className="min-h-screen bg-background">
 
       {/* Authenticated Sidebar */}
       <div className="relative z-50">

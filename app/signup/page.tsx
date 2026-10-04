@@ -13,6 +13,10 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/app/lib/auth-client";
+import { Button } from "@/app/components/ui/button";
+import { Card } from "@/app/components/ui/card";
+import { Input } from "@/app/components/ui/input";
+import { Label } from "@/app/components/ui/label";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -87,7 +91,7 @@ export default function SignupPage() {
     return (
       <main className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-4">
         <div className="text-center">
-          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-green-600" />
+          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-primary" />
 
           <p className="mt-3 text-sm text-slate-500">
             Checking your session...
@@ -107,8 +111,8 @@ export default function SignupPage() {
 
         {/* Brand */}
         <div className="mb-6 text-center">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-white text-3xl shadow-md">
-            🌈
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-white text-primary shadow-md">
+            <Sparkles size={26} />
           </div>
 
           <h1 className="mt-4 text-2xl font-bold tracking-tight text-slate-900">
@@ -121,14 +125,14 @@ export default function SignupPage() {
         </div>
 
         {/* Card */}
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-lg sm:p-8">
+        <Card className="rounded-2xl p-6 shadow-lg sm:p-8">
 
           {/* Card heading */}
           <div className="mb-6">
             <div className="flex items-center gap-2">
               <Sparkles
                 size={18}
-                className="text-green-600"
+                className="text-primary"
               />
 
               <h2 className="text-lg font-semibold text-slate-900">
@@ -147,12 +151,12 @@ export default function SignupPage() {
           >
             {/* Name */}
             <div>
-              <label
+              <Label
                 htmlFor="name"
-                className="mb-2 block text-sm font-medium text-slate-700"
+                className="mb-2 block text-slate-700"
               >
                 Full Name
-              </label>
+              </Label>
 
               <div className="relative">
                 <User
@@ -160,7 +164,7 @@ export default function SignupPage() {
                   className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
                 />
 
-                <input
+                <Input
                   id="name"
                   type="text"
                   placeholder="Your name"
@@ -170,19 +174,19 @@ export default function SignupPage() {
                   }
                   required
                   autoComplete="name"
-                  className="w-full rounded-xl border border-slate-300 bg-white py-3 pl-10 pr-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-green-500 focus:ring-4 focus:ring-green-100"
+                  className="h-12 rounded-xl pl-10 pr-4 focus-visible:ring-offset-0"
                 />
               </div>
             </div>
 
             {/* Username */}
             <div>
-              <label
+              <Label
                 htmlFor="username"
-                className="mb-2 block text-sm font-medium text-slate-700"
+                className="mb-2 block text-slate-700"
               >
                 Username
-              </label>
+              </Label>
 
               <div className="relative">
                 <UserRound
@@ -190,7 +194,7 @@ export default function SignupPage() {
                   className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
                 />
 
-                <input
+                <Input
                   id="username"
                   type="text"
                   placeholder="Choose a username"
@@ -200,7 +204,7 @@ export default function SignupPage() {
                   }
                   required
                   autoComplete="username"
-                  className="w-full rounded-xl border border-slate-300 bg-white py-3 pl-10 pr-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-green-500 focus:ring-4 focus:ring-green-100"
+                  className="h-12 rounded-xl pl-10 pr-4 focus-visible:ring-offset-0"
                 />
               </div>
 
@@ -211,12 +215,12 @@ export default function SignupPage() {
 
             {/* Email */}
             <div>
-              <label
+              <Label
                 htmlFor="email"
-                className="mb-2 block text-sm font-medium text-slate-700"
+                className="mb-2 block text-slate-700"
               >
                 Email
-              </label>
+              </Label>
 
               <div className="relative">
                 <Mail
@@ -224,7 +228,7 @@ export default function SignupPage() {
                   className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
                 />
 
-                <input
+                <Input
                   id="email"
                   type="email"
                   placeholder="you@example.com"
@@ -234,19 +238,19 @@ export default function SignupPage() {
                   }
                   required
                   autoComplete="email"
-                  className="w-full rounded-xl border border-slate-300 bg-white py-3 pl-10 pr-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-green-500 focus:ring-4 focus:ring-green-100"
+                  className="h-12 rounded-xl pl-10 pr-4 focus-visible:ring-offset-0"
                 />
               </div>
             </div>
 
             {/* Password */}
             <div>
-              <label
+              <Label
                 htmlFor="password"
-                className="mb-2 block text-sm font-medium text-slate-700"
+                className="mb-2 block text-slate-700"
               >
                 Password
-              </label>
+              </Label>
 
               <div className="relative">
                 <LockKeyhole
@@ -254,7 +258,7 @@ export default function SignupPage() {
                   className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
                 />
 
-                <input
+                <Input
                   id="password"
                   type={
                     showPassword
@@ -270,7 +274,7 @@ export default function SignupPage() {
                   minLength={12}
                   maxLength={128}
                   autoComplete="new-password"
-                  className="w-full rounded-xl border border-slate-300 bg-white py-3 pl-10 pr-12 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-green-500 focus:ring-4 focus:ring-green-100"
+                  className="h-12 rounded-xl pl-10 pr-12 focus-visible:ring-offset-0"
                 />
 
                 <button
@@ -280,7 +284,7 @@ export default function SignupPage() {
                       (visible) => !visible
                     )
                   }
-                  className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-1 text-slate-400 hover:text-slate-700"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-1 text-slate-400 hover:text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   aria-label={
                     showPassword
                       ? "Hide password"
@@ -308,15 +312,15 @@ export default function SignupPage() {
             )}
 
             {/* Submit */}
-            <button
+            <Button
               type="submit"
               disabled={loading}
-              className="w-full rounded-xl bg-green-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-green-700 focus:outline-none focus:ring-4 focus:ring-green-100 disabled:cursor-not-allowed disabled:opacity-60"
+              className="h-12 w-full rounded-xl"
             >
               {loading
                 ? "Creating account..."
                 : "Create Account"}
-            </button>
+            </Button>
           </form>
 
           {/* Login */}
@@ -325,13 +329,13 @@ export default function SignupPage() {
               Already have an account?{" "}
               <Link
                 href="/login"
-                className="font-semibold text-green-600 hover:text-green-700"
+                className="font-semibold text-primary hover:text-primary/80 focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 Login
               </Link>
             </p>
           </div>
-        </div>
+        </Card>
 
         {/* Footer */}
         <p className="mt-5 text-center text-xs text-slate-400">
