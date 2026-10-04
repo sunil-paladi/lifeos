@@ -30,6 +30,17 @@ model User {
   targetWeight          Float?
   preferredTrainingDays Int?
 
+  // Personal regional and unit preferences
+  timezone     String @default("Asia/Kolkata")
+  country      String @default("IN")
+  locale       String @default("en-IN")
+  currency     String @default("INR")
+  weightUnit   String @default("kg")
+  heightUnit   String @default("cm")
+  distanceUnit String @default("km")
+  dateFormat   String @default("DD/MM/YYYY")
+  timeFormat   String @default("12h")
+
   // Trainer relationship
   trainerId String?
   trainer   User?   @relation("TrainerClients", fields: [trainerId], references: [id])

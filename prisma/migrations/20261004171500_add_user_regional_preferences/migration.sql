@@ -1,0 +1,10 @@
+ALTER TABLE "user"
+    ADD COLUMN "timezone" TEXT NOT NULL DEFAULT 'Asia/Kolkata',
+    ADD COLUMN "country" TEXT NOT NULL DEFAULT 'IN',
+    ADD COLUMN "locale" TEXT NOT NULL DEFAULT 'en-IN',
+    ADD COLUMN "currency" TEXT NOT NULL DEFAULT 'INR',
+    ADD COLUMN "weightUnit" TEXT NOT NULL DEFAULT 'kg',
+    ADD COLUMN "heightUnit" TEXT NOT NULL DEFAULT 'cm',
+    ADD COLUMN "distanceUnit" TEXT NOT NULL DEFAULT 'km',
+    ADD COLUMN "dateFormat" TEXT NOT NULL DEFAULT 'DD/MM/YYYY',
+    ADD COLUMN "timeFormat" TEXT NOT NULL DEFAULT '12h';

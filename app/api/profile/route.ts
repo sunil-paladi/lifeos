@@ -2,6 +2,17 @@ import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { auth } from "@/app/lib/auth";
 import { parseJsonObject } from "@/app/lib/input-validation";
+import {
+  isSupportedCountry,
+  isSupportedCurrency,
+  normalizeUserLocale,
+  normalizeUserTimezone,
+  USER_DATE_FORMATS,
+  USER_DISTANCE_UNITS,
+  USER_HEIGHT_UNITS,
+  USER_TIME_FORMATS,
+  USER_WEIGHT_UNITS,
+} from "@/app/lib/regional-preferences";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -87,6 +98,15 @@ export async function PATCH(request: Request) {
     trainingExperience?: typeof TRAINING_EXPERIENCES[number] | null;
     targetWeight?: number | null;
     preferredTrainingDays?: number | null;
+    timezone?: string;
+    country?: string;
+    locale?: string;
+    currency?: string;
+    weightUnit?: typeof USER_WEIGHT_UNITS[number];
+    heightUnit?: typeof USER_HEIGHT_UNITS[number];
+    distanceUnit?: typeof USER_DISTANCE_UNITS[number];
+    dateFormat?: typeof USER_DATE_FORMATS[number];
+    timeFormat?: typeof USER_TIME_FORMATS[number];
   } = {};
 
   if (body.name !== undefined) {
@@ -144,6 +164,66 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: "trainingExperience is not valid" }, { status: 400 });
     }
     data.trainingExperience = body.trainingExperience === null ? null : body.trainingExperience;
+  }
+  if (body.timezone !== undefined) {
+    const timezone = normalizeUserTimezone(body.timezone);
+    if (!timezone) {
+      return NextResponse.json({ error: "timezone must be a valid IANA timezone" }, { status: 400 });
+    }
+    data.timezone = timezone;
+  }
+  if (body.country !== undefined) {
+    const country =
+      typeof body.country === "string" ? body.country.trim().toUpperCase() : "";
+    if (!isSupportedCountry(country)) {
+      return NextResponse.json({ error: "country must be a valid ISO 3166-1 alpha-2 code" }, { status: 400 });
+    }
+    data.country = country;
+  }
+  if (body.locale !== undefined) {
+    const locale = normalizeUserLocale(body.locale);
+    if (!locale) {
+      return NextResponse.json({ error: "locale must be a valid BCP 47 language tag" }, { status: 400 });
+    }
+    data.locale = locale;
+  }
+  if (body.currency !== undefined) {
+    const currency =
+      typeof body.currency === "string" ? body.currency.trim().toUpperCase() : "";
+    if (!isSupportedCurrency(currency)) {
+      return NextResponse.json({ error: "currency must be a supported ISO 4217 currency code" }, { status: 400 });
+    }
+    data.currency = currency;
+  }
+  if (body.weightUnit !== undefined) {
+    if (!isOneOf(body.weightUnit, USER_WEIGHT_UNITS)) {
+      return NextResponse.json({ error: "weightUnit is not valid" }, { status: 400 });
+    }
+    data.weightUnit = body.weightUnit;
+  }
+  if (body.heightUnit !== undefined) {
+    if (!isOneOf(body.heightUnit, USER_HEIGHT_UNITS)) {
+      return NextResponse.json({ error: "heightUnit is not valid" }, { status: 400 });
+    }
+    data.heightUnit = body.heightUnit;
+  }
+  if (body.distanceUnit !== undefined) {
+    if (!isOneOf(body.distanceUnit, USER_DISTANCE_UNITS)) {
+      return NextResponse.json({ error: "distanceUnit is not valid" }, { status: 400 });
+    }
+    data.distanceUnit = body.distanceUnit;
+  }
+  if (body.dateFormat !== undefined) {
+    if (!isOneOf(body.dateFormat, USER_DATE_FORMATS)) {
+      return NextResponse.json({ error: "dateFormat is not valid" }, { status: 400 });
+    }
+    data.dateFormat = body.dateFormat;
+  }
+  if (body.timeFormat !== undefined) {
+    if (!isOneOf(body.timeFormat, USER_TIME_FORMATS)) {
+      return NextResponse.json({ error: "timeFormat is not valid" }, { status: 400 });
+    }
+    data.timeFormat = body.timeFormat;
   }
 
   if (Object.keys(data).length === 0) {

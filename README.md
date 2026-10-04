@@ -11,6 +11,10 @@ LifeOS is a Next.js application backed by PostgreSQL and Prisma.
 
 `SHADOW_DATABASE_URL` is used for local `prisma migrate dev`; it is not needed by production `prisma migrate deploy`.
 
+### User regional preferences
+
+Timezone, locale, currency, unit, and date/time display preferences are stored on each user profile. Future daily calculations must use `getUserLocalDate()` from `app/lib/user-time.ts` with that user's saved timezone; do not derive a user's "today" from the server timezone. Existing habit and other daily-module date behavior is unchanged until those modules are intentionally migrated.
+
 ## Production deployment on Render
 
 LifeOS uses a native Node.js Render Web Service with Render PostgreSQL. This keeps the deployment to one app service and one database; the existing Docker files remain available for local/container workflows but are not required on Render. Use the Node.js version pinned in `.node-version` and place the web service and database in the same Render region. Use the database's internal connection URL for `DATABASE_URL`.

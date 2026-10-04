@@ -6,6 +6,7 @@ import {
   type ThemeMode,
   useTheme,
 } from "@/app/components/theme/ThemeProvider";
+import { DEFAULT_USER_PREFERENCES } from "@/app/lib/regional-preferences";
 
 type AccountRole = "USER" | "TRAINER" | "OWNER";
 
@@ -34,6 +35,24 @@ type NutritionTargets = {
   carbs: string;
   fat: string;
 };
+
+type RegionalPreferences = {
+  timezone: string;
+  country: string;
+  locale: string;
+  currency: string;
+  weightUnit: string;
+  heightUnit: string;
+  distanceUnit: string;
+  dateFormat: string;
+  timeFormat: string;
+};
+
+const DEFAULT_REGIONAL_PREFERENCES: RegionalPreferences = {
+  ...DEFAULT_USER_PREFERENCES,
+};
+
+const SUPPORTED_CURRENCIES = Intl.supportedValuesOf("currency");
 
 const SETTINGS_STORAGE_KEY = "lifeos-settings";
 const NUTRITION_TARGETS_KEY = "lifeos-nutrition-targets";
@@ -64,6 +83,10 @@ export default function SettingsPage() {
   const [accountRole, setAccountRole] = useState<AccountRole | null>(null);
   const [settings, setSettings] =
     useState<SettingsData>(DEFAULT_SETTINGS);
+  const [regionalPreferences, setRegionalPreferences] =
+    useState<RegionalPreferences>(DEFAULT_REGIONAL_PREFERENCES);
+  const [regionalSaving, setRegionalSaving] = useState(false);
+  const [regionalMessage, setRegionalMessage] = useState("");
 
   const [loading, setLoading] = useState(true);
 
@@ -116,6 +139,18 @@ export default function SettingsPage() {
                     ? "Improve Fitness"
                     : "Build Muscle",
         }));
+        setRegionalPreferences({
+          timezone: user.timezone ?? DEFAULT_USER_PREFERENCES.timezone,
+          country: user.country ?? DEFAULT_USER_PREFERENCES.country,
+          locale: user.locale ?? DEFAULT_USER_PREFERENCES.locale,
+          currency: user.currency ?? DEFAULT_USER_PREFERENCES.currency,
+          weightUnit: user.weightUnit ?? DEFAULT_USER_PREFERENCES.weightUnit,
+          heightUnit: user.heightUnit ?? DEFAULT_USER_PREFERENCES.heightUnit,
+          distanceUnit:
+            user.distanceUnit ?? DEFAULT_USER_PREFERENCES.distanceUnit,
+          dateFormat: user.dateFormat ?? DEFAULT_USER_PREFERENCES.dateFormat,
+          timeFormat: user.timeFormat ?? DEFAULT_USER_PREFERENCES.timeFormat,
+        });
 
         // Load nutrition targets from the database.
         const nutritionResponse = await fetch(
@@ -171,6 +206,57 @@ export default function SettingsPage() {
 
     loadSettings();
   }, []);
+
+  function updateRegionalPreference(
+    field: keyof RegionalPreferences,
+    value: string,
+  ) {
+    setRegionalPreferences((previous) => ({ ...previous, [field]: value }));
+    setRegionalMessage("");
+  }
+
+  async function saveRegionalPreferences() {
+    setRegionalSaving(true);
+    setRegionalMessage("");
+
+    try {
+      const response = await fetch("/api/profile", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(regionalPreferences),
+      });
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error ?? "Unable to save regional preferences");
+      }
+
+      const user = result.user;
+      setRegionalPreferences({
+        timezone: user.timezone,
+        country: user.country,
+        locale: user.locale,
+        currency: user.currency,
+        weightUnit: user.weightUnit,
+        heightUnit: user.heightUnit,
+        distanceUnit: user.distanceUnit,
+        dateFormat: user.dateFormat,
+        timeFormat: user.timeFormat,
+      });
+      setRegionalMessage("Regional & units preferences saved.");
+    } catch (error) {
+      console.error("Failed to save regional preferences:", error);
+      setRegionalMessage(
+        error instanceof Error
+          ? error.message
+          : "Unable to save regional preferences",
+      );
+    } finally {
+      setRegionalSaving(false);
+    }
+  }
 
 async function updateSetting(
   field: keyof SettingsData,
@@ -546,6 +632,186 @@ async function updateSetting(
             </label>
           ))}
         </fieldset>
+      </section>
+
+      {/* REGIONAL & UNITS */}
+      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div>
+          <h2 className="text-lg font-bold text-slate-900">
+            Regional &amp; Units
+          </h2>
+          <p className="mt-1 text-sm text-slate-500">
+            Set the timezone, language, currency, and measurement formats used
+            for your personal experience.
+          </p>
+        </div>
+
+        <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <label className="text-sm font-semibold text-slate-700">
+            Timezone
+            <input
+              type="text"
+              value={regionalPreferences.timezone}
+              onChange={(event) =>
+                updateRegionalPreference("timezone", event.target.value)
+              }
+              className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-primary/30 focus:ring-2 focus:ring-primary/20"
+              placeholder="America/New_York"
+              autoComplete="off"
+            />
+            <span className="mt-1 block text-xs font-normal text-slate-400">
+              Use an IANA timezone, such as America/New_York.
+            </span>
+          </label>
+
+          <label className="text-sm font-semibold text-slate-700">
+            Country code
+            <input
+              type="text"
+              value={regionalPreferences.country}
+              onChange={(event) =>
+                updateRegionalPreference(
+                  "country",
+                  event.target.value.toUpperCase(),
+                )
+              }
+              className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-primary/30 focus:ring-2 focus:ring-primary/20"
+              placeholder="IN"
+              maxLength={2}
+              autoComplete="country"
+            />
+            <span className="mt-1 block text-xs font-normal text-slate-400">
+              ISO 3166-1 alpha-2 code.
+            </span>
+          </label>
+
+          <label className="text-sm font-semibold text-slate-700">
+            Locale / language
+            <input
+              type="text"
+              value={regionalPreferences.locale}
+              onChange={(event) =>
+                updateRegionalPreference("locale", event.target.value)
+              }
+              className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-primary/30 focus:ring-2 focus:ring-primary/20"
+              placeholder="en-IN"
+              maxLength={35}
+              autoComplete="language"
+            />
+            <span className="mt-1 block text-xs font-normal text-slate-400">
+              BCP 47 language tag, such as en-IN or fr-CA.
+            </span>
+          </label>
+
+          <label className="text-sm font-semibold text-slate-700">
+            Currency
+            <select
+              value={regionalPreferences.currency}
+              onChange={(event) =>
+                updateRegionalPreference("currency", event.target.value)
+              }
+              className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-primary/30 focus:ring-2 focus:ring-primary/20"
+            >
+              {SUPPORTED_CURRENCIES.map((currency) => (
+                <option key={currency} value={currency}>
+                  {currency}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="text-sm font-semibold text-slate-700">
+            Weight
+            <select
+              value={regionalPreferences.weightUnit}
+              onChange={(event) =>
+                updateRegionalPreference("weightUnit", event.target.value)
+              }
+              className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-primary/30 focus:ring-2 focus:ring-primary/20"
+            >
+              <option value="kg">Kilograms (kg)</option>
+              <option value="lb">Pounds (lb)</option>
+            </select>
+          </label>
+
+          <label className="text-sm font-semibold text-slate-700">
+            Height
+            <select
+              value={regionalPreferences.heightUnit}
+              onChange={(event) =>
+                updateRegionalPreference("heightUnit", event.target.value)
+              }
+              className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-primary/30 focus:ring-2 focus:ring-primary/20"
+            >
+              <option value="cm">Centimeters (cm)</option>
+              <option value="ft_in">Feet and inches (ft/in)</option>
+            </select>
+          </label>
+
+          <label className="text-sm font-semibold text-slate-700">
+            Distance
+            <select
+              value={regionalPreferences.distanceUnit}
+              onChange={(event) =>
+                updateRegionalPreference("distanceUnit", event.target.value)
+              }
+              className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-primary/30 focus:ring-2 focus:ring-primary/20"
+            >
+              <option value="km">Kilometers (km)</option>
+              <option value="miles">Miles</option>
+            </select>
+          </label>
+
+          <label className="text-sm font-semibold text-slate-700">
+            Date format
+            <select
+              value={regionalPreferences.dateFormat}
+              onChange={(event) =>
+                updateRegionalPreference("dateFormat", event.target.value)
+              }
+              className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-primary/30 focus:ring-2 focus:ring-primary/20"
+            >
+              <option value="DD/MM/YYYY">DD/MM/YYYY</option>
+              <option value="MM/DD/YYYY">MM/DD/YYYY</option>
+              <option value="YYYY-MM-DD">YYYY-MM-DD</option>
+            </select>
+          </label>
+
+          <label className="text-sm font-semibold text-slate-700">
+            Time format
+            <select
+              value={regionalPreferences.timeFormat}
+              onChange={(event) =>
+                updateRegionalPreference("timeFormat", event.target.value)
+              }
+              className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-primary/30 focus:ring-2 focus:ring-primary/20"
+            >
+              <option value="12h">12-hour</option>
+              <option value="24h">24-hour</option>
+            </select>
+          </label>
+        </div>
+
+        <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <p
+            role="status"
+            className={`text-sm ${
+              regionalMessage.includes("saved")
+                ? "font-semibold text-primary"
+                : "text-slate-600"
+            }`}
+          >
+            {regionalMessage}
+          </p>
+          <button
+            type="button"
+            onClick={saveRegionalPreferences}
+            disabled={regionalSaving}
+            className="rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {regionalSaving ? "Saving..." : "Save Regional Preferences"}
+          </button>
+        </div>
       </section>
 
       {/* PROFILE */}
