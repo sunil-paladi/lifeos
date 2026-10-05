@@ -13,6 +13,10 @@ import {
 
 import { exercises } from "@/app/data/exercises";
 import { useProgram } from "@/app/context/ProgramContext";
+import {
+  WORKOUT_HISTORY_KEY,
+  WORKOUT_HISTORY_UPDATED_EVENT,
+} from "@/app/lib/workout-progress";
 
 interface WorkoutExercise {
   id: number;
@@ -60,9 +64,6 @@ interface SavedWorkout {
 
 const WORKOUT_STORAGE_KEY =
   "lifeos-todays-workout";
-
-const WORKOUT_HISTORY_KEY =
-  "lifeos-workout-history";
 
 /*
  * Six hours of inactivity will automatically
@@ -741,6 +742,9 @@ export default function TodaysWorkout() {
       localStorage.setItem(
         WORKOUT_HISTORY_KEY,
         JSON.stringify(updatedHistory)
+      );
+      window.dispatchEvent(
+        new Event(WORKOUT_HISTORY_UPDATED_EVENT)
       );
 
       localStorage.removeItem(

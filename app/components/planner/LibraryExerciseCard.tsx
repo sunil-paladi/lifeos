@@ -4,10 +4,12 @@ import { Exercise } from "@/app/types/exercise";
 
 interface Props {
   exercise: Exercise;
+  onAdd: (exercise: Exercise) => void;
 }
 
 export default function LibraryExerciseCard({
   exercise,
+  onAdd,
 }: Props) {
   return (
     <div className="rounded-lg border border-slate-200 bg-white p-3 shadow-sm transition hover:border-primary/30 hover:shadow-md">
@@ -54,6 +56,7 @@ export default function LibraryExerciseCard({
       {/* Add Exercise */}
       <button
         type="button"
+        onClick={() => onAdd(exercise)}
         className="mt-3 w-full rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-primary/90"
       >
         + Add Exercise

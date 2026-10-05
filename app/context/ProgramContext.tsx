@@ -113,6 +113,8 @@ interface ProgramContextType {
 
   weeks: DayWorkout[];
 
+  programStartDate: string | null;
+
   saveStatus: SaveStatus;
 
   getWorkoutForWeek: (
@@ -187,6 +189,9 @@ export function ProgramProvider({
   const [trainingPlanId, setTrainingPlanId] =
     useState<string | null>(null);
 
+  const [programStartDate, setProgramStartDate] =
+    useState<string | null>(null);
+
   const [dbDayMap, setDbDayMap] =
     useState<DbDayMap>({});
 
@@ -234,6 +239,9 @@ export function ProgramProvider({
         }
 
         setTrainingPlanId(plan.id);
+        setProgramStartDate(
+          plan.startDate ?? plan.createdAt ?? null
+        );
 
         console.log(
           "✅ Training plan loaded:",
@@ -402,11 +410,14 @@ export function ProgramProvider({
                   continue;
                 }
 
+                const exerciseId = Number(
+                  libraryExercise.id
+                );
                 const primaryMuscle =
                   libraryExercise.primaryMuscle;
-
                 const muscleName =
-                  [
+                  findExerciseGroupById(exerciseId) ??
+                  ([
                     "Middle Back",
                     "Upper Back",
                     "Lats",
@@ -414,7 +425,9 @@ export function ProgramProvider({
                     "Back",
                   ].includes(primaryMuscle)
                     ? "Back"
-                    : primaryMuscle;
+                    : primaryMuscle);
+                const catalogExercise =
+                  findExerciseById(exerciseId);
 
                 let muscle =
                   muscleGroups.find(
@@ -437,21 +450,20 @@ export function ProgramProvider({
                 }
 
                 muscle.exercises.push({
-                  id: Number(
-                    libraryExercise.id
-                  ),
-                  type:
-                    libraryExercise.type ===
-                    "cardio"
-                      ? "cardio"
-                      : "strength",
-                  sets:
-                    programExercise.sets,
-                  reps:
-                    programExercise.minReps,
-                  rest:
-                    programExercise.restSeconds ??
-                    60,
+                  id: exerciseId,
+                  type: catalogExercise?.type === "cardio"
+                    ? "cardio"
+                    : "strength",
+                  ...(catalogExercise?.type === "cardio"
+                    ? {
+                        duration: catalogExercise.duration ?? 20,
+                        rest: programExercise.restSeconds ?? 0,
+                      }
+                    : {
+                        sets: programExercise.sets,
+                        reps: programExercise.minReps,
+                        rest: programExercise.restSeconds ?? 60,
+                      }),
                 });
               }
 
@@ -585,7 +597,7 @@ export function ProgramProvider({
           },
           body: JSON.stringify({
             exerciseId:
-              exercise.id,
+              String(exercise.id),
             sets:
               exercise.sets ?? 3,
             reps:
@@ -1013,6 +1025,22 @@ export function ProgramProvider({
     return undefined;
   }
 
+  function findExerciseGroupById(
+    exerciseId: number
+  ) {
+    for (const [muscleName, muscleExercises] of Object.entries(exercises)) {
+      if (
+        muscleExercises.some(
+          (exercise) => exercise.id === exerciseId
+        )
+      ) {
+        return muscleName;
+      }
+    }
+
+    return undefined;
+  }
+
   /* =======================================================
      ADD EXERCISES TO MUSCLE
      ======================================================= */
@@ -1060,7 +1088,7 @@ export function ProgramProvider({
       ProgramExercise[] = [];
 
     const updatedExercises =
-      exerciseIds.map((id) => {
+      Array.from(new Set(exerciseIds)).map((id) => {
         const existing =
           existingExercises.find(
             (exercise) =>
@@ -1099,8 +1127,8 @@ export function ProgramProvider({
           ProgramExercise = {
           id,
           type: "strength",
-          sets: 3,
-          reps: 10,
+          sets: libraryExercise?.sets ?? 3,
+          reps: libraryExercise?.reps ?? 10,
           rest: 60,
         };
 
@@ -1396,6 +1424,7 @@ export function ProgramProvider({
       value={{
         workout,
         weeks,
+        programStartDate,
         saveStatus,
 
         getWorkoutForWeek,

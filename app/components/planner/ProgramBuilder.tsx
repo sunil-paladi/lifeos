@@ -7,10 +7,17 @@ import {
   ChevronLeft,
   ChevronRight,
   Cloud,
+  Library,
   Loader2,
 } from "lucide-react";
 
 import { useProgram } from "@/app/context/ProgramContext";
+import {
+  formatWorkoutWeekRange,
+  getWorkoutWeekRange,
+} from "@/app/lib/workout-progress";
+import ExerciseLibrary from "./ExerciseLibrary";
+import WeeklyWorkoutProgress from "./WeeklyWorkoutProgress";
 import WeekPlanner from "./WeekPlanner";
 
 const durationOptions = [
@@ -28,10 +35,17 @@ export default function ProgramBuilder() {
   const [selectedWeek, setSelectedWeek] = useState(0);
   const [showDurationMenu, setShowDurationMenu] =
     useState(false);
+  const [showExerciseLibrary, setShowExerciseLibrary] =
+    useState(false);
 
-  const { saveStatus } = useProgram();
+  const { saveStatus, programStartDate, getWorkoutForWeek } =
+    useProgram();
 
   const currentWeekNumber = selectedWeek + 1;
+  const weekRange = getWorkoutWeekRange(
+    programStartDate,
+    selectedWeek,
+  );
 
   function handleDurationChange(weeks: number) {
     setDurationWeeks(weeks);
@@ -296,11 +310,17 @@ export default function ProgramBuilder() {
       {/* Current Week */}
       <div className="mt-3">
 
-        <div className="mb-2 flex items-center justify-between">
+        <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
 
           <div>
             <h3 className="text-sm font-bold text-slate-900">
               Week {currentWeekNumber}
+              {weekRange && (
+                <span className="font-medium text-slate-500">
+                  {" · "}
+                  {formatWorkoutWeekRange(weekRange.start, weekRange.end)}
+                </span>
+              )}
             </h3>
 
             <p className="text-[10px] font-medium text-slate-500">
@@ -314,8 +334,36 @@ export default function ProgramBuilder() {
 
         </div>
 
+        <WeeklyWorkoutProgress
+          week={getWorkoutForWeek(selectedWeek)}
+          weekIndex={selectedWeek}
+          programStartDate={programStartDate}
+        />
+
         {/* Existing Week Planner */}
         <WeekPlanner weekIndex={selectedWeek} />
+
+        <div className="mt-3">
+          <button
+            type="button"
+            onClick={() =>
+              setShowExerciseLibrary((current) => !current)
+            }
+            aria-expanded={showExerciseLibrary}
+            className="flex w-full items-center justify-center gap-2 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 text-xs font-semibold text-primary transition hover:bg-primary/10 sm:w-auto"
+          >
+            <Library size={14} />
+            {showExerciseLibrary
+              ? "Close exercise catalog"
+              : "Add Exercise from Library"}
+          </button>
+        </div>
+
+        {showExerciseLibrary && (
+          <div className="mt-3 rounded-lg border border-slate-200 bg-white p-3 sm:p-4">
+            <ExerciseLibrary initialWeekIndex={selectedWeek} />
+          </div>
+        )}
 
       </div>
 
