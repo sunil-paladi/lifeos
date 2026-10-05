@@ -11,8 +11,11 @@
 -- permanently pin every existing user as having explicit personal overrides
 -- and make "inherit gym settings" unrepresentable.
 --
--- This backfill clears exactly those auto-assigned defaults to NULL so
--- existing users inherit (gym -> browser/device -> built-in) from now on.
+-- ORDER MATTERS: the columns are made nullable FIRST, and only then are the
+-- auto-assigned defaults cleared to NULL (PostgreSQL rejects NULL writes
+-- while the columns are still NOT NULL). Existing users then inherit
+-- (gym -> browser/device -> built-in) from now on.
+--
 -- This is safe/appropriate because the regional preference feature is newly
 -- introduced and is being corrected BEFORE MVP: at this stage the default
 -- values are indistinguishable from deliberate choices, and no released
@@ -22,22 +25,8 @@
 -- values matching these defaults may be intentional user choices.
 -- ==========================================================================
 
--- Defensive vocabulary normalization (legacy "mi" -> "miles").
-UPDATE "user" SET "distanceUnit" = 'miles' WHERE "distanceUnit" = 'mi';
-
--- Clear the auto-assigned India defaults -> users inherit instead.
-UPDATE "user" SET "timezone"     = NULL WHERE "timezone"     = 'Asia/Kolkata';
-UPDATE "user" SET "country"      = NULL WHERE "country"      = 'IN';
-UPDATE "user" SET "locale"       = NULL WHERE "locale"       = 'en-IN';
-UPDATE "user" SET "currency"     = NULL WHERE "currency"     = 'INR';
-UPDATE "user" SET "weightUnit"   = NULL WHERE "weightUnit"   = 'kg';
-UPDATE "user" SET "heightUnit"   = NULL WHERE "heightUnit"   = 'cm';
-UPDATE "user" SET "distanceUnit" = NULL WHERE "distanceUnit" = 'km';
-UPDATE "user" SET "dateFormat"   = NULL WHERE "dateFormat"   = 'DD/MM/YYYY';
-UPDATE "user" SET "timeFormat"   = NULL WHERE "timeFormat"   = '12h';
-
--- null now means "inherit": drop NOT NULL and the column defaults so the
--- database no longer injects implicit overrides on insert.
+-- 1) null now means "inherit": drop NOT NULL and the column defaults so the
+--    database no longer injects implicit overrides on insert.
 ALTER TABLE "user"
   ALTER COLUMN "timezone" DROP NOT NULL,
   ALTER COLUMN "timezone" DROP DEFAULT,
@@ -57,6 +46,21 @@ ALTER TABLE "user"
   ALTER COLUMN "dateFormat" DROP DEFAULT,
   ALTER COLUMN "timeFormat" DROP NOT NULL,
   ALTER COLUMN "timeFormat" DROP DEFAULT;
+
+-- 2) Clear the auto-assigned India defaults -> users inherit instead.
+--    (Safe now that all 9 columns accept NULL.)
+UPDATE "user" SET "timezone"     = NULL WHERE "timezone"     = 'Asia/Kolkata';
+UPDATE "user" SET "country"      = NULL WHERE "country"      = 'IN';
+UPDATE "user" SET "locale"       = NULL WHERE "locale"       = 'en-IN';
+UPDATE "user" SET "currency"     = NULL WHERE "currency"     = 'INR';
+UPDATE "user" SET "weightUnit"   = NULL WHERE "weightUnit"   = 'kg';
+UPDATE "user" SET "heightUnit"   = NULL WHERE "heightUnit"   = 'cm';
+UPDATE "user" SET "distanceUnit" = NULL WHERE "distanceUnit" = 'km';
+UPDATE "user" SET "dateFormat"   = NULL WHERE "dateFormat"   = 'DD/MM/YYYY';
+UPDATE "user" SET "timeFormat"   = NULL WHERE "timeFormat"   = '12h';
+
+-- 3) Defensive vocabulary normalization (legacy "mi" -> "miles").
+UPDATE "user" SET "distanceUnit" = 'miles' WHERE "distanceUnit" = 'mi';
 
 -- ==========================================================================
 -- PART B: gym_settings gains owner display settings.
