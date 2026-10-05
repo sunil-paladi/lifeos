@@ -13,6 +13,10 @@ import {
   USER_TIME_FORMATS,
   USER_WEIGHT_UNITS,
 } from "@/app/lib/regional-preferences";
+import {
+  GymContextError,
+  resolveUserRegionalPreferences,
+} from "@/app/lib/regional-server";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -29,7 +33,7 @@ function isOneOf<T extends readonly string[]>(value: unknown, options: T): value
 // GET PROFILE
 // ========================================
 
-export async function GET() {
+export async function GET(request: Request) {
   const session = await auth.api.getSession({
     headers: await headers(),
   });
@@ -54,9 +58,30 @@ export async function GET() {
     );
   }
 
-  return NextResponse.json({
-    user,
-  });
+  // Raw stored values (null = inherit) plus the resolved preferences and
+  // their provenance (user -> gym -> browser/device -> built-in).
+  // Callers with multiple gym memberships may pass ?gymId= to select the
+  // gym context; unauthorized ids are rejected, never silently swapped.
+  const requestedGymId = new URL(request.url).searchParams.get("gymId");
+
+  try {
+    const resolved = await resolveUserRegionalPreferences(user.id, {
+      gymId: requestedGymId,
+    });
+
+    return NextResponse.json({
+      user,
+      resolved,
+    });
+  } catch (error) {
+    if (error instanceof GymContextError) {
+      return NextResponse.json(
+        { error: error.message, code: error.code },
+        { status: 403 },
+      );
+    }
+    throw error;
+  }
 }
 
 // ========================================
@@ -98,15 +123,15 @@ export async function PATCH(request: Request) {
     trainingExperience?: typeof TRAINING_EXPERIENCES[number] | null;
     targetWeight?: number | null;
     preferredTrainingDays?: number | null;
-    timezone?: string;
-    country?: string;
-    locale?: string;
-    currency?: string;
-    weightUnit?: typeof USER_WEIGHT_UNITS[number];
-    heightUnit?: typeof USER_HEIGHT_UNITS[number];
-    distanceUnit?: typeof USER_DISTANCE_UNITS[number];
-    dateFormat?: typeof USER_DATE_FORMATS[number];
-    timeFormat?: typeof USER_TIME_FORMATS[number];
+    timezone?: string | null;
+    country?: string | null;
+    locale?: string | null;
+    currency?: string | null;
+    weightUnit?: typeof USER_WEIGHT_UNITS[number] | null;
+    heightUnit?: typeof USER_HEIGHT_UNITS[number] | null;
+    distanceUnit?: typeof USER_DISTANCE_UNITS[number] | null;
+    dateFormat?: typeof USER_DATE_FORMATS[number] | null;
+    timeFormat?: typeof USER_TIME_FORMATS[number] | null;
   } = {};
 
   if (body.name !== undefined) {
@@ -165,65 +190,83 @@ export async function PATCH(request: Request) {
     }
     data.trainingExperience = body.trainingExperience === null ? null : body.trainingExperience;
   }
+  // Regional preference fields: null means "clear my override and inherit"
+  // (gym -> browser/device -> built-in). Strings are validated as before.
   if (body.timezone !== undefined) {
-    const timezone = normalizeUserTimezone(body.timezone);
-    if (!timezone) {
-      return NextResponse.json({ error: "timezone must be a valid IANA timezone" }, { status: 400 });
+    if (body.timezone === null) {
+      data.timezone = null;
+    } else {
+      const timezone = normalizeUserTimezone(body.timezone);
+      if (!timezone) {
+        return NextResponse.json({ error: "timezone must be a valid IANA timezone or null to inherit" }, { status: 400 });
+      }
+      data.timezone = timezone;
     }
-    data.timezone = timezone;
   }
   if (body.country !== undefined) {
-    const country =
-      typeof body.country === "string" ? body.country.trim().toUpperCase() : "";
-    if (!isSupportedCountry(country)) {
-      return NextResponse.json({ error: "country must be a valid ISO 3166-1 alpha-2 code" }, { status: 400 });
+    if (body.country === null) {
+      data.country = null;
+    } else {
+      const country =
+        typeof body.country === "string" ? body.country.trim().toUpperCase() : "";
+      if (!isSupportedCountry(country)) {
+        return NextResponse.json({ error: "country must be a valid ISO 3166-1 alpha-2 code or null to inherit" }, { status: 400 });
+      }
+      data.country = country;
     }
-    data.country = country;
   }
   if (body.locale !== undefined) {
-    const locale = normalizeUserLocale(body.locale);
-    if (!locale) {
-      return NextResponse.json({ error: "locale must be a valid BCP 47 language tag" }, { status: 400 });
+    if (body.locale === null) {
+      data.locale = null;
+    } else {
+      const locale = normalizeUserLocale(body.locale);
+      if (!locale) {
+        return NextResponse.json({ error: "locale must be a valid BCP 47 language tag or null to inherit" }, { status: 400 });
+      }
+      data.locale = locale;
     }
-    data.locale = locale;
   }
   if (body.currency !== undefined) {
-    const currency =
-      typeof body.currency === "string" ? body.currency.trim().toUpperCase() : "";
-    if (!isSupportedCurrency(currency)) {
-      return NextResponse.json({ error: "currency must be a supported ISO 4217 currency code" }, { status: 400 });
+    if (body.currency === null) {
+      data.currency = null;
+    } else {
+      const currency =
+        typeof body.currency === "string" ? body.currency.trim().toUpperCase() : "";
+      if (!isSupportedCurrency(currency)) {
+        return NextResponse.json({ error: "currency must be a supported ISO 4217 currency code or null to inherit" }, { status: 400 });
+      }
+      data.currency = currency;
     }
-    data.currency = currency;
   }
   if (body.weightUnit !== undefined) {
-    if (!isOneOf(body.weightUnit, USER_WEIGHT_UNITS)) {
+    if (body.weightUnit !== null && !isOneOf(body.weightUnit, USER_WEIGHT_UNITS)) {
       return NextResponse.json({ error: "weightUnit is not valid" }, { status: 400 });
     }
-    data.weightUnit = body.weightUnit;
+    data.weightUnit = body.weightUnit === null ? null : body.weightUnit;
   }
   if (body.heightUnit !== undefined) {
-    if (!isOneOf(body.heightUnit, USER_HEIGHT_UNITS)) {
+    if (body.heightUnit !== null && !isOneOf(body.heightUnit, USER_HEIGHT_UNITS)) {
       return NextResponse.json({ error: "heightUnit is not valid" }, { status: 400 });
     }
-    data.heightUnit = body.heightUnit;
+    data.heightUnit = body.heightUnit === null ? null : body.heightUnit;
   }
   if (body.distanceUnit !== undefined) {
-    if (!isOneOf(body.distanceUnit, USER_DISTANCE_UNITS)) {
+    if (body.distanceUnit !== null && !isOneOf(body.distanceUnit, USER_DISTANCE_UNITS)) {
       return NextResponse.json({ error: "distanceUnit is not valid" }, { status: 400 });
     }
-    data.distanceUnit = body.distanceUnit;
+    data.distanceUnit = body.distanceUnit === null ? null : body.distanceUnit;
   }
   if (body.dateFormat !== undefined) {
-    if (!isOneOf(body.dateFormat, USER_DATE_FORMATS)) {
+    if (body.dateFormat !== null && !isOneOf(body.dateFormat, USER_DATE_FORMATS)) {
       return NextResponse.json({ error: "dateFormat is not valid" }, { status: 400 });
     }
-    data.dateFormat = body.dateFormat;
+    data.dateFormat = body.dateFormat === null ? null : body.dateFormat;
   }
   if (body.timeFormat !== undefined) {
-    if (!isOneOf(body.timeFormat, USER_TIME_FORMATS)) {
+    if (body.timeFormat !== null && !isOneOf(body.timeFormat, USER_TIME_FORMATS)) {
       return NextResponse.json({ error: "timeFormat is not valid" }, { status: 400 });
     }
-    data.timeFormat = body.timeFormat;
+    data.timeFormat = body.timeFormat === null ? null : body.timeFormat;
   }
 
   if (Object.keys(data).length === 0) {
@@ -237,8 +280,11 @@ export async function PATCH(request: Request) {
     data,
   });
 
+  const resolved = await resolveUserRegionalPreferences(user.id);
+
   return NextResponse.json({
     success: true,
     user,
+    resolved,
   });
 }

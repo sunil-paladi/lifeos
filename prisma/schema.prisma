@@ -30,16 +30,18 @@ model User {
   targetWeight          Float?
   preferredTrainingDays Int?
 
-  // Personal regional and unit preferences
-  timezone     String @default("Asia/Kolkata")
-  country      String @default("IN")
-  locale       String @default("en-IN")
-  currency     String @default("INR")
-  weightUnit   String @default("kg")
-  heightUnit   String @default("cm")
-  distanceUnit String @default("km")
-  dateFormat   String @default("DD/MM/YYYY")
-  timeFormat   String @default("12h")
+  // Personal regional and unit preferences.
+  // Nullable: null means "inherit" (resolution: user -> gym -> browser/device
+  // -> built-in, see app/lib/regional-preferences.ts).
+  timezone     String?
+  country      String?
+  locale       String?
+  currency     String?
+  weightUnit   String?
+  heightUnit   String?
+  distanceUnit String?
+  dateFormat   String?
+  timeFormat   String?
 
   // Trainer relationship
   trainerId String?
@@ -383,10 +385,11 @@ model GymSettings {
   country      String   @default("IN")
   timezone     String   @default("Asia/Kolkata")
   currency     String   @default("INR")
-  language     String   @default("en")
+  locale       String   @default("en-IN")
   dateFormat   String   @default("DD/MM/YYYY")
   timeFormat   String   @default("12h")
   weightUnit   String   @default("kg")
+  heightUnit   String   @default("cm")
   distanceUnit String   @default("km")
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt

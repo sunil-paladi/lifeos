@@ -1,42 +1,169 @@
 import { NextResponse } from "next/server";
 import { getAuthenticatedUser } from "@/app/lib/authorization";
+import {
+  getCountryDefaults,
+  isSupportedCountry,
+  isSupportedCurrency,
+  normalizeUserLocale,
+  normalizeUserTimezone,
+  USER_DATE_FORMATS,
+  USER_DISTANCE_UNITS,
+  USER_HEIGHT_UNITS,
+  USER_TIME_FORMATS,
+  USER_WEIGHT_UNITS,
+} from "@/app/lib/regional-preferences";
 import { prisma } from "@/lib/prisma";
 
 type RouteContext = {
   params: Promise<{ gymId: string }>;
 };
 
-const DEFAULT_SETTINGS = {
-  country: "IN",
-  timezone: "Asia/Kolkata",
-  currency: "INR",
-  language: "en",
-  dateFormat: "DD/MM/YYYY",
-  timeFormat: "12h",
-  weightUnit: "kg",
-  distanceUnit: "km",
-} as const;
-
-const COUNTRY_OPTIONS = ["IN", "US", "GB", "CA", "AU", "DE", "FR", "AE", "SG", "NZ"] as const;
-const CURRENCY_OPTIONS = ["INR", "USD", "EUR", "GBP", "AED", "SGD", "AUD"] as const;
-const LANGUAGE_OPTIONS = ["en", "hi", "fr", "de", "es", "ar"] as const;
-const DATE_FORMAT_OPTIONS = ["DD/MM/YYYY", "MM/DD/YYYY", "YYYY-MM-DD"] as const;
-const TIME_FORMAT_OPTIONS = ["12h", "24h"] as const;
-const WEIGHT_UNIT_OPTIONS = ["kg", "lb"] as const;
-const DISTANCE_UNIT_OPTIONS = ["km", "mi"] as const;
-const TIMEZONE_OPTIONS = [
-  "UTC",
-  "Asia/Kolkata",
-  "America/New_York",
-  "Europe/London",
-  "Europe/Paris",
-  "Asia/Dubai",
-  "Asia/Singapore",
-  "Australia/Sydney",
+const REGIONAL_KEYS = [
+  "country",
+  "timezone",
+  "currency",
+  "locale",
+  "dateFormat",
+  "timeFormat",
+  "weightUnit",
+  "heightUnit",
+  "distanceUnit",
 ] as const;
 
-function isValidValue<T extends readonly string[]>(value: unknown, options: T) {
-  return typeof value === "string" && options.includes(value as T[number]);
+type RegionalKey = (typeof REGIONAL_KEYS)[number];
+type RegionalValues = Partial<Record<RegionalKey, string>>;
+
+function isOneOf<T extends readonly string[]>(
+  value: unknown,
+  options: T,
+): value is T[number] {
+  return typeof value === "string" && (options as readonly string[]).includes(value);
+}
+
+/** Normalizes legacy "mi" to the canonical "miles" vocabulary. */
+function normalizeDistanceUnit(value: unknown): string | null {
+  if (value === "mi" || value === "miles") return "miles";
+  return isOneOf(value, USER_DISTANCE_UNITS) ? value : null;
+}
+
+/**
+ * Validates and normalizes only the regional fields present in the payload.
+ * Fields absent from the payload are never touched by the caller.
+ */
+function normalizeRegionalValues(payload: Record<string, unknown>): {
+  values: RegionalValues;
+  errors: Record<string, string>;
+} {
+  const values: RegionalValues = {};
+  const errors: Record<string, string> = {};
+
+  if (payload.country !== undefined) {
+    const code =
+      typeof payload.country === "string" ? payload.country.trim().toUpperCase() : "";
+    if (!isSupportedCountry(code)) {
+      errors.country = "Invalid country value (ISO alpha-2 expected)";
+    } else {
+      values.country = code;
+    }
+  }
+
+  if (payload.timezone !== undefined) {
+    const timezone = normalizeUserTimezone(payload.timezone);
+    if (!timezone) {
+      errors.timezone = "Invalid timezone value";
+    } else {
+      values.timezone = timezone;
+    }
+  }
+
+  if (payload.currency !== undefined) {
+    const code =
+      typeof payload.currency === "string" ? payload.currency.trim().toUpperCase() : "";
+    if (!isSupportedCurrency(code)) {
+      errors.currency = "Invalid currency value";
+    } else {
+      values.currency = code;
+    }
+  }
+
+  // "locale" is canonical; "language" is accepted as a deprecated alias so
+  // older clients keep working during the vocabulary unification.
+  if (payload.locale !== undefined || payload.language !== undefined) {
+    const locale = normalizeUserLocale(payload.locale ?? payload.language);
+    if (!locale) {
+      errors.locale = "Invalid locale value (BCP 47 language tag expected)";
+    } else {
+      values.locale = locale;
+    }
+  }
+
+  if (payload.dateFormat !== undefined) {
+    if (!isOneOf(payload.dateFormat, USER_DATE_FORMATS)) {
+      errors.dateFormat = "Invalid date format value";
+    } else {
+      values.dateFormat = payload.dateFormat;
+    }
+  }
+
+  if (payload.timeFormat !== undefined) {
+    if (!isOneOf(payload.timeFormat, USER_TIME_FORMATS)) {
+      errors.timeFormat = "Invalid time format value";
+    } else {
+      values.timeFormat = payload.timeFormat;
+    }
+  }
+
+  if (payload.weightUnit !== undefined) {
+    if (!isOneOf(payload.weightUnit, USER_WEIGHT_UNITS)) {
+      errors.weightUnit = "Invalid weight unit value";
+    } else {
+      values.weightUnit = payload.weightUnit;
+    }
+  }
+
+  if (payload.heightUnit !== undefined) {
+    if (!isOneOf(payload.heightUnit, USER_HEIGHT_UNITS)) {
+      errors.heightUnit = "Invalid height unit value";
+    } else {
+      values.heightUnit = payload.heightUnit;
+    }
+  }
+
+  if (payload.distanceUnit !== undefined) {
+    const unit = normalizeDistanceUnit(payload.distanceUnit);
+    if (!unit) {
+      errors.distanceUnit = "Invalid distance unit value (km or miles)";
+    } else {
+      values.distanceUnit = unit;
+    }
+  }
+
+  return { values, errors };
+}
+
+function toSettingsResponse(settings: {
+  country: string;
+  timezone: string;
+  currency: string;
+  locale: string;
+  dateFormat: string;
+  timeFormat: string;
+  weightUnit: string;
+  heightUnit: string;
+  distanceUnit: string;
+}) {
+  return {
+    country: settings.country,
+    timezone: settings.timezone,
+    currency: settings.currency,
+    locale: settings.locale,
+    dateFormat: settings.dateFormat,
+    timeFormat: settings.timeFormat,
+    weightUnit: settings.weightUnit,
+    heightUnit: settings.heightUnit,
+    distanceUnit:
+      settings.distanceUnit === "mi" ? "miles" : settings.distanceUnit,
+  };
 }
 
 export async function GET(_request: Request, context: RouteContext) {
@@ -74,19 +201,14 @@ export async function GET(_request: Request, context: RouteContext) {
     return NextResponse.json({ error: "Gym not found" }, { status: 404 });
   }
 
-  const settings = gym.settings ?? { ...DEFAULT_SETTINGS };
+  // Recommended country defaults are only a fallback for gyms that never
+  // saved a settings row; owner-saved values always take precedence.
+  const settings = gym.settings ?? getCountryDefaults("IN");
 
   return NextResponse.json({
     gymId: gym.id,
     gymName: gym.name,
-    country: settings.country,
-    timezone: settings.timezone,
-    currency: settings.currency,
-    language: settings.language,
-    dateFormat: settings.dateFormat,
-    timeFormat: settings.timeFormat,
-    weightUnit: settings.weightUnit,
-    distanceUnit: settings.distanceUnit,
+    ...toSettingsResponse(settings),
   });
 }
 
@@ -124,63 +246,50 @@ export async function PATCH(request: Request, context: RouteContext) {
 
   const payload = body as Record<string, unknown>;
 
-  const gymNameValue = payload.gymName;
-  const gymName = typeof gymNameValue === "string" ? gymNameValue.trim() : undefined;
-
-  if (gymNameValue !== undefined && (typeof gymNameValue !== "string" || gymName === "")) {
+  const gymName = typeof payload.gymName === "string" ? payload.gymName.trim() : undefined;
+  if (payload.gymName !== undefined && !gymName) {
     return NextResponse.json({ error: "Gym name must be a non-empty string" }, { status: 400 });
   }
 
-  const validationErrors: Record<string, string> = {};
-  const normalizedValues = {
-    country: payload.country,
-    timezone: payload.timezone,
-    currency: payload.currency,
-    language: payload.language,
-    dateFormat: payload.dateFormat,
-    timeFormat: payload.timeFormat,
-    weightUnit: payload.weightUnit,
-    distanceUnit: payload.distanceUnit,
-  } as const;
-
-  if (payload.country !== undefined && !isValidValue(payload.country, COUNTRY_OPTIONS)) {
-    validationErrors.country = "Invalid country value";
-  }
-  if (payload.timezone !== undefined && !isValidValue(payload.timezone, TIMEZONE_OPTIONS)) {
-    validationErrors.timezone = "Invalid timezone value";
-  }
-  if (payload.currency !== undefined && !isValidValue(payload.currency, CURRENCY_OPTIONS)) {
-    validationErrors.currency = "Invalid currency value";
-  }
-  if (payload.language !== undefined && !isValidValue(payload.language, LANGUAGE_OPTIONS)) {
-    validationErrors.language = "Invalid language value";
-  }
-  if (payload.dateFormat !== undefined && !isValidValue(payload.dateFormat, DATE_FORMAT_OPTIONS)) {
-    validationErrors.dateFormat = "Invalid date format value";
-  }
-  if (payload.timeFormat !== undefined && !isValidValue(payload.timeFormat, TIME_FORMAT_OPTIONS)) {
-    validationErrors.timeFormat = "Invalid time format value";
-  }
-  if (payload.weightUnit !== undefined && !isValidValue(payload.weightUnit, WEIGHT_UNIT_OPTIONS)) {
-    validationErrors.weightUnit = "Invalid weight unit value";
-  }
-  if (payload.distanceUnit !== undefined && !isValidValue(payload.distanceUnit, DISTANCE_UNIT_OPTIONS)) {
-    validationErrors.distanceUnit = "Invalid distance unit value";
-  }
+  const { values, errors: validationErrors } = normalizeRegionalValues(payload);
 
   if (Object.keys(validationErrors).length > 0) {
     return NextResponse.json({ error: "Validation failed", details: validationErrors }, { status: 400 });
   }
 
-  const settingsPayload = {
-    country: typeof payload.country === "string" ? payload.country : DEFAULT_SETTINGS.country,
-    timezone: typeof payload.timezone === "string" ? payload.timezone : DEFAULT_SETTINGS.timezone,
-    currency: typeof payload.currency === "string" ? payload.currency : DEFAULT_SETTINGS.currency,
-    language: typeof payload.language === "string" ? payload.language : DEFAULT_SETTINGS.language,
-    dateFormat: typeof payload.dateFormat === "string" ? payload.dateFormat : DEFAULT_SETTINGS.dateFormat,
-    timeFormat: typeof payload.timeFormat === "string" ? payload.timeFormat : DEFAULT_SETTINGS.timeFormat,
-    weightUnit: typeof payload.weightUnit === "string" ? payload.weightUnit : DEFAULT_SETTINGS.weightUnit,
-    distanceUnit: typeof payload.distanceUnit === "string" ? payload.distanceUnit : DEFAULT_SETTINGS.distanceUnit,
+  const existing = await prisma.gymSettings.findUnique({
+    where: { gymId },
+  });
+
+  // Country change = owner picked a new country: repopulate the *unspecified*
+  // display fields with that country's recommended defaults. Values provided
+  // in this payload always win over the recommendations, and if country is
+  // not part of the payload, no other field is touched (partial PATCH never
+  // resets owner config).
+  const countryChanged =
+    values.country !== undefined && values.country !== (existing?.country ?? null);
+  const recommended = getCountryDefaults(values.country ?? existing?.country ?? "IN");
+
+  const updateData: RegionalValues = {};
+  if (countryChanged) {
+    for (const key of REGIONAL_KEYS) {
+      if (values[key] !== undefined) {
+        updateData[key] = values[key];
+      } else if (key !== "country") {
+        updateData[key] = recommended[key];
+      }
+    }
+  } else {
+    Object.assign(updateData, values);
+  }
+
+  // Creating a settings row for the first time: full row from the current
+  // country's recommended defaults, overridden by whatever the owner sent.
+  const createData = {
+    gymId,
+    ...recommended,
+    ...(values.country !== undefined ? { country: values.country } : {}),
+    ...values,
   };
 
   const result = await prisma.$transaction(async (tx) => {
@@ -193,11 +302,8 @@ export async function PATCH(request: Request, context: RouteContext) {
 
     const settings = await tx.gymSettings.upsert({
       where: { gymId },
-      update: settingsPayload,
-      create: {
-        gymId,
-        ...settingsPayload,
-      },
+      update: updateData,
+      create: createData,
     });
 
     const gym = await tx.gym.findUnique({
@@ -211,6 +317,6 @@ export async function PATCH(request: Request, context: RouteContext) {
   return NextResponse.json({
     message: "Gym settings updated successfully",
     gymName: result.gymName,
-    settings: result.settings,
+    settings: toSettingsResponse(result.settings),
   });
 }

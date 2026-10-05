@@ -15,6 +15,10 @@ LifeOS is a Next.js application backed by PostgreSQL and Prisma.
 
 Timezone, locale, currency, unit, and date/time display preferences are stored on each user profile. Future daily calculations must use `getUserLocalDate()` from `app/lib/user-time.ts` with that user's saved timezone; do not derive a user's "today" from the server timezone. Existing habit and other daily-module date behavior is unchanged until those modules are intentionally migrated.
 
+Regional fields on `User` are nullable: `null` means "inherit". Effective values are resolved per field in `app/lib/regional-preferences.ts` (`resolveRegionalPreferences`) with the chain **user explicit override -> gym settings -> browser/device -> built-in**, and every value carries provenance (`user | gym | browser | builtin`). Server-side resolution lives in `app/lib/regional-server.ts` (`resolveUserRegionalPreferences`), which applies the gym context rules: an explicitly supplied (and authorized) `gymId` wins; with no `gymId`, exactly one ACTIVE membership is used; with multiple ACTIVE memberships the resolver does **not** guess and returns `gymSelection: "context-required"` so the caller/UI can provide the current gym context (a future "current gym" session context plugs in as `gymId`).
+
+Per-country values in `COUNTRY_DEFAULTS` are *recommended* defaults only — owners and members can override every individual setting. The one-time migration `20261005000000_regional_inheritance_and_gym_display_settings` clears the previously auto-assigned India defaults to `NULL` (pre-MVP correction so existing users inherit); it must not be re-run after MVP.
+
 ## Production deployment on Render
 
 LifeOS uses a native Node.js Render Web Service with Render PostgreSQL. This keeps the deployment to one app service and one database; the existing Docker files remain available for local/container workflows but are not required on Render. Use the Node.js version pinned in `.node-version` and place the web service and database in the same Render region. Use the database's internal connection URL for `DATABASE_URL`.

@@ -6,7 +6,19 @@ import {
   type ThemeMode,
   useTheme,
 } from "@/app/components/theme/ThemeProvider";
-import { DEFAULT_USER_PREFERENCES } from "@/app/lib/regional-preferences";
+import {
+  COUNTRY_CODES,
+  getClientBrowserPreferences,
+  getCountryDisplayName,
+  getCurrencyDisplayName,
+  getLocaleDisplayName,
+  REGIONAL_PREFERENCE_KEYS,
+  resolveRegionalPreferences,
+  SUPPORTED_LOCALES,
+  type RegionalPreferenceKey,
+  type RegionalPreferenceSource,
+  type RegionalPreferences,
+} from "@/app/lib/regional-preferences";
 
 type AccountRole = "USER" | "TRAINER" | "OWNER";
 
@@ -36,23 +48,160 @@ type NutritionTargets = {
   fat: string;
 };
 
-type RegionalPreferences = {
-  timezone: string;
-  country: string;
-  locale: string;
-  currency: string;
-  weightUnit: string;
-  heightUnit: string;
-  distanceUnit: string;
-  dateFormat: string;
-  timeFormat: string;
+// Raw stored regional values for the signed-in user. null = "inherit"
+// (gym -> browser/device -> built-in resolution chain).
+type RegionalValues = Record<RegionalPreferenceKey, string | null>;
+
+const EMPTY_REGIONAL_VALUES: RegionalValues = {
+  timezone: null,
+  country: null,
+  locale: null,
+  currency: null,
+  weightUnit: null,
+  heightUnit: null,
+  distanceUnit: null,
+  dateFormat: null,
+  timeFormat: null,
 };
 
-const DEFAULT_REGIONAL_PREFERENCES: RegionalPreferences = {
-  ...DEFAULT_USER_PREFERENCES,
+type ResolvedRegionalResponse = {
+  preferences: RegionalPreferences;
+  provenance: Record<RegionalPreferenceKey, RegionalPreferenceSource>;
+  layers: {
+    user: Partial<Record<RegionalPreferenceKey, string | null>> | null;
+    gym: RegionalPreferences | null;
+  };
+  gymId: string | null;
+  gymName: string | null;
+  gymSelection: "explicit" | "single-active" | "context-required" | "none";
+  availableGyms?: { id: string; name: string }[];
 };
 
-const SUPPORTED_CURRENCIES = Intl.supportedValuesOf("currency");
+function readRegionalValues(user: Record<string, unknown>): RegionalValues {
+  return {
+    timezone: (user.timezone as string | null) ?? null,
+    country: (user.country as string | null) ?? null,
+    locale: (user.locale as string | null) ?? null,
+    currency: (user.currency as string | null) ?? null,
+    weightUnit: (user.weightUnit as string | null) ?? null,
+    heightUnit: (user.heightUnit as string | null) ?? null,
+    distanceUnit: (user.distanceUnit as string | null) ?? null,
+    dateFormat: (user.dateFormat as string | null) ?? null,
+    timeFormat: (user.timeFormat as string | null) ?? null,
+  };
+}
+
+const COUNTRY_OPTIONS = COUNTRY_CODES.map((code) => ({
+  value: code,
+  label: `${getCountryDisplayName(code)} (${code})`,
+}));
+
+const TIMEZONE_OPTIONS: string[] = (() => {
+  try {
+    return Intl.supportedValuesOf("timeZone");
+  } catch {
+    return [
+      "Asia/Kolkata",
+      "America/New_York",
+      "Europe/London",
+      "Asia/Dubai",
+      "Asia/Singapore",
+      "Australia/Sydney",
+    ];
+  }
+})();
+
+const TIMEZONE_LABEL_OPTIONS = TIMEZONE_OPTIONS.map((timezone) => ({
+  value: timezone,
+  label: timezone.replace(/_/g, " "),
+}));
+
+const LOCALE_OPTIONS = SUPPORTED_LOCALES.map((tag) => ({
+  value: tag,
+  label: getLocaleDisplayName(tag),
+}));
+
+const CURRENCY_OPTIONS: string[] = (() => {
+  try {
+    return Intl.supportedValuesOf("currency");
+  } catch {
+    return ["INR", "USD", "EUR", "GBP", "AUD", "CAD", "SGD", "AED", "SAR", "JPY"];
+  }
+})();
+
+const CURRENCY_LABEL_OPTIONS = CURRENCY_OPTIONS.map((code) => ({
+  value: code,
+  label: getCurrencyDisplayName(code),
+}));
+
+const WEIGHT_UNIT_OPTIONS = [
+  { value: "kg", label: "Kilograms (kg)" },
+  { value: "lb", label: "Pounds (lb)" },
+];
+
+const HEIGHT_UNIT_OPTIONS = [
+  { value: "cm", label: "Centimeters (cm)" },
+  { value: "ft_in", label: "Feet and inches (ft/in)" },
+];
+
+const DISTANCE_UNIT_OPTIONS = [
+  { value: "km", label: "Kilometers (km)" },
+  { value: "miles", label: "Miles" },
+];
+
+const DATE_FORMAT_OPTIONS = [
+  { value: "DD/MM/YYYY", label: "DD/MM/YYYY" },
+  { value: "MM/DD/YYYY", label: "MM/DD/YYYY" },
+  { value: "YYYY-MM-DD", label: "YYYY-MM-DD" },
+];
+
+const TIME_FORMAT_OPTIONS = [
+  { value: "12h", label: "12-hour" },
+  { value: "24h", label: "24-hour" },
+];
+
+const PROVENANCE_LABELS: Record<RegionalPreferenceSource, string> = {
+  user: "Personal override",
+  gym: "Inherited from gym",
+  browser: "From this device",
+  builtin: "LifeOS default",
+};
+
+// Shown when the user has multiple active gym memberships: lets the UI
+// provide the gym context instead of the resolver guessing across gyms.
+function RegionalGymContextPicker({
+  resolved,
+  onChange,
+}: {
+  resolved: ResolvedRegionalResponse;
+  onChange: (gymId: string) => void;
+}) {
+  const gyms = resolved.availableGyms ?? [];
+  if (gyms.length < 2) return null;
+
+  return (
+    <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+      <p className="font-semibold">
+        You belong to more than one gym, so gym defaults are not guessed.
+      </p>
+      <p className="mt-1">
+        Choose a gym context to preview and inherit its values:
+      </p>
+      <select
+        value={resolved.gymId ?? ""}
+        onChange={(event) => onChange(event.target.value)}
+        className="mt-2 w-full rounded-xl border border-amber-200 bg-white px-3 py-2 text-sm outline-none focus:border-primary/30"
+      >
+        <option value="">Device &amp; built-in defaults only</option>
+        {gyms.map((gym) => (
+          <option key={gym.id} value={gym.id}>
+            {gym.name}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}
 
 const SETTINGS_STORAGE_KEY = "lifeos-settings";
 const NUTRITION_TARGETS_KEY = "lifeos-nutrition-targets";
@@ -83,8 +232,16 @@ export default function SettingsPage() {
   const [accountRole, setAccountRole] = useState<AccountRole | null>(null);
   const [settings, setSettings] =
     useState<SettingsData>(DEFAULT_SETTINGS);
-  const [regionalPreferences, setRegionalPreferences] =
-    useState<RegionalPreferences>(DEFAULT_REGIONAL_PREFERENCES);
+  // regionalDraft = what the form shows (null = inherit);
+  // regionalBaseline = last saved values, to compute dirty state.
+  const [regionalDraft, setRegionalDraft] = useState<RegionalValues>({
+    ...EMPTY_REGIONAL_VALUES,
+  });
+  const [regionalBaseline, setRegionalBaseline] = useState<RegionalValues>({
+    ...EMPTY_REGIONAL_VALUES,
+  });
+  const [regionalResolved, setRegionalResolved] =
+    useState<ResolvedRegionalResponse | null>(null);
   const [regionalSaving, setRegionalSaving] = useState(false);
   const [regionalMessage, setRegionalMessage] = useState("");
 
@@ -139,18 +296,12 @@ export default function SettingsPage() {
                     ? "Improve Fitness"
                     : "Build Muscle",
         }));
-        setRegionalPreferences({
-          timezone: user.timezone ?? DEFAULT_USER_PREFERENCES.timezone,
-          country: user.country ?? DEFAULT_USER_PREFERENCES.country,
-          locale: user.locale ?? DEFAULT_USER_PREFERENCES.locale,
-          currency: user.currency ?? DEFAULT_USER_PREFERENCES.currency,
-          weightUnit: user.weightUnit ?? DEFAULT_USER_PREFERENCES.weightUnit,
-          heightUnit: user.heightUnit ?? DEFAULT_USER_PREFERENCES.heightUnit,
-          distanceUnit:
-            user.distanceUnit ?? DEFAULT_USER_PREFERENCES.distanceUnit,
-          dateFormat: user.dateFormat ?? DEFAULT_USER_PREFERENCES.dateFormat,
-          timeFormat: user.timeFormat ?? DEFAULT_USER_PREFERENCES.timeFormat,
-        });
+        const rawRegional = readRegionalValues(user);
+        setRegionalDraft(rawRegional);
+        setRegionalBaseline(rawRegional);
+        if (data.resolved) {
+          setRegionalResolved(data.resolved);
+        }
 
         // Load nutrition targets from the database.
         const nutritionResponse = await fetch(
@@ -207,12 +358,119 @@ export default function SettingsPage() {
     loadSettings();
   }, []);
 
-  function updateRegionalPreference(
-    field: keyof RegionalPreferences,
-    value: string,
-  ) {
-    setRegionalPreferences((previous) => ({ ...previous, [field]: value }));
+  function updateRegionalPreference(field: RegionalPreferenceKey, value: string) {
+    setRegionalDraft((previous) => ({ ...previous, [field]: value }));
     setRegionalMessage("");
+  }
+
+  // "Use gym default": clears the personal override (sends null = inherit).
+  function clearRegionalPreference(field: RegionalPreferenceKey) {
+    setRegionalDraft((previous) => ({ ...previous, [field]: null }));
+    setRegionalMessage("");
+  }
+
+  function getRegionalDisplay() {
+    return resolveRegionalPreferences({
+      user: regionalDraft,
+      gym: regionalResolved?.layers.gym ?? null,
+      browser: getClientBrowserPreferences(),
+    });
+  }
+
+  function provenanceBadgeClass(source: RegionalPreferenceSource) {
+    switch (source) {
+      case "user":
+        return "rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary";
+      case "gym":
+        return "rounded-full bg-blue-50 px-2 py-0.5 text-xs font-semibold text-blue-600";
+      case "browser":
+        return "rounded-full bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-600";
+      default:
+        return "rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-500";
+    }
+  }
+
+  function renderRegionalField(
+    field: RegionalPreferenceKey,
+    label: string,
+    options: { value: string; label: string }[],
+  ) {
+    const { effective, provenance } = getRegionalDisplay();
+    const source = provenance[field];
+    const isInherited = regionalDraft[field] === null;
+    const value = effective[field];
+    const selectOptions = options.some((option) => option.value === value)
+      ? options
+      : [...options, { value, label: value }];
+
+    return (
+      <div key={field} className="rounded-xl border border-slate-200 p-3">
+        <div className="flex items-center justify-between gap-2">
+          <label
+            htmlFor={`regional-${field}`}
+            className="text-sm font-semibold text-slate-700"
+          >
+            {label}
+          </label>
+          <span className={provenanceBadgeClass(source)}>
+            {PROVENANCE_LABELS[source]}
+          </span>
+        </div>
+        <select
+          id={`regional-${field}`}
+          value={value}
+          onChange={(event) => updateRegionalPreference(field, event.target.value)}
+          className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-primary/30 focus:ring-2 focus:ring-primary/20"
+        >
+          {selectOptions.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+        <div className="mt-1 flex items-center justify-between gap-2">
+          <span className="text-xs font-normal text-slate-400">
+            {isInherited ? "Inherited value." : "Your personal override."}
+          </span>
+          {isInherited ? null : (
+            <button
+              type="button"
+              onClick={() => clearRegionalPreference(field)}
+              className="text-xs font-semibold text-primary hover:underline"
+            >
+              {regionalResolved?.gymId ? "Use gym default" : "Use default"}
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  async function changeRegionalGymContext(gymId: string) {
+    setRegionalMessage("");
+    try {
+      const url = gymId
+        ? `/api/profile?gymId=${encodeURIComponent(gymId)}`
+        : "/api/profile";
+      const response = await fetch(url, { cache: "no-store" });
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error ?? "Unable to change gym context");
+      }
+
+      const rawRegional = readRegionalValues(data.user);
+      setRegionalDraft(rawRegional);
+      setRegionalBaseline(rawRegional);
+      if (data.resolved) {
+        setRegionalResolved(data.resolved);
+      }
+    } catch (error) {
+      console.error("Failed to change gym context:", error);
+      setRegionalMessage(
+        error instanceof Error ? error.message : "Unable to change gym context",
+      );
+    }
   }
 
   async function saveRegionalPreferences() {
@@ -220,12 +478,26 @@ export default function SettingsPage() {
     setRegionalMessage("");
 
     try {
+      // Send only fields that changed. A null value clears the override
+      // ("inherit"); unchanged fields are omitted from the PATCH.
+      const payload: Partial<RegionalValues> = {};
+      for (const field of REGIONAL_PREFERENCE_KEYS) {
+        if (regionalDraft[field] !== regionalBaseline[field]) {
+          payload[field] = regionalDraft[field];
+        }
+      }
+
+      if (Object.keys(payload).length === 0) {
+        setRegionalMessage("No regional changes to save.");
+        return;
+      }
+
       const response = await fetch("/api/profile", {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(regionalPreferences),
+        body: JSON.stringify(payload),
       });
       const result = await response.json();
 
@@ -233,18 +505,12 @@ export default function SettingsPage() {
         throw new Error(result.error ?? "Unable to save regional preferences");
       }
 
-      const user = result.user;
-      setRegionalPreferences({
-        timezone: user.timezone,
-        country: user.country,
-        locale: user.locale,
-        currency: user.currency,
-        weightUnit: user.weightUnit,
-        heightUnit: user.heightUnit,
-        distanceUnit: user.distanceUnit,
-        dateFormat: user.dateFormat,
-        timeFormat: user.timeFormat,
-      });
+      const rawRegional = readRegionalValues(result.user);
+      setRegionalDraft(rawRegional);
+      setRegionalBaseline(rawRegional);
+      if (result.resolved) {
+        setRegionalResolved(result.resolved);
+      }
       setRegionalMessage("Regional & units preferences saved.");
     } catch (error) {
       console.error("Failed to save regional preferences:", error);
@@ -641,155 +907,34 @@ async function updateSetting(
             Regional &amp; Units
           </h2>
           <p className="mt-1 text-sm text-slate-500">
-            Set the timezone, language, currency, and measurement formats used
-            for your personal experience.
+            Values are inherited automatically (your gym&apos;s defaults, then
+            this device, then LifeOS defaults). Set a personal override only
+            when you want something different.
           </p>
+          {regionalResolved?.gymId ? (
+            <p className="mt-1 text-xs font-medium text-slate-400">
+              Current gym context: {regionalResolved.gymName ?? regionalResolved.gymId}
+            </p>
+          ) : null}
         </div>
 
+        {regionalResolved ? (
+          <RegionalGymContextPicker
+            resolved={regionalResolved}
+            onChange={changeRegionalGymContext}
+          />
+        ) : null}
+
         <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <label className="text-sm font-semibold text-slate-700">
-            Timezone
-            <input
-              type="text"
-              value={regionalPreferences.timezone}
-              onChange={(event) =>
-                updateRegionalPreference("timezone", event.target.value)
-              }
-              className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-primary/30 focus:ring-2 focus:ring-primary/20"
-              placeholder="America/New_York"
-              autoComplete="off"
-            />
-            <span className="mt-1 block text-xs font-normal text-slate-400">
-              Use an IANA timezone, such as America/New_York.
-            </span>
-          </label>
-
-          <label className="text-sm font-semibold text-slate-700">
-            Country code
-            <input
-              type="text"
-              value={regionalPreferences.country}
-              onChange={(event) =>
-                updateRegionalPreference(
-                  "country",
-                  event.target.value.toUpperCase(),
-                )
-              }
-              className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-primary/30 focus:ring-2 focus:ring-primary/20"
-              placeholder="IN"
-              maxLength={2}
-              autoComplete="country"
-            />
-            <span className="mt-1 block text-xs font-normal text-slate-400">
-              ISO 3166-1 alpha-2 code.
-            </span>
-          </label>
-
-          <label className="text-sm font-semibold text-slate-700">
-            Locale / language
-            <input
-              type="text"
-              value={regionalPreferences.locale}
-              onChange={(event) =>
-                updateRegionalPreference("locale", event.target.value)
-              }
-              className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-primary/30 focus:ring-2 focus:ring-primary/20"
-              placeholder="en-IN"
-              maxLength={35}
-              autoComplete="language"
-            />
-            <span className="mt-1 block text-xs font-normal text-slate-400">
-              BCP 47 language tag, such as en-IN or fr-CA.
-            </span>
-          </label>
-
-          <label className="text-sm font-semibold text-slate-700">
-            Currency
-            <select
-              value={regionalPreferences.currency}
-              onChange={(event) =>
-                updateRegionalPreference("currency", event.target.value)
-              }
-              className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-primary/30 focus:ring-2 focus:ring-primary/20"
-            >
-              {SUPPORTED_CURRENCIES.map((currency) => (
-                <option key={currency} value={currency}>
-                  {currency}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label className="text-sm font-semibold text-slate-700">
-            Weight
-            <select
-              value={regionalPreferences.weightUnit}
-              onChange={(event) =>
-                updateRegionalPreference("weightUnit", event.target.value)
-              }
-              className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-primary/30 focus:ring-2 focus:ring-primary/20"
-            >
-              <option value="kg">Kilograms (kg)</option>
-              <option value="lb">Pounds (lb)</option>
-            </select>
-          </label>
-
-          <label className="text-sm font-semibold text-slate-700">
-            Height
-            <select
-              value={regionalPreferences.heightUnit}
-              onChange={(event) =>
-                updateRegionalPreference("heightUnit", event.target.value)
-              }
-              className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-primary/30 focus:ring-2 focus:ring-primary/20"
-            >
-              <option value="cm">Centimeters (cm)</option>
-              <option value="ft_in">Feet and inches (ft/in)</option>
-            </select>
-          </label>
-
-          <label className="text-sm font-semibold text-slate-700">
-            Distance
-            <select
-              value={regionalPreferences.distanceUnit}
-              onChange={(event) =>
-                updateRegionalPreference("distanceUnit", event.target.value)
-              }
-              className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-primary/30 focus:ring-2 focus:ring-primary/20"
-            >
-              <option value="km">Kilometers (km)</option>
-              <option value="miles">Miles</option>
-            </select>
-          </label>
-
-          <label className="text-sm font-semibold text-slate-700">
-            Date format
-            <select
-              value={regionalPreferences.dateFormat}
-              onChange={(event) =>
-                updateRegionalPreference("dateFormat", event.target.value)
-              }
-              className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-primary/30 focus:ring-2 focus:ring-primary/20"
-            >
-              <option value="DD/MM/YYYY">DD/MM/YYYY</option>
-              <option value="MM/DD/YYYY">MM/DD/YYYY</option>
-              <option value="YYYY-MM-DD">YYYY-MM-DD</option>
-            </select>
-          </label>
-
-          <label className="text-sm font-semibold text-slate-700">
-            Time format
-            <select
-              value={regionalPreferences.timeFormat}
-              onChange={(event) =>
-                updateRegionalPreference("timeFormat", event.target.value)
-              }
-              className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-primary/30 focus:ring-2 focus:ring-primary/20"
-            >
-              <option value="12h">12-hour</option>
-              <option value="24h">24-hour</option>
-            </select>
-          </label>
+          {renderRegionalField("timezone", "Timezone", TIMEZONE_LABEL_OPTIONS)}
+          {renderRegionalField("country", "Country", COUNTRY_OPTIONS)}
+          {renderRegionalField("locale", "Locale / language", LOCALE_OPTIONS)}
+          {renderRegionalField("currency", "Currency", CURRENCY_LABEL_OPTIONS)}
+          {renderRegionalField("weightUnit", "Weight", WEIGHT_UNIT_OPTIONS)}
+          {renderRegionalField("heightUnit", "Height", HEIGHT_UNIT_OPTIONS)}
+          {renderRegionalField("distanceUnit", "Distance", DISTANCE_UNIT_OPTIONS)}
+          {renderRegionalField("dateFormat", "Date format", DATE_FORMAT_OPTIONS)}
+          {renderRegionalField("timeFormat", "Time format", TIME_FORMAT_OPTIONS)}
         </div>
 
         <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -806,7 +951,12 @@ async function updateSetting(
           <button
             type="button"
             onClick={saveRegionalPreferences}
-            disabled={regionalSaving}
+            disabled={
+              regionalSaving ||
+              !REGIONAL_PREFERENCE_KEYS.some(
+                (field) => regionalDraft[field] !== regionalBaseline[field],
+              )
+            }
             className="rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {regionalSaving ? "Saving..." : "Save Regional Preferences"}
