@@ -159,25 +159,21 @@ export default function PTSessionsClient({ gymId }: { gymId: string }) {
           readResponse<{ trainers: Trainer[] }>(trainerResponse),
           readResponse<{ pricing: Pricing[] }>(pricingResponse),
           readResponse<{ sessions: PTSession[] }>(sessionResponse),
-          readResponse<{ clients: Array<{ clientMembershipId: string; trainer: { id: string } }> }>(assignmentResponse),
+          readResponse<{ clients: Array<{ clientMembershipId: string; trainerMembershipId: string }> }>(assignmentResponse),
         ]);
 
         if (!active) return;
 
         const activeMembers = memberData.memberships.filter((member) => member.role === "MEMBER" && member.status === "ACTIVE");
         const activeTrainers = trainerData.trainers.filter((trainer) => trainer.status === "ACTIVE");
-        const trainerMembershipByUserId = new Map(activeTrainers.map((trainer) => [trainer.userId, trainer.membershipId]));
-
         setMembers(activeMembers);
         setTrainers(activeTrainers);
         setPricing(pricingData.pricing.filter((item) => item.isActive));
         setSessions(sessionData.sessions);
-        setAssignments(assignmentData.clients.flatMap((assignment) => {
-          const trainerMembershipId = trainerMembershipByUserId.get(assignment.trainer.id);
-          return trainerMembershipId
-            ? [{ clientMembershipId: assignment.clientMembershipId, trainerMembershipId }]
-            : [];
-        }));
+        setAssignments(assignmentData.clients.map(({ clientMembershipId, trainerMembershipId }) => ({
+          clientMembershipId,
+          trainerMembershipId,
+        })));
       } catch (loadError) {
         if (active) setError(loadError instanceof Error ? loadError.message : "Unable to load PT sessions.");
       } finally {
@@ -278,7 +274,7 @@ export default function PTSessionsClient({ gymId }: { gymId: string }) {
       trainerMembershipId: session.trainerMembershipId,
       ptPricingId: session.ptPricingId ?? "",
       scheduledAt: toLocalDateTime(session.scheduledAt),
-      durationMinutes: String(session.durationMinutes),
+      durationMinutes: String(session.ptPricing?.durationMinutes ?? session.durationMinutes),
       status: session.status,
       notes: session.notes ?? "",
     });
@@ -405,7 +401,8 @@ export default function PTSessionsClient({ gymId }: { gymId: string }) {
           </label>
           <label className={labelClass}>
             Duration (minutes)
-            <input required type="number" min="1" max="480" step="1" value={draft.durationMinutes} onChange={(event) => setDraft({ ...draft, durationMinutes: event.target.value })} className={inputClass} />
+            <input required type="number" min="1" max="480" step="1" value={draft.durationMinutes} onChange={(event) => setDraft({ ...draft, durationMinutes: event.target.value })} disabled={Boolean(draft.ptPricingId)} className={inputClass} />
+            {draft.ptPricingId ? <span className="mt-1 block text-xs font-normal text-slate-500">Duration follows the selected PT pricing.</span> : null}
           </label>
           <label className={labelClass}>
             Status
@@ -491,7 +488,8 @@ export default function PTSessionsClient({ gymId }: { gymId: string }) {
                       </label>
                       <label className={labelClass}>
                         Duration (minutes)
-                        <input required type="number" min="1" max="480" step="1" value={editDraft.durationMinutes} onChange={(event) => setEditDraft({ ...editDraft, durationMinutes: event.target.value })} disabled={session.status !== "SCHEDULED"} className={inputClass} />
+                        <input required type="number" min="1" max="480" step="1" value={editDraft.durationMinutes} onChange={(event) => setEditDraft({ ...editDraft, durationMinutes: event.target.value })} disabled={session.status !== "SCHEDULED" || Boolean(editDraft.ptPricingId)} className={inputClass} />
+                        {editDraft.ptPricingId ? <span className="mt-1 block text-xs font-normal text-slate-500">Duration follows the selected PT pricing.</span> : null}
                       </label>
                       <label className={labelClass}>
                         Status

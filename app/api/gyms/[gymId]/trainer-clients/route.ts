@@ -192,6 +192,7 @@ export async function GET(
       id: true,
       assignedAt: true,
       clientMembershipId: true,
+      trainerMembershipId: true,
       clientMembership: {
         select: {
           user: {
@@ -227,6 +228,7 @@ export async function GET(
       assignmentId: assignment.id,
       assignedAt: assignment.assignedAt,
       clientMembershipId: assignment.clientMembershipId,
+      trainerMembershipId: assignment.trainerMembershipId,
       client: assignment.clientMembership.user,
       trainer: assignment.trainerMembership.user,
     })),

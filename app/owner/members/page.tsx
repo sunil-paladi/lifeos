@@ -26,6 +26,7 @@ type Trainer = {
 };
 
 type AssignedTrainer = {
+  membershipId: string;
   name: string;
   username: string | null;
 };
@@ -43,7 +44,8 @@ type TrainersResponse = {
 type AssignmentsResponse = {
   clients?: Array<{
     clientMembershipId: string;
-    trainer: AssignedTrainer;
+    trainerMembershipId: string;
+    trainer: Pick<AssignedTrainer, "name" | "username">;
   }>;
   error?: string;
 };
@@ -225,12 +227,17 @@ export default async function OwnerMembersPage() {
     : [[], []];
   const memberBillingById = new Map(memberBillingDetails.map((item) => [item.id, item]));
   const trainers = trainersResponse.trainers ?? [];
-  const assignments = new Map(
-    (assignmentsResponse.clients ?? []).map((assignment) => [
-      assignment.clientMembershipId,
-      assignment.trainer,
-    ])
-  );
+  const assignments = new Map<string, AssignedTrainer[]>();
+  for (const assignment of assignmentsResponse.clients ?? []) {
+    const trainer: AssignedTrainer = {
+      membershipId: assignment.trainerMembershipId,
+      name: assignment.trainer.name,
+      username: assignment.trainer.username,
+    };
+    const trainerList = assignments.get(assignment.clientMembershipId) ?? [];
+    trainerList.push(trainer);
+    assignments.set(assignment.clientMembershipId, trainerList);
+  }
 
   return (
     <div className="space-y-6 py-2">
@@ -308,7 +315,7 @@ export default async function OwnerMembersPage() {
                       gymId={membership.gymId}
                       clientMembershipId={member.id}
                       trainers={trainers}
-                      currentTrainer={assignments.get(member.id)}
+                      currentTrainers={assignments.get(member.id) ?? []}
                     />
                     <MembershipActions
                       gymId={membership.gymId}

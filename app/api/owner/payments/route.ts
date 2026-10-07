@@ -139,8 +139,8 @@ export async function POST(request: Request) {
   const memberMembershipId = typeof payload.memberMembershipId === "string" ? payload.memberMembershipId.trim() : "";
   const membershipPlanId = typeof payload.membershipPlanId === "string" ? payload.membershipPlanId.trim() || null : null;
   const ptSessionId = typeof payload.ptSessionId === "string" ? payload.ptSessionId.trim() || null : null;
-  const amount = parseAmount(payload.amount);
-  const currency = typeof payload.currency === "string" ? payload.currency.trim() : "";
+  const requestedAmount = parseAmount(payload.amount);
+  const requestedCurrency = typeof payload.currency === "string" ? payload.currency.trim() : "";
   const paymentType = payload.paymentType;
   const paymentMethod = payload.paymentMethod === undefined ? "CASH" : payload.paymentMethod;
   const provider = payload.provider === undefined ? "MANUAL" : payload.provider;
@@ -159,14 +159,6 @@ export async function POST(request: Request) {
     (ptSessionId !== null && ptSessionId.length > 128)
   ) {
     return NextResponse.json({ error: "membershipPlanId and ptSessionId must be valid IDs or null" }, { status: 400 });
-  }
-
-  if (amount === null || amount <= 0) {
-    return NextResponse.json({ error: "Payment amount must be positive and within the supported range" }, { status: 400 });
-  }
-
-  if (!isValidCurrency(currency)) {
-    return NextResponse.json({ error: "Currency must be a three-letter currency code" }, { status: 400 });
   }
 
   if (!isOneOf(paymentType, PAYMENT_TYPES)) {
@@ -256,13 +248,26 @@ if (paymentType === "PT_SESSION" && !ptSessionId) {
     }
   }
 
+  let amount = requestedAmount;
+  let currency = requestedCurrency;
+
   if (ptSessionId) {
     const session = await prisma.pTSession.findFirst({
       where: {
         id: ptSessionId,
         gymId: ownerMembership.gymId,
       },
-      select: { id: true, clientMembershipId: true, ptPricingId: true },
+      select: {
+        id: true,
+        clientMembershipId: true,
+        ptPricing: {
+          select: {
+            gymId: true,
+            price: true,
+            currency: true,
+          },
+        },
+      },
     });
 
     if (!session) {
@@ -272,6 +277,22 @@ if (paymentType === "PT_SESSION" && !ptSessionId) {
     if (session.clientMembershipId !== memberMembershipId) {
       return NextResponse.json({ error: "PT payment member must match the PT session client" }, { status: 400 });
     }
+
+    if (session.ptPricing) {
+      if (session.ptPricing.gymId !== ownerMembership.gymId) {
+        return NextResponse.json({ error: "PT pricing does not belong to this gym" }, { status: 400 });
+      }
+      amount = parseAmount(session.ptPricing.price.toString());
+      currency = session.ptPricing.currency;
+    }
+  }
+
+  if (amount === null || amount <= 0) {
+    return NextResponse.json({ error: "Payment amount must be positive and within the supported range" }, { status: 400 });
+  }
+
+  if (!isValidCurrency(currency)) {
+    return NextResponse.json({ error: "Currency must be a three-letter currency code" }, { status: 400 });
   }
 
   const payment = await prisma.$transaction(async (tx) => {

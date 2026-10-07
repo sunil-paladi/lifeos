@@ -31,6 +31,13 @@ type PTSession = {
   durationMinutes: number;
   status: string;
   trainerMembership: { user: { name: string } };
+  ptPricing: {
+    id: string;
+    name: string;
+    price: string;
+    currency: string;
+    durationMinutes: number;
+  } | null;
 };
 
 type Payment = {
@@ -313,7 +320,7 @@ export default function BillingClient({ gymId }: { gymId: string }) {
 
   function selectPTSession(ptSessionId: string) {
     const session = activeMemberSessions.find((item) => item.id === ptSessionId);
-    const linkedPricing = pricing.find((item) => item.id === session?.ptPricingId);
+    const linkedPricing = session?.ptPricing ?? pricing.find((item) => item.id === session?.ptPricingId);
     setPaymentDraft({
       ...paymentDraft,
       ptSessionId,
@@ -327,16 +334,18 @@ export default function BillingClient({ gymId }: { gymId: string }) {
     setError("");
     setSuccess("");
     const amount = Number(paymentDraft.amount);
+    const usesPTPricing =
+      paymentDraft.paymentType === "PT_SESSION" && Boolean(selectedSessionPricing);
     if (!paymentDraft.memberMembershipId) {
       setError("Select a member.");
       return;
     }
-    if (!Number.isFinite(amount) || amount <= 0) {
+    if (!usesPTPricing && (!Number.isFinite(amount) || amount <= 0)) {
       setError("Payment amount must be a positive number.");
       return;
     }
     const currency = normalizeCurrency(paymentDraft.currency);
-    if (!currency) {
+    if (!usesPTPricing && !currency) {
       setError("Select a supported currency.");
       return;
     }
@@ -352,12 +361,11 @@ export default function BillingClient({ gymId }: { gymId: string }) {
     const payload = {
       paymentType: paymentDraft.paymentType,
       memberMembershipId: paymentDraft.memberMembershipId,
-      amount,
-      currency,
       paymentMethod: paymentDraft.paymentMethod,
       provider: "MANUAL",
       status: paymentDraft.status,
       notes: paymentDraft.notes.trim() || undefined,
+      ...(!usesPTPricing ? { amount, currency } : {}),
       ...(paymentDraft.paymentType === "MEMBERSHIP"
         ? { membershipPlanId: paymentDraft.membershipPlanId }
         : { ptSessionId: paymentDraft.ptSessionId }),
@@ -395,7 +403,9 @@ export default function BillingClient({ gymId }: { gymId: string }) {
 
   const activeMemberSessions = sessions.filter((session) => session.clientMembershipId === paymentDraft.memberMembershipId);
   const selectedSession = activeMemberSessions.find((session) => session.id === paymentDraft.ptSessionId);
-  const selectedSessionPricing = pricing.find((item) => item.id === selectedSession?.ptPricingId);
+  const selectedSessionPricing =
+    selectedSession?.ptPricing ??
+    pricing.find((item) => item.id === selectedSession?.ptPricingId);
   const catalogItems = view === "plans" ? plans : pricing;
   const catalogType = view === "plans" ? "plan" : "pricing";
   const durationLabel = view === "plans" ? "Duration (days)" : "Duration (minutes)";
@@ -453,19 +463,20 @@ export default function BillingClient({ gymId }: { gymId: string }) {
                 <label className={labelClass}>PT session
                   <select required className={inputClass} value={paymentDraft.ptSessionId} disabled={!paymentDraft.memberMembershipId} onChange={(event) => selectPTSession(event.target.value)}>
                     <option value="">{paymentDraft.memberMembershipId ? "Select this member's session" : "Select a member first"}</option>
-                    {activeMemberSessions.map((session) => <option key={session.id} value={session.id}>{new Date(session.scheduledAt).toLocaleString()} · {session.durationMinutes} min · {session.trainerMembership.user.name} · {formatLabel(session.status)}</option>)}
+                    {activeMemberSessions.map((session) => <option key={session.id} value={session.id}>{new Date(session.scheduledAt).toLocaleString()} · {session.ptPricing?.durationMinutes ?? session.durationMinutes} min · {session.trainerMembership.user.name} · {formatLabel(session.status)}</option>)}
                   </select>
                   {paymentDraft.memberMembershipId && activeMemberSessions.length === 0 ? <span className="mt-1 block text-xs text-slate-500">No PT sessions available for this member.</span> : null}
                 </label>
               )}
               <label className={labelClass}>Amount
-                <input required type="number" min="0.01" step="0.01" inputMode="decimal" className={inputClass} value={paymentDraft.amount} onChange={(event) => setPaymentDraft({ ...paymentDraft, amount: event.target.value })} />
+                <input required={!selectedSessionPricing || paymentDraft.paymentType === "MEMBERSHIP"} type="number" min="0.01" step="0.01" inputMode="decimal" className={inputClass} value={paymentDraft.amount} disabled={paymentDraft.paymentType === "PT_SESSION" && Boolean(selectedSessionPricing)} onChange={(event) => setPaymentDraft({ ...paymentDraft, amount: event.target.value })} />
+                {selectedSessionPricing && paymentDraft.paymentType === "PT_SESSION" ? <span className="mt-1 block text-xs text-slate-500">Amount follows the session&apos;s PT pricing.</span> : null}
               </label>
               <label className={labelClass}>Currency
                 <select required className={inputClass} value={paymentDraft.currency} disabled={paymentDraft.paymentType === "MEMBERSHIP" ? Boolean(plans.find((plan) => plan.id === paymentDraft.membershipPlanId)) : Boolean(selectedSessionPricing)} onChange={(event) => setPaymentDraft({ ...paymentDraft, currency: event.target.value })}>
                   {SUPPORTED_CURRENCIES.map(({ code, name }) => <option key={code} value={code}>{code} - {name}</option>)}
                 </select>
-                {selectedSessionPricing ? <span className="mt-1 block text-xs text-slate-500">Currency and amount follow the session&apos;s PT pricing.</span> : null}
+                {selectedSessionPricing && paymentDraft.paymentType === "PT_SESSION" ? <span className="mt-1 block text-xs text-slate-500">Currency follows the session&apos;s PT pricing.</span> : null}
               </label>
               <label className={labelClass}>Payment method
                 <select className={inputClass} value={paymentDraft.paymentMethod} onChange={(event) => setPaymentDraft({ ...paymentDraft, paymentMethod: event.target.value })}>

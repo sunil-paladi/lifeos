@@ -78,7 +78,13 @@ export async function GET(_request: Request, context: RouteContext) {
     orderBy: { scheduledAt: "asc" },
   });
 
-  return NextResponse.json({ sessions, serverTime: new Date().toISOString() });
+  return NextResponse.json({
+    sessions: sessions.map((session) => ({
+      ...session,
+      durationMinutes: session.ptPricing?.durationMinutes ?? session.durationMinutes,
+    })),
+    serverTime: new Date().toISOString(),
+  });
 }
 
 export async function POST(request: Request, context: RouteContext) {
@@ -123,13 +129,17 @@ export async function POST(request: Request, context: RouteContext) {
     return NextResponse.json({ error: "scheduledAt must be a valid date and time" }, { status: 400 });
   }
 
-  const durationMinutes = body.durationMinutes;
-  if (!isValidSessionDuration(durationMinutes)) {
-    return NextResponse.json({ error: "durationMinutes must be an integer from 1 to 480" }, { status: 400 });
-  }
+  const requestedDurationMinutes = body.durationMinutes;
 
   if (ptPricingId !== null && (typeof ptPricingId !== "string" || !ptPricingId.trim() || ptPricingId.length > 128)) {
     return NextResponse.json({ error: "ptPricingId must be a valid pricing ID or null" }, { status: 400 });
+  }
+
+  if (
+    requestedDurationMinutes !== undefined &&
+    !isValidSessionDuration(requestedDurationMinutes)
+  ) {
+    return NextResponse.json({ error: "durationMinutes must be an integer from 1 to 480" }, { status: 400 });
   }
 
   if (!( ["SCHEDULED", "COMPLETED", "CANCELLED", "NO_SHOW"] as const).includes(status as "SCHEDULED" | "COMPLETED" | "CANCELLED" | "NO_SHOW")) {
@@ -163,7 +173,7 @@ export async function POST(request: Request, context: RouteContext) {
       ? Promise.resolve(null)
       : prisma.pTPricing.findFirst({
           where: { id: ptPricingId, gymId, isActive: true },
-          select: { id: true },
+          select: { id: true, durationMinutes: true },
         }),
   ]);
 
@@ -173,6 +183,11 @@ export async function POST(request: Request, context: RouteContext) {
 
   if (ptPricingId !== null && !ptPricing) {
     return NextResponse.json({ error: "Active PT pricing not found in this gym" }, { status: 404 });
+  }
+
+  const durationMinutes = ptPricing?.durationMinutes ?? requestedDurationMinutes;
+  if (!isValidSessionDuration(durationMinutes)) {
+    return NextResponse.json({ error: "durationMinutes is required when no PT pricing is selected" }, { status: 400 });
   }
 
   const assignment = await prisma.trainerClient.findUnique({

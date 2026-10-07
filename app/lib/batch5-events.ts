@@ -2,6 +2,7 @@ import type { Prisma } from "@/app/generated/prisma/client";
 
 type AuditAction =
   | "TRAINER_CLIENT_ASSIGNED"
+  | "TRAINER_CLIENT_UNASSIGNED"
   | "MEMBERSHIP_PLAN_ASSIGNED"
   | "MEMBERSHIP_STATUS_CHANGED"
   | "PT_SESSION_CREATED"
@@ -21,6 +22,7 @@ type AuditEvent = {
 
 const auditMetadataKeys: Record<AuditAction, readonly string[]> = {
   TRAINER_CLIENT_ASSIGNED: ["trainerMembershipId", "clientMembershipId"],
+  TRAINER_CLIENT_UNASSIGNED: ["trainerMembershipId", "clientMembershipId"],
   MEMBERSHIP_PLAN_ASSIGNED: ["membershipPlanId"],
   MEMBERSHIP_STATUS_CHANGED: ["status"],
   PT_SESSION_CREATED: ["trainerMembershipId", "clientMembershipId", "scheduledAt"],

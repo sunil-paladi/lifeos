@@ -85,7 +85,12 @@ export async function GET(_request: Request, context: RouteContext) {
     return NextResponse.json({ error: "PT session not found" }, { status: 404 });
   }
 
-  return NextResponse.json({ session });
+  return NextResponse.json({
+    session: {
+      ...session,
+      durationMinutes: session.ptPricing?.durationMinutes ?? session.durationMinutes,
+    },
+  });
 }
 
 export async function PATCH(request: Request, context: RouteContext) {
@@ -136,17 +141,6 @@ export async function PATCH(request: Request, context: RouteContext) {
     return NextResponse.json({ error: "ptPricingId must be a valid pricing ID or null" }, { status: 400 });
   }
 
-  if (hasPTPricingId && typeof body.ptPricingId === "string" && body.ptPricingId !== session.ptPricingId) {
-    const ptPricing = await prisma.pTPricing.findFirst({
-      where: { id: body.ptPricingId, gymId, isActive: true },
-      select: { id: true },
-    });
-
-    if (!ptPricing) {
-      return NextResponse.json({ error: "Active PT pricing not found in this gym" }, { status: 404 });
-    }
-  }
-
   if (hasNotes && body.notes !== null && (typeof body.notes !== "string" || body.notes.length > 2000)) {
     return NextResponse.json({ error: "notes must be a string of at most 2000 characters or null" }, { status: 400 });
   }
@@ -163,12 +157,38 @@ export async function PATCH(request: Request, context: RouteContext) {
     return NextResponse.json({ error: "Only scheduled sessions can change status" }, { status: 409 });
   }
 
+  const ptPricingId = hasPTPricingId ? body.ptPricingId as string | null : session.ptPricingId;
+  const ptPricing = ptPricingId
+    ? await prisma.pTPricing.findFirst({
+        where: {
+          id: ptPricingId,
+          gymId,
+          ...(ptPricingId !== session.ptPricingId ? { isActive: true } : {}),
+        },
+        select: { id: true, durationMinutes: true },
+      })
+    : null;
+
+  if (ptPricingId && !ptPricing) {
+    return NextResponse.json(
+      {
+        error:
+          ptPricingId === session.ptPricingId
+            ? "PT pricing not found in this gym"
+            : "Active PT pricing not found in this gym",
+      },
+      { status: 404 }
+    );
+  }
+
+  const durationMinutes = ptPricing?.durationMinutes ??
+    (hasDuration ? body.durationMinutes as number : session.durationMinutes);
   const scheduledAt = hasScheduledAt ? parseScheduledAt(body.scheduledAt)! : session.scheduledAt;
   const isRescheduled = hasScheduledAt && scheduledAt.getTime() !== session.scheduledAt.getTime();
   const isCancelled = hasStatus && body.status === "CANCELLED" && session.status !== "CANCELLED";
   const changedFields = [
     ...(hasScheduledAt ? ["scheduledAt"] : []),
-    ...(hasDuration ? ["durationMinutes"] : []),
+    ...(hasDuration || durationMinutes !== session.durationMinutes ? ["durationMinutes"] : []),
     ...(hasNotes ? ["notes"] : []),
     ...(hasStatus ? ["status"] : []),
     ...(hasPTPricingId ? ["ptPricingId"] : []),
@@ -179,7 +199,9 @@ export async function PATCH(request: Request, context: RouteContext) {
       where: { id: session.id },
       data: {
         ...(hasScheduledAt ? { scheduledAt } : {}),
-        ...(hasDuration ? { durationMinutes: body.durationMinutes as number } : {}),
+        ...(hasDuration || durationMinutes !== session.durationMinutes
+          ? { durationMinutes }
+          : {}),
         ...(hasPTPricingId ? { ptPricingId: body.ptPricingId as string | null } : {}),
         ...(hasNotes ? { notes: typeof body.notes === "string" ? body.notes.trim() || null : null } : {}),
         ...(hasStatus ? { status: body.status as "SCHEDULED" | "COMPLETED" | "CANCELLED" | "NO_SHOW" } : {}),
@@ -240,5 +262,10 @@ export async function PATCH(request: Request, context: RouteContext) {
     return updatedSession;
   });
 
-  return NextResponse.json({ session: updated });
+  return NextResponse.json({
+    session: {
+      ...updated,
+      durationMinutes: updated.ptPricing?.durationMinutes ?? updated.durationMinutes,
+    },
+  });
 }

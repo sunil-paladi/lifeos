@@ -94,7 +94,21 @@ export async function PATCH(request: Request, context: RouteContext) {
 
   const payment = await prisma.payment.findFirst({
     where: { id, gymId: ownerMembership.gymId },
-    select: { id: true, memberMembershipId: true, membershipPlanId: true, ptSessionId: true, amount: true, gymId: true },
+    select: {
+      id: true,
+      memberMembershipId: true,
+      membershipPlanId: true,
+      ptSessionId: true,
+      amount: true,
+      gymId: true,
+      ptSession: {
+        select: {
+          ptPricing: {
+            select: { gymId: true, price: true, currency: true },
+          },
+        },
+      },
+    },
   });
 
   if (!payment) {
@@ -108,17 +122,31 @@ export async function PATCH(request: Request, context: RouteContext) {
 
   const updateData: Record<string, unknown> = {};
 
-  if (payload.amount !== undefined) {
+  const linkedPricing = payment.ptSession?.ptPricing ?? null;
+  if (linkedPricing && linkedPricing.gymId !== ownerMembership.gymId) {
+    return NextResponse.json({ error: "PT pricing does not belong to this gym" }, { status: 400 });
+  }
+
+  if (payload.amount !== undefined && !linkedPricing) {
     const amount = parseAmount(payload.amount);
     if (amount === null) return NextResponse.json({ error: "Payment amount must be positive and within the supported range" }, { status: 400 });
     updateData.amount = new Prisma.Decimal(amount.toString());
   }
 
-  if (payload.currency !== undefined) {
+  if (payload.currency !== undefined && !linkedPricing) {
     if (!isValidCurrency(payload.currency)) {
       return NextResponse.json({ error: "Currency is required" }, { status: 400 });
     }
     updateData.currency = payload.currency.trim().toUpperCase();
+  }
+
+  if (linkedPricing) {
+    const amount = parseAmount(linkedPricing.price.toString());
+    if (amount === null) {
+      return NextResponse.json({ error: "PT pricing amount is outside the supported range" }, { status: 400 });
+    }
+    updateData.amount = new Prisma.Decimal(amount.toString());
+    updateData.currency = linkedPricing.currency.toUpperCase();
   }
 
   if (payload.status !== undefined) {
