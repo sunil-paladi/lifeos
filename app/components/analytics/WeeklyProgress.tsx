@@ -1,6 +1,17 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import {
+  averageRecorded,
+  calculateHabitAdherence,
+  calculateNutritionIntake,
+  calculateNutritionAdherence,
+  calculateWaterAdherence,
+  calculateWorkoutMetrics,
+  createCalendarDateRange,
+  getCalendarDates,
+  getCalendarDateInTimeZone,
+} from "@/app/lib/reports";
 
 type Goal = {
   id: number;
@@ -107,18 +118,6 @@ const DEFAULT_NUTRITION_TARGETS: NutritionTargets = {
   fat: 70,
 };
 
-function getLastSevenDates(): string[] {
-  const dates: string[] = [];
-
-  for (let i = 6; i >= 0; i--) {
-    const date = new Date();
-    date.setDate(date.getDate() - i);
-    dates.push(date.toISOString().split("T")[0]);
-  }
-
-  return dates;
-}
-
 function formatDay(dateString: string) {
   const date = new Date(`${dateString}T00:00:00`);
 
@@ -127,54 +126,32 @@ function formatDay(dateString: string) {
   });
 }
 
-function calculateHabitProgress(goals: Goal[]) {
-  if (!goals.length) {
-    return 0;
-  }
-
-  const completed = goals.filter(
-    (goal) => goal.completed
-  ).length;
-
-  return Math.round((completed / goals.length) * 100);
-}
-
 function calculateWaterProgress(entries: WaterEntry[]) {
   const totalWater = entries.reduce(
     (total, entry) => total + entry.amount,
     0
   );
 
-  return Math.min(
-    Math.round((totalWater / WATER_TARGET) * 100),
-    100
-  );
+  return calculateWaterAdherence(totalWater, WATER_TARGET, true);
 }
 
-function calculateWorkoutProgress(workout: SavedWorkout) {
+function getWorkoutSets(workout: SavedWorkout) {
   const sets = Object.values(
     workout.setData || {}
   ).flatMap((exerciseSets) =>
     Object.values(exerciseSets || {})
   );
 
-  if (!sets.length) {
-    return workout.completed ? 100 : 0;
-  }
+  return sets;
+}
 
-  const completedSets = sets.filter(
-    (set) => set.completed
-  ).length;
-
-  return Math.round((completedSets / sets.length) * 100);
+function calculateWorkoutProgress(workout: SavedWorkout) {
+  return calculateWorkoutMetrics(getWorkoutSets(workout))
+    .completionPercentage;
 }
 
 function calculateCompletedSets(workout: SavedWorkout) {
-  return Object.values(workout.setData || {})
-    .flatMap((exerciseSets) =>
-      Object.values(exerciseSets || {})
-    )
-    .filter((set) => set.completed).length;
+  return calculateWorkoutMetrics(getWorkoutSets(workout)).completedSets;
 }
 
 function calculateCompletedExercises(workout: SavedWorkout) {
@@ -190,52 +167,8 @@ function calculateCompletedExercises(workout: SavedWorkout) {
   ).length;
 }
 
-function calculateAverage(progress: DayProgress[]) {
-  const recordedDays = progress.filter(
-    (item) => item.value !== null
-  );
-
-  if (!recordedDays.length) {
-    return 0;
-  }
-
-  const total = recordedDays.reduce(
-    (sum, item) => sum + (item.value ?? 0),
-    0
-  );
-
-  return Math.round(total / recordedDays.length);
-}
-
 function calculateNutritionTotals(meals: Meal[]) {
-  return meals.reduce(
-    (total, meal) => ({
-      calories: total.calories + Number(meal.calories || 0),
-      protein: total.protein + Number(meal.protein || 0),
-      carbs: total.carbs + Number(meal.carbs || 0),
-      fat: total.fat + Number(meal.fat || 0),
-    }),
-    {
-      calories: 0,
-      protein: 0,
-      carbs: 0,
-      fat: 0,
-    }
-  );
-}
-
-function nutritionPercentage(
-  consumed: number,
-  target: number
-) {
-  if (!target || target <= 0) {
-    return 0;
-  }
-
-  return Math.min(
-    Math.round((consumed / target) * 100),
-    100
-  );
+  return calculateNutritionIntake(meals);
 }
 
 export default function WeeklyProgress() {
@@ -371,7 +304,21 @@ export default function WeeklyProgress() {
   }, []);
 
   const dates = useMemo(
-    () => getLastSevenDates(),
+    () => {
+      const timezone =
+        Intl.DateTimeFormat().resolvedOptions().timeZone;
+      const today = getCalendarDateInTimeZone(new Date(), timezone);
+      const start = new Date(`${today}T00:00:00.000Z`);
+      start.setUTCDate(start.getUTCDate() - 6);
+
+      return getCalendarDates(
+        createCalendarDateRange(
+          start.toISOString().slice(0, 10),
+          today,
+          timezone,
+        ),
+      );
+    },
     []
   );
 
@@ -387,9 +334,10 @@ export default function WeeklyProgress() {
           day: formatDay(date),
           date,
           value: historyDay
-            ? calculateHabitProgress(
-                historyDay.goals
-              )
+            ? calculateHabitAdherence(
+                historyDay.goals.filter((goal) => goal.completed).length,
+                historyDay.goals.length,
+              ).percentage
             : null,
         };
       }),
@@ -433,20 +381,12 @@ export default function WeeklyProgress() {
           };
         }
 
-        const total =
-          workoutsForDay.reduce(
-            (sum, workout) =>
-              sum +
-              calculateWorkoutProgress(workout),
-            0
-          );
+        const workoutValues = workoutsForDay.map(calculateWorkoutProgress);
 
         return {
           day: formatDay(date),
           date,
-          value: Math.round(
-            total / workoutsForDay.length
-          ),
+          value: averageRecorded(workoutValues),
         };
       }),
     [dates, workoutHistory]
@@ -473,35 +413,16 @@ export default function WeeklyProgress() {
             historyDay.meals
           );
 
-        const percentages = [
-          nutritionPercentage(
-            totals.calories,
-            nutritionTargets.calories
-          ),
-          nutritionPercentage(
-            totals.protein,
-            nutritionTargets.protein
-          ),
-          nutritionPercentage(
-            totals.carbs,
-            nutritionTargets.carbs
-          ),
-          nutritionPercentage(
-            totals.fat,
-            nutritionTargets.fat
-          ),
-        ];
-
-        const average =
-          percentages.reduce(
-            (sum, value) => sum + value,
-            0
-          ) / percentages.length;
+        const adherence = calculateNutritionAdherence(
+          [totals],
+          nutritionTargets,
+          true,
+        );
 
         return {
           day: formatDay(date),
           date,
-          value: Math.round(average),
+          value: adherence?.averagePercentage ?? null,
         };
       }),
     [dates, nutritionHistory, nutritionTargets]
@@ -509,25 +430,25 @@ export default function WeeklyProgress() {
 
   const habitAverage =
     useMemo(
-      () => calculateAverage(habitProgress),
+      () => averageRecorded(habitProgress.map(({ value }) => value)),
       [habitProgress]
     );
 
   const waterAverage =
     useMemo(
-      () => calculateAverage(waterProgress),
+      () => averageRecorded(waterProgress.map(({ value }) => value)),
       [waterProgress]
     );
 
   const workoutAverage =
     useMemo(
-      () => calculateAverage(workoutProgress),
+      () => averageRecorded(workoutProgress.map(({ value }) => value)),
       [workoutProgress]
     );
 
   const nutritionAverage =
     useMemo(
-      () => calculateAverage(nutritionProgress),
+      () => averageRecorded(nutritionProgress.map(({ value }) => value)),
       [nutritionProgress]
     );
 
@@ -562,10 +483,9 @@ export default function WeeklyProgress() {
     );
 
   const todayWater = useMemo(() => {
-    const today =
-      new Date()
-        .toISOString()
-        .split("T")[0];
+    const timezone =
+      Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const today = getCalendarDateInTimeZone(new Date(), timezone);
 
     const todayData =
       waterHistory.find(
@@ -592,24 +512,17 @@ export default function WeeklyProgress() {
       [todayMeals]
     );
 
-  const todayNutritionPercentages = {
-    calories: nutritionPercentage(
-      todayNutrition.calories,
-      nutritionTargets.calories
-    ),
-    protein: nutritionPercentage(
-      todayNutrition.protein,
-      nutritionTargets.protein
-    ),
-    carbs: nutritionPercentage(
-      todayNutrition.carbs,
-      nutritionTargets.carbs
-    ),
-    fat: nutritionPercentage(
-      todayNutrition.fat,
-      nutritionTargets.fat
-    ),
-  };
+  const todayNutritionPercentages =
+    calculateNutritionAdherence(
+      [todayNutrition],
+      nutritionTargets,
+      true,
+    )?.percentages ?? {
+      calories: 0,
+      protein: 0,
+      carbs: 0,
+      fat: 0,
+    };
 
   if (!loaded) {
     return (
@@ -657,7 +570,7 @@ export default function WeeklyProgress() {
                   Habit Performance
                 </p>
                 <p className="text-2xl font-bold text-slate-900">
-                  {habitAverage}%
+                  {habitAverage === null ? "—" : `${habitAverage}%`}
                 </p>
               </div>
             </div>
@@ -670,7 +583,7 @@ export default function WeeklyProgress() {
             <div
               className="h-full rounded-full bg-primary transition-all duration-500"
               style={{
-                width: `${habitAverage}%`,
+                width: `${habitAverage ?? 0}%`,
               }}
             />
           </div>
@@ -688,7 +601,7 @@ export default function WeeklyProgress() {
                   Water Performance
                 </p>
                 <p className="text-2xl font-bold text-slate-900">
-                  {waterAverage}%
+                  {waterAverage === null ? "—" : `${waterAverage}%`}
                 </p>
               </div>
             </div>
@@ -701,7 +614,7 @@ export default function WeeklyProgress() {
             <div
               className="h-full rounded-full bg-blue-500 transition-all duration-500"
               style={{
-                width: `${waterAverage}%`,
+                width: `${waterAverage ?? 0}%`,
               }}
             />
           </div>
@@ -719,7 +632,7 @@ export default function WeeklyProgress() {
                   Workout Performance
                 </p>
                 <p className="text-2xl font-bold text-slate-900">
-                  {workoutAverage}%
+                  {workoutAverage === null ? "—" : `${workoutAverage}%`}
                 </p>
               </div>
             </div>
@@ -732,7 +645,7 @@ export default function WeeklyProgress() {
             <div
               className="h-full rounded-full bg-orange-500 transition-all duration-500"
               style={{
-                width: `${workoutAverage}%`,
+                width: `${workoutAverage ?? 0}%`,
               }}
             />
           </div>
@@ -750,7 +663,7 @@ export default function WeeklyProgress() {
                   Nutrition Performance
                 </p>
                 <p className="text-2xl font-bold text-slate-900">
-                  {nutritionAverage}%
+                  {nutritionAverage === null ? "—" : `${nutritionAverage}%`}
                 </p>
               </div>
             </div>
@@ -764,7 +677,7 @@ export default function WeeklyProgress() {
             <div
               className="h-full rounded-full bg-primary transition-all duration-500"
               style={{
-                width: `${nutritionAverage}%`,
+                width: `${nutritionAverage ?? 0}%`,
               }}
             />
           </div>
@@ -986,7 +899,7 @@ export default function WeeklyProgress() {
               Weekly Average
             </p>
             <p className="text-2xl font-bold text-primary">
-              {habitAverage}%
+              {habitAverage === null ? "—" : `${habitAverage}%`}
             </p>
           </div>
         </div>
@@ -1035,7 +948,7 @@ export default function WeeklyProgress() {
               Weekly Average
             </p>
             <p className="text-2xl font-bold text-blue-600">
-              {waterAverage}%
+              {waterAverage === null ? "—" : `${waterAverage}%`}
             </p>
           </div>
         </div>
@@ -1084,7 +997,7 @@ export default function WeeklyProgress() {
               Weekly Average
             </p>
             <p className="text-2xl font-bold text-orange-600">
-              {workoutAverage}%
+              {workoutAverage === null ? "—" : `${workoutAverage}%`}
             </p>
           </div>
         </div>
@@ -1133,7 +1046,7 @@ export default function WeeklyProgress() {
               Weekly Average
             </p>
             <p className="text-2xl font-bold text-primary">
-              {nutritionAverage}%
+              {nutritionAverage === null ? "—" : `${nutritionAverage}%`}
             </p>
           </div>
         </div>

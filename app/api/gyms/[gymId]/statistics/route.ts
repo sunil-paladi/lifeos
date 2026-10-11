@@ -1,109 +1,69 @@
 import { NextResponse } from "next/server";
 import { getAuthenticatedUser } from "@/app/lib/authorization";
+import {
+  addCalendarDays,
+  createCalendarDateRange,
+  getCalendarDateInTimeZone,
+  getCalendarDates,
+  getCurrentCalendarDate,
+} from "@/app/lib/reports";
 import { prisma } from "@/lib/prisma";
 
 type RouteContext = {
   params: Promise<{ gymId: string }>;
 };
 
-const DAY_MS = 24 * 60 * 60 * 1000;
-
-function parseDateOnly(value: string | null) {
-  if (!value) return null;
-
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
-    return null;
-  }
-
-  const date = new Date(`${value}T00:00:00.000Z`);
-  return Number.isNaN(date.getTime()) ? null : date;
-}
-
-function endOfDay(date: Date) {
-  return new Date(Date.UTC(
-    date.getUTCFullYear(),
-    date.getUTCMonth(),
-    date.getUTCDate(),
-    23,
-    59,
-    59,
-    999
-  ));
-}
-
-function startOfDay(date: Date) {
-  return new Date(Date.UTC(
-    date.getUTCFullYear(),
-    date.getUTCMonth(),
-    date.getUTCDate(),
-    0,
-    0,
-    0,
-    0
-  ));
-}
-
-function resolveDateRange(searchParams: URLSearchParams) {
+function resolveDateRange(searchParams: URLSearchParams, timezone: string) {
   const range = searchParams.get("range") ?? "30d";
-  const paramFrom = parseDateOnly(searchParams.get("from"));
-  const paramTo = parseDateOnly(searchParams.get("to"));
+  const paramFrom = searchParams.get("from");
+  const paramTo = searchParams.get("to");
+  const today = getCurrentCalendarDate(timezone);
+  const todayRange = createCalendarDateRange(today, today, timezone);
 
-  const today = new Date();
-  const todayStart = startOfDay(today);
-  const todayEnd = endOfDay(today);
+  if (paramFrom !== null || paramTo !== null) {
+    if (paramFrom === null || paramTo === null) {
+      throw new RangeError("Both from and to are required for a custom date range");
+    }
 
-  if (paramFrom && paramTo) {
     return {
-      from: startOfDay(paramFrom),
-      to: endOfDay(paramTo),
-      range,
-      todayStart,
-      todayEnd,
+      ...createCalendarDateRange(paramFrom, paramTo, timezone),
+      range: "custom",
+      todayRange,
     };
   }
 
-  let days = 30;
-
-  if (range === "today") {
-    days = 0;
-  } else if (range === "7d") {
-    days = 6;
-  } else if (range === "30d") {
-    days = 29;
+  const daysBackByRange: Record<string, number> = {
+    today: 0,
+    "7d": 6,
+    "30d": 29,
+  };
+  const daysBack = daysBackByRange[range];
+  if (daysBack === undefined) {
+    throw new RangeError("range must be today, 7d, or 30d");
   }
 
-  const from = days === 0 ? todayStart : new Date(todayStart.getTime() - (days * DAY_MS));
-
   return {
-    from,
-    to: todayEnd,
+    ...createCalendarDateRange(addCalendarDays(today, -daysBack), today, timezone),
     range,
-    todayStart,
-    todayEnd,
+    todayRange,
   };
 }
 
-function buildDailyTrend<T extends { date: Date; count: number }>(items: T[], start: Date, end: Date) {
+function buildDailyTrend<T extends { date: Date; count: number }>(
+  items: T[],
+  range: ReturnType<typeof createCalendarDateRange>,
+) {
   const bucketMap = new Map<string, number>();
 
   for (const item of items) {
-    const key = new Date(item.date).toISOString().slice(0, 10);
+    const key = getCalendarDateInTimeZone(item.date, range.timezone);
     bucketMap.set(key, (bucketMap.get(key) ?? 0) + item.count);
   }
 
-  const output: Array<{ date: string; count: number }> = [];
-  const cursor = new Date(start);
-
-  while (cursor <= end) {
-    const key = cursor.toISOString().slice(0, 10);
-    output.push({
-      date: key,
-      count: bucketMap.get(key) ?? 0,
-    });
-    cursor.setUTCDate(cursor.getUTCDate() + 1);
-  }
-
-  return output;
+  return getCalendarDates(range).map((date) => ({
+    date,
+    count: bucketMap.get(date) ?? 0,
+  }));
 }
 
 export async function GET(request: Request, context: RouteContext) {
@@ -130,13 +90,39 @@ export async function GET(request: Request, context: RouteContext) {
   }
 
   const url = new URL(request.url);
-  const range = resolveDateRange(url.searchParams);
-
-  if (range.from > range.to) {
-    return NextResponse.json({ error: "Invalid date range" }, { status: 400 });
+  let timezone = "Asia/Kolkata";
+  try {
+    const settings = await prisma.gymSettings.findUnique({
+      where: { gymId },
+      select: { timezone: true },
+    });
+    timezone = settings?.timezone ?? timezone;
+  } catch (error) {
+    console.error("Failed to load gym timezone for statistics", error);
+    return NextResponse.json({ error: "Unable to load gym reporting timezone" }, { status: 500 });
   }
 
-  const [memberSummaryRaw, attendanceRecords, ptSessions, growthRecords, trainers, members, trainerSessionGroups, checkedInRecords] = await Promise.all([
+  let range: ReturnType<typeof resolveDateRange>;
+  try {
+    range = resolveDateRange(url.searchParams, timezone);
+  } catch (error) {
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Invalid date range" },
+      { status: 400 },
+    );
+  }
+
+  const [
+    memberSummaryRaw,
+    attendanceRecords,
+    todayAttendanceRecords,
+    ptSessions,
+    growthRecords,
+    trainers,
+    members,
+    trainerSessionGroups,
+    checkedInRecords,
+  ] = await Promise.all([
     prisma.gymMembership.groupBy({
       by: ["role", "status"],
       where: { gymId },
@@ -146,8 +132,8 @@ export async function GET(request: Request, context: RouteContext) {
       where: {
         gymId,
         checkedInAt: {
-          gte: range.from,
-          lte: range.to,
+          gte: range.startAt,
+          lt: range.endExclusiveAt,
         },
       },
       select: {
@@ -156,13 +142,24 @@ export async function GET(request: Request, context: RouteContext) {
       },
       orderBy: { checkedInAt: "asc" },
     }),
+    prisma.gymAttendance.findMany({
+      where: {
+        gymId,
+        checkedInAt: {
+          gte: range.todayRange.startAt,
+          lt: range.todayRange.endExclusiveAt,
+        },
+        memberMembership: { gymId, role: "MEMBER" },
+      },
+      select: { checkedOutAt: true },
+    }),
     prisma.pTSession.groupBy({
       by: ["status"],
       where: {
         gymId,
         scheduledAt: {
-          gte: range.from,
-          lte: range.to,
+          gte: range.startAt,
+          lt: range.endExclusiveAt,
         },
       },
       _count: { _all: true },
@@ -172,8 +169,8 @@ export async function GET(request: Request, context: RouteContext) {
         gymId,
         role: "MEMBER",
         joinedAt: {
-          gte: range.from,
-          lte: range.to,
+          gte: range.startAt,
+          lt: range.endExclusiveAt,
         },
       },
       select: {
@@ -233,7 +230,7 @@ export async function GET(request: Request, context: RouteContext) {
       by: ["trainerMembershipId", "clientMembershipId", "status"],
       where: {
         gymId,
-        scheduledAt: { gte: range.from, lte: range.to },
+        scheduledAt: { gte: range.startAt, lt: range.endExclusiveAt },
         trainerMembership: { gymId, role: "TRAINER" },
         clientMembership: { gymId, role: "MEMBER" },
       },
@@ -266,22 +263,19 @@ export async function GET(request: Request, context: RouteContext) {
     attendanceRecords
       .filter((record) => record.checkedInAt)
       .map((record) => ({ date: record.checkedInAt, count: 1 })),
-    range.from,
-    range.to
+    range
   ).map((entry) => ({
     date: entry.date,
     count: entry.count,
   }));
 
-  const todayCheckIns = attendanceRecords.filter((record) => {
-    if (!record.checkedInAt) return false;
-    const day = startOfDay(record.checkedInAt);
-    return day.getTime() === range.todayStart.getTime();
-  }).length;
+  const todayCheckIns = todayAttendanceRecords.length;
 
   const currentlyCheckedIn = checkedInRecords.length;
 
-  const completedVisits = attendanceRecords.filter((record) => record.checkedOutAt !== null && record.checkedOutAt >= range.todayStart && record.checkedOutAt <= range.todayEnd).length;
+  const completedVisits = todayAttendanceRecords.filter(
+    (record) => record.checkedOutAt !== null,
+  ).length;
 
   const ptSessionSummary = {
     scheduled: ptSessions.find((session) => session.status === "SCHEDULED")?._count._all ?? 0,
@@ -292,8 +286,7 @@ export async function GET(request: Request, context: RouteContext) {
 
   const memberGrowthTrend = buildDailyTrend(
     growthRecords.map((record) => ({ date: record.joinedAt, count: 1 })),
-    range.from,
-    range.to
+    range
   );
 
   const clientNames = new Map(members.map((member) => [member.id, member.user.name]));
@@ -382,8 +375,9 @@ export async function GET(request: Request, context: RouteContext) {
       trend: memberGrowthTrend,
     },
     range: {
-      from: range.from.toISOString(),
-      to: range.to.toISOString(),
+      from: range.from,
+      to: range.to,
+      timezone,
     },
   });
 }

@@ -1,6 +1,16 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import {
+  averageRecorded,
+  calculateHabitAdherence,
+  calculateNutritionIntake,
+  calculateNutritionAdherence,
+  calculateWaterAdherence,
+  createCalendarDateRange,
+  getCalendarDates,
+  getCurrentCalendarDate,
+} from "@/app/lib/reports";
 
 type ReportPeriod = "weekly" | "monthly";
 
@@ -106,7 +116,6 @@ type Summary = {
 const HABIT_STORAGE_KEY = "lifeos-habits";
 const WATER_STORAGE_KEY = "lifeos-water-data";
 const WORKOUT_HISTORY_KEY = "lifeos-workout-history";
-const MEALS_STORAGE_KEY = "lifeos-todays-meals";
 const NUTRITION_HISTORY_KEY = "lifeos-nutrition-history";
 const NUTRITION_TARGETS_KEY = "lifeos-nutrition-targets";
 const JOURNAL_STORAGE_KEY = "lifeos-journal";
@@ -120,53 +129,45 @@ const DEFAULT_TARGETS: NutritionTargets = {
   fat: 70,
 };
 
-function getDateString(date: Date) {
-  return date.toISOString().split("T")[0];
-}
-
-function getStartDate(period: ReportPeriod) {
-  const date = new Date();
+function getCurrentRange(period: ReportPeriod) {
+  const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const today = getCurrentCalendarDate(timezone);
+  const start = new Date(`${today}T00:00:00.000Z`);
 
   if (period === "weekly") {
-    date.setDate(date.getDate() - 6);
+    start.setUTCDate(start.getUTCDate() - 6);
   } else {
-    date.setDate(1);
+    start.setUTCDate(1);
   }
 
-  date.setHours(0, 0, 0, 0);
-  return date;
+  return createCalendarDateRange(
+    start.toISOString().slice(0, 10),
+    today,
+    timezone,
+  );
 }
 
 function getDatesForPeriod(period: ReportPeriod) {
-  const start = getStartDate(period);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  const dates: string[] = [];
-  const current = new Date(start);
-
-  while (current <= today) {
-    dates.push(getDateString(current));
-    current.setDate(current.getDate() + 1);
-  }
-
-  return dates;
+  return getCalendarDates(getCurrentRange(period));
 }
 
 function formatDateRange(period: ReportPeriod) {
-  const start = getStartDate(period);
-  const end = new Date();
+  const range = getCurrentRange(period);
+  const start = range.startAt;
+  const end = new Date(range.endExclusiveAt.getTime() - 1);
 
   const options: Intl.DateTimeFormatOptions = {
     day: "numeric",
     month: "short",
     year: "numeric",
+    timeZone: range.timezone,
   };
 
   if (period === "monthly") {
     return start.toLocaleDateString("en-IN", {
       month: "long",
       year: "numeric",
+      timeZone: range.timezone,
     });
   }
 
@@ -177,15 +178,10 @@ function formatDateRange(period: ReportPeriod) {
 }
 
 function habitPercentage(goals: Goal[]) {
-  if (!goals.length) return 0;
-
-  const completed = goals.filter(
-    (goal) => goal.completed
-  ).length;
-
-  return Math.round(
-    (completed / goals.length) * 100
-  );
+  return calculateHabitAdherence(
+    goals.filter((goal) => goal.completed).length,
+    goals.length,
+  ).percentage;
 }
 
 function waterPercentage(entries: WaterEntry[]) {
@@ -194,82 +190,23 @@ function waterPercentage(entries: WaterEntry[]) {
     0
   );
 
-  return Math.min(
-    Math.round((total / WATER_TARGET) * 100),
-    100
-  );
+  return calculateWaterAdherence(total, WATER_TARGET, true);
 }
 
 function nutritionTotals(meals: Meal[]) {
-  return meals.reduce(
-    (total, meal) => ({
-      calories: total.calories + Number(meal.calories || 0),
-      protein: total.protein + Number(meal.protein || 0),
-      carbs: total.carbs + Number(meal.carbs || 0),
-      fat: total.fat + Number(meal.fat || 0),
-    }),
-    {
-      calories: 0,
-      protein: 0,
-      carbs: 0,
-      fat: 0,
-    }
-  );
+  return calculateNutritionIntake(meals);
 }
 
 function nutritionPercentage(
   meals: Meal[],
   targets: NutritionTargets
 ) {
-  const totals = nutritionTotals(meals);
-
-  const values = [
-    Math.min(
-      Math.round(
-        (totals.calories / targets.calories) * 100
-      ),
-      100
-    ),
-    Math.min(
-      Math.round(
-        (totals.protein / targets.protein) * 100
-      ),
-      100
-    ),
-    Math.min(
-      Math.round(
-        (totals.carbs / targets.carbs) * 100
-      ),
-      100
-    ),
-    Math.min(
-      Math.round(
-        (totals.fat / targets.fat) * 100
-      ),
-      100
-    ),
-  ];
-
-  return Math.round(
-    values.reduce((sum, value) => sum + value, 0) /
-      values.length
-  );
+  return calculateNutritionAdherence(meals, targets, true)
+    ?.averagePercentage ?? null;
 }
 
-function average(values: number[]) {
-  if (!values.length) return null;
-
-  return Math.round(
-    values.reduce((sum, value) => sum + value, 0) /
-      values.length
-  );
-}
-
-function getWorkoutSets(workout: SavedWorkout) {
-  return Object.values(workout.setData || {})
-    .flatMap((exerciseSets) =>
-      Object.values(exerciseSets || {})
-    );
+function average(values: (number | null)[]) {
+  return averageRecorded(values);
 }
 
 function getWorkoutMinutes(workout: SavedWorkout) {
@@ -509,12 +446,7 @@ export default function ReportsPage() {
     );
 
     const workoutScore = Math.round(
-      (workoutDays.size /
-        Math.max(
-          period === "weekly" ? 6 : dates.length,
-          1
-        )) *
-        100
+      (workoutDays.size / Math.max(dates.length, 1)) * 100
     );
 
     return Math.round(
@@ -528,7 +460,6 @@ export default function ReportsPage() {
     summary,
     workoutHistory,
     dateSet,
-    period,
     dates.length,
   ]);
 

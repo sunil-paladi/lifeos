@@ -1,4 +1,9 @@
 import type { DayName } from "@/app/context/ProgramContext";
+import {
+  addCalendarDays,
+  calculateWorkoutMetrics,
+  parseCalendarDate as parseReportCalendarDate,
+} from "@/app/lib/reports";
 
 export const WORKOUT_HISTORY_KEY = "lifeos-workout-history";
 export const WORKOUT_HISTORY_UPDATED_EVENT =
@@ -52,34 +57,24 @@ export interface ExerciseComparison {
   improvement: string | null;
 }
 
-function parseCalendarDate(value: string | null | undefined) {
+function parseWorkoutCalendarDate(value: string | null | undefined) {
   if (!value) {
     return null;
   }
 
   const datePart = value.match(/^(\d{4}-\d{2}-\d{2})/)?.[1];
-  if (!datePart) {
-    return null;
-  }
-
-  const date = new Date(`${datePart}T00:00:00.000Z`);
-  return Number.isFinite(date.getTime()) &&
-    date.toISOString().slice(0, 10) === datePart
-    ? datePart
-    : null;
+  return datePart ? parseReportCalendarDate(datePart) : null;
 }
 
 function shiftCalendarDate(date: string, offset: number) {
-  const shifted = new Date(`${date}T00:00:00.000Z`);
-  shifted.setUTCDate(shifted.getUTCDate() + offset);
-  return shifted.toISOString().slice(0, 10);
+  return addCalendarDays(date, offset);
 }
 
 export function getWorkoutWeekRange(
   programStartDate: string | null,
   weekIndex: number,
 ): WorkoutWeekRange | null {
-  const startDate = parseCalendarDate(programStartDate);
+  const startDate = parseWorkoutCalendarDate(programStartDate);
   if (!startDate || !Number.isInteger(weekIndex) || weekIndex < 0) {
     return null;
   }
@@ -138,8 +133,8 @@ export function getWorkoutWeekDays(
 
 export function getWorkoutHistoryDate(workout: WorkoutHistoryEntry) {
   return (
-    parseCalendarDate(workout.date) ??
-    parseCalendarDate(workout.completedAt)
+    parseWorkoutCalendarDate(workout.date) ??
+    parseWorkoutCalendarDate(workout.completedAt)
   );
 }
 
@@ -185,11 +180,18 @@ function getExercisePerformance(
   const completedSets = Object.values(setData).filter(
     (set) => set.completed,
   );
+  const metrics = calculateWorkoutMetrics(
+    Object.values(setData).map((set) => ({
+      completed: Boolean(set.completed),
+      weight: set.weight,
+      reps: set.reps,
+    })),
+  );
 
   const performance: ExercisePerformance = {
-    completedSets: completedSets.length,
-    volume: 0,
-    weightedSets: 0,
+    completedSets: metrics.completedSets,
+    volume: metrics.weightedVolume ?? 0,
+    weightedSets: metrics.weightedSets,
     bestSet: null,
   };
 
@@ -204,11 +206,6 @@ function getExercisePerformance(
     const validWeight = Number.isFinite(weight) && weight > 0
       ? weight
       : 0;
-    if (validWeight > 0) {
-      performance.volume += validWeight * reps;
-      performance.weightedSets += 1;
-    }
-
     if (
       !performance.bestSet ||
       validWeight * reps >

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 
 type MemberSummary = {
@@ -63,48 +63,17 @@ type StatsResponse = {
   range: {
     from: string;
     to: string;
+    timezone: string;
   };
 };
 
 function formatDateLabel(dateString: string) {
-  const date = new Date(dateString);
+  const date = new Date(`${dateString}T00:00:00.000Z`);
   return new Intl.DateTimeFormat("en-US", {
     month: "short",
     day: "numeric",
+    timeZone: "UTC",
   }).format(date);
-}
-
-function buildRangeValues(rangeType: string, fromValue: string, toValue: string) {
-  const today = new Date();
-  const todayString = today.toISOString().slice(0, 10);
-
-  if (rangeType === "custom") {
-    return {
-      from: fromValue || todayString,
-      to: toValue || todayString,
-    };
-  }
-
-  const end = new Date();
-  const start = new Date();
-
-  if (rangeType === "today") {
-    start.setHours(0, 0, 0, 0);
-    end.setHours(23, 59, 59, 999);
-  } else if (rangeType === "7d") {
-    start.setDate(end.getDate() - 6);
-    start.setHours(0, 0, 0, 0);
-    end.setHours(23, 59, 59, 999);
-  } else {
-    start.setDate(end.getDate() - 29);
-    start.setHours(0, 0, 0, 0);
-    end.setHours(23, 59, 59, 999);
-  }
-
-  return {
-    from: start.toISOString().slice(0, 10),
-    to: end.toISOString().slice(0, 10),
-  };
 }
 
 export default function OwnerStatisticsClient({
@@ -124,8 +93,6 @@ export default function OwnerStatisticsClient({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const selectedRange = useMemo(() => buildRangeValues(rangeType, customFrom, customTo), [rangeType, customFrom, customTo]);
-
   useEffect(() => {
     const controller = new AbortController();
 
@@ -141,7 +108,6 @@ export default function OwnerStatisticsClient({
         } else {
           params.set("range", rangeType);
         }
-
         const response = await fetch(`/api/gyms/${encodeURIComponent(gymId)}/statistics?${params.toString()}`, {
           cache: "no-store",
           signal: controller.signal,
@@ -293,7 +259,7 @@ export default function OwnerStatisticsClient({
                 <div className="rounded-lg bg-slate-50 p-4">
                   <p className="text-sm text-slate-500">Date range</p>
                   <p className="mt-2 text-sm font-semibold text-slate-900">
-                    {new Date(data.range.from).toLocaleDateString()} – {new Date(data.range.to).toLocaleDateString()}
+                    {formatDateLabel(data.range.from)} – {formatDateLabel(data.range.to)}
                   </p>
                 </div>
               </div>
