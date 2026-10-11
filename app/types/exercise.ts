@@ -28,4 +28,9 @@ export interface Exercise {
   completed: boolean;
 
   instructions: string[];
+
+  startingPosition?: string;
+  techniqueTips?: string[];
+  commonMistakes?: string[];
+  safetyNotes?: string[];
 }

@@ -12,21 +12,20 @@ import {
 } from "lucide-react";
 
 import { exercises } from "@/app/data/exercises";
+import ExerciseDetails from "@/app/components/ExerciseDetails";
+import type { Exercise } from "@/app/types/exercise";
 import { useProgram } from "@/app/context/ProgramContext";
 import {
   WORKOUT_HISTORY_KEY,
   WORKOUT_HISTORY_UPDATED_EVENT,
 } from "@/app/lib/workout-progress";
 
-interface WorkoutExercise {
-  id: number;
-  name: string;
-  equipment: string;
+type WorkoutExercise = Omit<Exercise, "sets" | "reps"> & {
   muscle: string;
   sets: number;
   reps: number;
   rest: number;
-}
+};
 
 interface SetData {
   weight: string;
@@ -176,6 +175,8 @@ export default function TodaysWorkout() {
    */
   const [expandedExerciseIndex, setExpandedExerciseIndex] =
     useState<number | null>(null);
+  const [exerciseForDetails, setExerciseForDetails] =
+    useState<Exercise | null>(null);
 
   /*
    * ========================================
@@ -1317,12 +1318,13 @@ export default function TodaysWorkout() {
                 >
 
                   {/* Compact Exercise Row */}
-                  <button
-                    type="button"
-                    onClick={() => openExercise(exerciseIndex)}
-                    className="flex w-full items-center gap-3 px-3 py-2.5 text-left transition hover:bg-slate-50"
-                    aria-expanded={isExpanded}
-                  >
+                  <div className="flex items-stretch">
+                    <button
+                      type="button"
+                      onClick={() => openExercise(exerciseIndex)}
+                      className="flex min-w-0 flex-1 items-center gap-3 px-3 py-2.5 text-left transition hover:bg-slate-50"
+                      aria-expanded={isExpanded}
+                    >
                     <div
                       className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${
                         exerciseCompleted
@@ -1376,7 +1378,16 @@ export default function TodaysWorkout() {
                     <span className="shrink-0 text-slate-400">
                       {isExpanded ? "⌃" : "⌄"}
                     </span>
-                  </button>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setExerciseForDetails(exercise)}
+                      className="my-2 mr-2 shrink-0 rounded-md border border-slate-200 px-2 py-1 text-[10px] font-semibold text-slate-700 transition hover:bg-slate-50"
+                      aria-label={`View details for ${exercise.name}`}
+                    >
+                      Details
+                    </button>
+                  </div>
 
                   {isExpanded && (
                     <div className="border-t border-slate-100 bg-slate-50/60 px-3 py-3">
@@ -1672,6 +1683,13 @@ export default function TodaysWorkout() {
         </div>
       )}
 
+      {exerciseForDetails && (
+        <ExerciseDetails
+          key={exerciseForDetails.id}
+          exercise={exerciseForDetails}
+          onClose={() => setExerciseForDetails(null)}
+        />
+      )}
     </section>
   );
 }

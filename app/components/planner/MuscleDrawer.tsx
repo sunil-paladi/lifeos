@@ -268,7 +268,7 @@ export default function MuscleDrawer({
      ===================================================== */
 
   return (
-    <>
+    <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
       {/* Background */}
       <div
         className="absolute inset-0 bg-slate-950/40 backdrop-blur-[1px]"
@@ -277,7 +277,7 @@ export default function MuscleDrawer({
 
       {/* Center Modal */}
       <div
-        className="absolute left-1/2 top-1/2 w-[calc(100%-32px)] max-w-md -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl"
+        className="relative flex max-h-[calc(100dvh-2rem)] w-full max-w-md flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl"
         onClick={(event) =>
           event.stopPropagation()
         }
@@ -337,7 +337,7 @@ export default function MuscleDrawer({
             CONTENT
             ================================================= */}
 
-        <div className="max-h-[60vh] overflow-y-auto p-4">
+        <div className="min-h-0 flex-1 overflow-y-auto p-4">
 
           {!selectedMuscle ? (
 
@@ -610,6 +610,6 @@ export default function MuscleDrawer({
         )}
 
       </div>
-    </>
+    </div>
   );
 }

@@ -22,6 +22,25 @@ export const exercises: Record<string, Exercise[]> = {
       "Press the bar upward while keeping your wrists stable.",
       "Return to the starting position under control.",
     ],
+    startingPosition:
+      "Lie on the bench with your eyes under the bar, feet flat on the floor, and shoulder blades set against the bench. Grip the bar slightly wider than shoulder-width.",
+    techniqueTips: [
+      "Lower the bar toward the middle of your chest with wrists stacked over your forearms.",
+      "Keep your feet planted and press the bar up smoothly.",
+      "Use a controlled pace and keep your shoulders steady.",
+      "Choose a weight that allows you to maintain control.",
+    ],
+    commonMistakes: [
+      "Bouncing the bar off the chest.",
+      "Letting the wrists bend back excessively.",
+      "Lifting the feet or shifting on the bench.",
+      "Using a weight that compromises control.",
+    ],
+    safetyNotes: [
+      "Use a spotter or safety supports when lifting a barbell.",
+      "Keep your grip secure and use a manageable weight.",
+      "Stop if you experience pain, dizziness, or unusual symptoms.",
+    ],
   },
 
   {
@@ -43,6 +62,25 @@ export const exercises: Record<string, Exercise[]> = {
       "Press both dumbbells upward.",
       "Keep the movement controlled.",
       "Lower the dumbbells back to chest level.",
+    ],
+    startingPosition:
+      "Set the bench to a comfortable incline. Sit back with feet planted and hold a light dumbbell in each hand at upper-chest level.",
+    techniqueTips: [
+      "Press the dumbbells upward smoothly without letting them collide.",
+      "Keep your back supported and wrists steady.",
+      "Lower the weights under control to a comfortable depth.",
+      "Use a weight that allows balanced, controlled repetitions.",
+    ],
+    commonMistakes: [
+      "Arching the lower back excessively.",
+      "Lowering the dumbbells too far or too quickly.",
+      "Letting the weights drift unevenly.",
+      "Choosing a weight that compromises control.",
+    ],
+    safetyNotes: [
+      "Make sure the bench is stable and set securely.",
+      "Start with manageable dumbbells and keep a firm grip.",
+      "Stop if you experience pain, dizziness, or unusual symptoms.",
     ],
   },
 
@@ -66,6 +104,25 @@ export const exercises: Record<string, Exercise[]> = {
       "Avoid locking your elbows aggressively.",
       "Return the handles slowly.",
     ],
+    startingPosition:
+      "Adjust the seat so the handles are level with your chest. Sit with your back against the pad, feet planted, and hands holding the handles comfortably.",
+    techniqueTips: [
+      "Press the handles forward smoothly while keeping your shoulders relaxed.",
+      "Stop just short of forcefully locking your elbows.",
+      "Return the handles slowly until your elbows are comfortably back.",
+      "Use a weight that allows smooth, controlled repetitions.",
+    ],
+    commonMistakes: [
+      "Arching away from the back pad.",
+      "Shrugging the shoulders during the press.",
+      "Slamming the handles back on the return.",
+      "Using a weight that compromises control.",
+    ],
+    safetyNotes: [
+      "Check the seat and weight setting before starting.",
+      "Keep your back supported and use a comfortable range of motion.",
+      "Stop if you experience pain, dizziness, or unusual symptoms.",
+    ],
   },
 
   {
@@ -87,6 +144,25 @@ export const exercises: Record<string, Exercise[]> = {
       "Bring the handles together in front of your chest.",
       "Squeeze your chest briefly.",
       "Return slowly to the starting position.",
+    ],
+    startingPosition:
+      "Adjust the seat so the handles are level with your chest. Sit with your back supported, feet planted, and elbows slightly bent as you hold the handles.",
+    techniqueTips: [
+      "Bring the handles together in a smooth arc without changing your elbow bend.",
+      "Keep your shoulders relaxed and back against the pad.",
+      "Return slowly until you feel a comfortable chest stretch.",
+      "Use a light, manageable weight to keep the movement controlled.",
+    ],
+    commonMistakes: [
+      "Bending and straightening the elbows during each repetition.",
+      "Stretching the arms too far behind the body.",
+      "Using momentum to bring the handles together.",
+      "Choosing a weight that compromises control.",
+    ],
+    safetyNotes: [
+      "Check the machine settings and adjust the seat before starting.",
+      "Use a comfortable range and avoid forcing a deep stretch.",
+      "Stop if you experience pain, dizziness, or unusual symptoms.",
     ],
   },
 
@@ -110,6 +186,25 @@ export const exercises: Record<string, Exercise[]> = {
       "Squeeze your chest at the end of the movement.",
       "Return slowly under control.",
     ],
+    startingPosition:
+      "Set both cables around chest height and stand between them with a stable stance. Hold one handle in each hand with a slight bend in your elbows.",
+    techniqueTips: [
+      "Bring your hands together in a smooth arc in front of your chest.",
+      "Keep your torso steady and elbows softly bent.",
+      "Open your arms only as far as feels comfortable, then return with control.",
+      "Use a manageable weight that allows steady repetitions.",
+    ],
+    commonMistakes: [
+      "Bending the elbows more as you bring the handles together.",
+      "Leaning or rocking to move the weight.",
+      "Letting the arms travel too far behind the body.",
+      "Using a weight that compromises control.",
+    ],
+    safetyNotes: [
+      "Check that both handles are attached securely and set to equal heights.",
+      "Keep a stable stance and avoid forcing a deep stretch.",
+      "Stop if you experience pain, dizziness, or unusual symptoms.",
+    ],
   },
 
   {
@@ -131,6 +226,25 @@ export const exercises: Record<string, Exercise[]> = {
       "Lower your body under control.",
       "Stop when your elbows reach approximately 90 degrees.",
       "Push yourself back to the starting position.",
+    ],
+    startingPosition:
+      "Set the dip machine to a manageable assistance or resistance level. Grip the handles firmly, support yourself with arms extended comfortably, and lean slightly forward.",
+    techniqueTips: [
+      "Lower slowly only as far as your shoulders feel comfortable.",
+      "Keep your shoulders steady and torso slightly inclined.",
+      "Press through the handles smoothly to return to the start.",
+      "Use enough assistance to maintain controlled repetitions.",
+    ],
+    commonMistakes: [
+      "Dropping too low and straining the shoulders.",
+      "Shrugging or letting the shoulders roll forward.",
+      "Bouncing or using momentum to rise.",
+      "Using too little assistance to maintain good form.",
+    ],
+    safetyNotes: [
+      "Check the machine setting and grip before beginning.",
+      "Keep the movement within a comfortable shoulder range.",
+      "Stop if you experience pain, dizziness, or unusual symptoms.",
     ],
   },
 
@@ -154,6 +268,25 @@ export const exercises: Record<string, Exercise[]> = {
       "Keep your elbows controlled.",
       "Push yourself back up.",
     ],
+    startingPosition:
+      "Place your hands on the floor slightly wider than shoulder-width. Extend your legs behind you and brace your core to form a straight line from head to heels.",
+    techniqueTips: [
+      "Lower your chest toward the floor while keeping your body aligned.",
+      "Keep your elbows at a comfortable angle from your sides.",
+      "Press through your hands to return without letting your hips sag.",
+      "Use an elevated surface or knee variation if needed to keep good form.",
+    ],
+    commonMistakes: [
+      "Letting the hips sag or rise too high.",
+      "Flaring the elbows straight out to the sides.",
+      "Lowering only the head or hips instead of the chest.",
+      "Using a variation that makes it hard to maintain alignment.",
+    ],
+    safetyNotes: [
+      "Choose a stable floor or elevated surface for your hands.",
+      "Keep your wrists comfortable and use a controlled range.",
+      "Stop if you experience pain, dizziness, or unusual symptoms.",
+    ],
   },
 
   {
@@ -176,6 +309,25 @@ export const exercises: Record<string, Exercise[]> = {
       "Press the bar upward under control.",
       "Return to the starting position.",
     ],
+    startingPosition:
+      "Secure your legs on the decline bench and lie back with your eyes under the bar. Grip slightly wider than shoulder-width and position the bar above your lower chest.",
+    techniqueTips: [
+      "Lower the bar slowly toward your lower chest.",
+      "Keep your wrists steady and feet securely supported.",
+      "Press upward smoothly and return the bar under control.",
+      "Use a weight that allows steady, controlled repetitions.",
+    ],
+    commonMistakes: [
+      "Bouncing the bar off the chest.",
+      "Allowing the bar to drift toward the neck.",
+      "Lifting or shifting the legs out of their supports.",
+      "Using a weight that compromises control.",
+    ],
+    safetyNotes: [
+      "Secure your legs and use a spotter or safety supports.",
+      "Start with a manageable weight and maintain a firm grip.",
+      "Stop if you experience pain, dizziness, or unusual symptoms.",
+    ],
   },
 ],
 
@@ -184,7 +336,7 @@ export const exercises: Record<string, Exercise[]> = {
     id: 101,
     bodyPart: "Back",
     name: "Lat Pulldown",
-    image: "/images/lat-pulldown.png",
+    image: "/exercises/lat-pulldown-demo.png",
     primaryMuscle: "Lats",
     secondaryMuscles: ["Biceps", "Upper Back"],
     equipment: "Cable Machine",
@@ -199,6 +351,25 @@ export const exercises: Record<string, Exercise[]> = {
       "Pull the bar toward your upper chest.",
       "Squeeze your back muscles.",
       "Return the bar slowly to the starting position.",
+    ],
+    startingPosition:
+      "Sit facing the machine with thighs secured under the pad. Grip the bar slightly wider than shoulder-width. Keep your torso upright, chest lifted, and feet flat.",
+    techniqueTips: [
+      "Pull the bar toward your upper chest, not behind your neck.",
+      "Drive your elbows down toward your sides.",
+      "Control the return until your arms are extended.",
+      "Use a weight that allows smooth, controlled repetitions.",
+    ],
+    commonMistakes: [
+      "Pulling the bar behind the neck.",
+      "Swinging or leaning backward excessively.",
+      "Using momentum instead of controlling the movement.",
+      "Choosing a weight that compromises form.",
+    ],
+    safetyNotes: [
+      "Start with a manageable weight and adjust the thigh pad securely.",
+      "Avoid jerking the bar or forcing uncomfortable shoulder movement.",
+      "Stop if you experience pain, dizziness, or unusual symptoms.",
     ],
   },
 
@@ -222,6 +393,25 @@ export const exercises: Record<string, Exercise[]> = {
       "Squeeze your shoulder blades together.",
       "Return the handle slowly.",
     ],
+    startingPosition:
+      "Sit facing the cable machine with your feet on the footrests and knees slightly bent. Grip the handle and sit upright with your chest lifted.",
+    techniqueTips: [
+      "Pull the handle toward your lower ribs.",
+      "Keep your torso steady as you draw your elbows back.",
+      "Squeeze your shoulder blades gently, then return with control.",
+      "Use a weight that allows smooth, controlled repetitions.",
+    ],
+    commonMistakes: [
+      "Rocking the torso to move the weight.",
+      "Rounding the back or shoulders.",
+      "Pulling with a sudden jerk.",
+      "Choosing a weight that compromises form.",
+    ],
+    safetyNotes: [
+      "Start with a manageable weight and keep your feet secure on the footrests.",
+      "Avoid pulling beyond a comfortable range.",
+      "Stop if you experience pain, dizziness, or unusual symptoms.",
+    ],
   },
 
   {
@@ -243,6 +433,25 @@ export const exercises: Record<string, Exercise[]> = {
       "Pull the handles toward your body.",
       "Squeeze your upper back.",
       "Return slowly.",
+    ],
+    startingPosition:
+      "Adjust the seat so the handles are within comfortable reach. Sit with your chest against the pad, feet planted, and hands gripping the handles.",
+    techniqueTips: [
+      "Pull the handles toward your sides with your elbows moving back.",
+      "Keep your chest in contact with the pad.",
+      "Squeeze your shoulder blades gently and lower the handles with control.",
+      "Use a weight that allows smooth, controlled repetitions.",
+    ],
+    commonMistakes: [
+      "Lifting your chest away from the pad.",
+      "Shrugging your shoulders as you pull.",
+      "Jerking the handles or rushing the return.",
+      "Choosing a weight that compromises form.",
+    ],
+    safetyNotes: [
+      "Set the machine to a manageable weight before starting.",
+      "Keep your chest supported and move through a comfortable range.",
+      "Stop if you experience pain, dizziness, or unusual symptoms.",
     ],
   },
 
@@ -266,6 +475,25 @@ export const exercises: Record<string, Exercise[]> = {
       "Squeeze your back at the top.",
       "Lower the dumbbell slowly.",
     ],
+    startingPosition:
+      "Place one hand and the same-side knee on a stable bench. Plant your other foot on the floor, hold a light dumbbell, and keep your back neutral.",
+    techniqueTips: [
+      "Pull the dumbbell toward your hip with your elbow close to your side.",
+      "Keep your torso steady and your shoulders level.",
+      "Lower the dumbbell slowly until your arm is extended.",
+      "Use a weight that allows smooth, controlled repetitions.",
+    ],
+    commonMistakes: [
+      "Twisting the torso to lift the dumbbell.",
+      "Rounding the back or shrugging the shoulder.",
+      "Swinging the weight instead of controlling it.",
+      "Choosing a weight that compromises form.",
+    ],
+    safetyNotes: [
+      "Use a stable bench and a manageable weight.",
+      "Keep your supporting hand and foot firmly planted.",
+      "Stop if you experience pain, dizziness, or unusual symptoms.",
+    ],
   },
 
   {
@@ -287,6 +515,25 @@ export const exercises: Record<string, Exercise[]> = {
       "Pull your body upward.",
       "Squeeze your back muscles.",
       "Lower yourself slowly.",
+    ],
+    startingPosition:
+      "Select a manageable assistance level and place your knees or feet securely on the platform. Grip the handles and let your arms extend comfortably.",
+    techniqueTips: [
+      "Pull your chest toward the handles while driving your elbows down.",
+      "Keep your body steady and avoid swinging.",
+      "Lower yourself slowly until your arms are extended comfortably.",
+      "Use enough assistance to maintain smooth, controlled repetitions.",
+    ],
+    commonMistakes: [
+      "Using too little assistance and losing control.",
+      "Swinging or kicking to lift the body.",
+      "Shrugging the shoulders toward the ears.",
+      "Dropping quickly instead of controlling the descent.",
+    ],
+    safetyNotes: [
+      "Check the assistance setting and platform before starting.",
+      "Keep your hands and knees or feet securely positioned.",
+      "Stop if you experience pain, dizziness, or unusual symptoms.",
     ],
   },
 
@@ -310,6 +557,25 @@ export const exercises: Record<string, Exercise[]> = {
       "Squeeze your rear shoulders and upper back.",
       "Return slowly.",
     ],
+    startingPosition:
+      "Set the cable around face height and attach a rope. Stand facing the machine with feet steady, hold one end in each hand, and take a small step back.",
+    techniqueTips: [
+      "Pull the rope toward your face, separating the ends as you pull.",
+      "Keep your elbows lifted and your shoulders relaxed.",
+      "Pause briefly, then return the rope with control.",
+      "Use a light weight that allows smooth repetitions.",
+    ],
+    commonMistakes: [
+      "Pulling the rope toward the chest instead of the face.",
+      "Shrugging or letting the elbows drop.",
+      "Leaning back or using momentum.",
+      "Using a weight that makes it difficult to control the return.",
+    ],
+    safetyNotes: [
+      "Check that the rope is attached securely before starting.",
+      "Use a manageable weight and avoid forcing your shoulders.",
+      "Stop if you experience pain, dizziness, or unusual symptoms.",
+    ],
   },
 
   {
@@ -332,6 +598,25 @@ export const exercises: Record<string, Exercise[]> = {
       "Squeeze your lats.",
       "Return the bar slowly.",
     ],
+    startingPosition:
+      "Attach a straight bar to a high cable. Stand with feet about shoulder-width apart, face the machine, and hold the bar with arms extended and elbows slightly bent.",
+    techniqueTips: [
+      "Keep a slight bend in your elbows as you pull the bar toward your thighs.",
+      "Hinge forward slightly and keep your torso steady.",
+      "Return the bar slowly until your arms are extended comfortably.",
+      "Use a weight that allows smooth, controlled repetitions.",
+    ],
+    commonMistakes: [
+      "Bending and straightening the elbows to move the bar.",
+      "Swinging the torso or leaning back.",
+      "Pulling past the thighs or rushing the return.",
+      "Choosing a weight that compromises control.",
+    ],
+    safetyNotes: [
+      "Check that the bar is attached securely and start with a manageable weight.",
+      "Keep your shoulders comfortable and avoid locking your elbows.",
+      "Stop if you experience pain, dizziness, or unusual symptoms.",
+    ],
   },
 
   {
@@ -353,6 +638,25 @@ export const exercises: Record<string, Exercise[]> = {
       "Raise your torso until it is aligned with your legs.",
       "Avoid excessive backward bending.",
       "Repeat with controlled movement.",
+    ],
+    startingPosition:
+      "Adjust the bench so the pad sits just below your hips. Secure your feet, let your upper body hinge forward comfortably, and keep your spine neutral.",
+    techniqueTips: [
+      "Lower by bending at the hips while keeping your back neutral.",
+      "Raise your torso until it is in line with your legs.",
+      "Squeeze your glutes gently and move at a controlled pace.",
+      "Start with body weight and add resistance only when comfortable.",
+    ],
+    commonMistakes: [
+      "Arching the lower back at the top.",
+      "Lowering farther than your comfortable range.",
+      "Rushing or using momentum to lift the torso.",
+      "Adding weight before mastering controlled repetitions.",
+    ],
+    safetyNotes: [
+      "Adjust the bench and secure your feet before each set.",
+      "Begin with body weight and avoid forcing the movement.",
+      "Stop if you experience pain, dizziness, or unusual symptoms.",
     ],
   },
 ],
@@ -378,6 +682,25 @@ export const exercises: Record<string, Exercise[]> = {
       "Push the platform back up without locking your knees.",
       "Return to the starting position under control.",
     ],
+    startingPosition:
+      "Sit with your back and hips against the seat. Place your feet about shoulder-width apart on the platform and release the safety handles as instructed by the machine.",
+    techniqueTips: [
+      "Lower the platform slowly while keeping your knees aligned with your toes.",
+      "Press through your whole foot and stop short of locking your knees.",
+      "Use a comfortable depth while keeping your hips against the seat.",
+      "Start with a manageable weight and controlled repetitions.",
+    ],
+    commonMistakes: [
+      "Letting the knees collapse inward.",
+      "Lowering so far that the hips lift from the seat.",
+      "Locking the knees forcefully at the top.",
+      "Using a weight that makes the movement jerky.",
+    ],
+    safetyNotes: [
+      "Check the machine settings and safety stops before beginning.",
+      "Keep your back and hips supported throughout the movement.",
+      "Stop if you experience pain, dizziness, or unusual symptoms.",
+    ],
   },
 
   {
@@ -399,6 +722,25 @@ export const exercises: Record<string, Exercise[]> = {
       "Lower your body while keeping your chest upright.",
       "Keep your knees tracking over your toes.",
       "Push through your feet to stand back up.",
+    ],
+    startingPosition:
+      "Stand with feet about shoulder-width apart and hold a light dumbbell close to your chest. Keep your chest lifted and your weight balanced over your feet.",
+    techniqueTips: [
+      "Sit your hips down between your feet while bending your knees.",
+      "Keep your knees tracking in the same direction as your toes.",
+      "Press through your whole foot to stand smoothly.",
+      "Use a comfortable depth and keep the dumbbell close to your chest.",
+    ],
+    commonMistakes: [
+      "Letting the knees cave inward.",
+      "Rounding the back or dropping the chest.",
+      "Lifting the heels as you squat.",
+      "Choosing a weight that makes it hard to stay balanced.",
+    ],
+    safetyNotes: [
+      "Start with a light dumbbell and use a clear, stable space.",
+      "Keep your feet planted and move only through a comfortable range.",
+      "Stop if you experience pain, dizziness, or unusual symptoms.",
     ],
   },
 
@@ -422,6 +764,25 @@ export const exercises: Record<string, Exercise[]> = {
       "Lower the weight slowly.",
       "Avoid swinging the weight.",
     ],
+    startingPosition:
+      "Adjust the seat so your knees line up with the machine pivot. Sit with your back supported and place your lower legs behind the pad just above your ankles.",
+    techniqueTips: [
+      "Extend your knees smoothly without kicking the weight.",
+      "Pause briefly near the top without forcefully locking your knees.",
+      "Lower the pad slowly to the starting position.",
+      "Use a light weight that lets you control every repetition.",
+    ],
+    commonMistakes: [
+      "Using momentum to lift the pad.",
+      "Setting the pad too high on the lower legs.",
+      "Locking the knees forcefully at the top.",
+      "Using a weight that causes discomfort or loss of control.",
+    ],
+    safetyNotes: [
+      "Check the seat, pivot alignment, and pad position before starting.",
+      "Begin with a manageable weight and avoid forcing the knee range.",
+      "Stop if you experience pain, dizziness, or unusual symptoms.",
+    ],
   },
 
   {
@@ -443,6 +804,25 @@ export const exercises: Record<string, Exercise[]> = {
       "Curl your legs downward and backward.",
       "Squeeze your hamstrings.",
       "Return slowly to the starting position.",
+    ],
+    startingPosition:
+      "Adjust the seat and thigh pad so your knees line up with the machine pivot. Sit with your back supported and place your lower legs in front of the ankle pad.",
+    techniqueTips: [
+      "Curl your heels down and back smoothly.",
+      "Keep your hips and back against the pads.",
+      "Pause briefly, then return the weight slowly.",
+      "Choose a manageable weight that allows steady control.",
+    ],
+    commonMistakes: [
+      "Lifting the hips away from the seat.",
+      "Jerking the weight or using momentum.",
+      "Returning the weight too quickly.",
+      "Using a weight that prevents a comfortable range of motion.",
+    ],
+    safetyNotes: [
+      "Check that the seat and pads are adjusted and secure.",
+      "Use a manageable weight and avoid forcing your knees.",
+      "Stop if you experience pain, dizziness, or unusual symptoms.",
     ],
   },
 
@@ -466,6 +846,25 @@ export const exercises: Record<string, Exercise[]> = {
       "Squeeze your hamstrings.",
       "Lower the weight slowly.",
     ],
+    startingPosition:
+      "Lie face down with your knees just beyond the bench edge. Position the ankle pad comfortably above your heels and hold the machine handles.",
+    techniqueTips: [
+      "Curl your heels toward your glutes without lifting your hips.",
+      "Move smoothly and pause briefly when your knees are bent.",
+      "Lower the pad slowly until your legs are comfortably extended.",
+      "Start with a manageable weight and keep the movement controlled.",
+    ],
+    commonMistakes: [
+      "Lifting or arching the hips off the bench.",
+      "Swinging the lower legs to move the weight.",
+      "Letting the weight drop quickly on the way down.",
+      "Setting the pad too high or too low on the ankles.",
+    ],
+    safetyNotes: [
+      "Adjust the machine so the knee joint aligns with its pivot.",
+      "Keep your hips supported and use a comfortable range.",
+      "Stop if you experience pain, dizziness, or unusual symptoms.",
+    ],
   },
 
   {
@@ -487,6 +886,25 @@ export const exercises: Record<string, Exercise[]> = {
       "Keep your front knee aligned with your foot.",
       "Push through your front foot.",
       "Return to the starting position.",
+    ],
+    startingPosition:
+      "Stand a comfortable step in front of a stable bench and place the top of one foot behind you on it. Keep your front foot flat and use body weight to begin.",
+    techniqueTips: [
+      "Lower your hips slowly while keeping your front knee aligned over your foot.",
+      "Keep your torso tall and most of your weight over the front leg.",
+      "Push through the front foot to stand back up smoothly.",
+      "Hold a wall or support for balance if needed.",
+    ],
+    commonMistakes: [
+      "Standing too close to or too far from the bench.",
+      "Letting the front knee collapse inward.",
+      "Pushing off strongly with the back leg.",
+      "Adding dumbbells before you can balance with body weight.",
+    ],
+    safetyNotes: [
+      "Make sure the bench is stable and the floor is clear.",
+      "Start without weights and use support if your balance is uncertain.",
+      "Stop if you experience pain, dizziness, or unusual symptoms.",
     ],
   },
 
@@ -510,6 +928,25 @@ export const exercises: Record<string, Exercise[]> = {
       "Feel the stretch in your hamstrings.",
       "Drive your hips forward to return upright.",
     ],
+    startingPosition:
+      "Stand with feet about hip-width apart and hold a light bar close to your thighs. Keep your knees softly bent, shoulders relaxed, and back neutral.",
+    techniqueTips: [
+      "Push your hips backward while keeping the bar close to your legs.",
+      "Lower only until you feel a comfortable hamstring stretch.",
+      "Keep your back neutral and stand by bringing your hips forward.",
+      "Begin with a light weight and controlled repetitions.",
+    ],
+    commonMistakes: [
+      "Rounding the back or looking sharply upward.",
+      "Bending the knees into a squat.",
+      "Letting the bar drift away from the legs.",
+      "Lowering farther than your flexibility allows.",
+    ],
+    safetyNotes: [
+      "Start with a light bar and make sure you have a clear lifting area.",
+      "Keep the load close and avoid forcing the stretch.",
+      "Stop if you experience pain, dizziness, or unusual symptoms.",
+    ],
   },
 
   {
@@ -531,6 +968,25 @@ export const exercises: Record<string, Exercise[]> = {
       "Push through your feet and raise your heels.",
       "Pause briefly at the top.",
       "Lower slowly.",
+    ],
+    startingPosition:
+      "Position your shoulders comfortably under the machine pads and place the balls of your feet on the platform, with heels free to move. Hold the handles for balance.",
+    techniqueTips: [
+      "Lower your heels slowly until you feel a comfortable calf stretch.",
+      "Rise onto the balls of your feet without bouncing.",
+      "Pause briefly at the top, then lower under control.",
+      "Start with a manageable weight and steady repetitions.",
+    ],
+    commonMistakes: [
+      "Bouncing through the bottom of the movement.",
+      "Using a partial range by barely lowering the heels.",
+      "Rolling the ankles outward or inward.",
+      "Using a weight that makes it difficult to balance.",
+    ],
+    safetyNotes: [
+      "Check that the shoulder pads and foot platform are secure.",
+      "Keep your feet firmly positioned and use a comfortable range.",
+      "Stop if you experience pain, dizziness, or unusual symptoms.",
     ],
   },
 ],
@@ -556,6 +1012,25 @@ export const exercises: Record<string, Exercise[]> = {
       "Avoid excessively arching your lower back.",
       "Lower the dumbbells slowly.",
     ],
+    startingPosition:
+      "Sit with your back supported and feet flat. Hold light dumbbells at shoulder height with palms facing forward or slightly inward.",
+    techniqueTips: [
+      "Press upward smoothly without arching your lower back.",
+      "Keep wrists above elbows and shoulders relaxed.",
+      "Lower the dumbbells slowly to shoulder height.",
+      "Use a weight you can control throughout the set.",
+    ],
+    commonMistakes: [
+      "Arching the lower back to press the weights.",
+      "Lowering the elbows far below a comfortable position.",
+      "Letting the dumbbells drift unevenly.",
+      "Using momentum or a weight that compromises control.",
+    ],
+    safetyNotes: [
+      "Use a stable bench and start with light dumbbells.",
+      "Keep your back supported and avoid forcing the overhead range.",
+      "Stop if you experience pain, dizziness, or unusual symptoms.",
+    ],
   },
 
   {
@@ -577,6 +1052,25 @@ export const exercises: Record<string, Exercise[]> = {
       "Press upward in a controlled movement.",
       "Avoid locking your elbows aggressively.",
       "Lower slowly.",
+    ],
+    startingPosition:
+      "Adjust the seat so the handles start around shoulder height. Sit with your back against the pad, feet planted, and hands gripping the handles.",
+    techniqueTips: [
+      "Press the handles upward smoothly while keeping your back supported.",
+      "Keep your wrists steady and shoulders relaxed.",
+      "Lower the handles slowly to a comfortable starting position.",
+      "Choose a manageable weight for controlled repetitions.",
+    ],
+    commonMistakes: [
+      "Setting the seat so the handles start too high or low.",
+      "Arching away from the back pad.",
+      "Locking the elbows forcefully at the top.",
+      "Letting the handles drop quickly on the return.",
+    ],
+    safetyNotes: [
+      "Check the seat and weight setting before pressing.",
+      "Use a comfortable range and keep your back supported.",
+      "Stop if you experience pain, dizziness, or unusual symptoms.",
     ],
   },
 
@@ -600,6 +1094,25 @@ export const exercises: Record<string, Exercise[]> = {
       "Avoid using momentum.",
       "Lower the dumbbells slowly.",
     ],
+    startingPosition:
+      "Stand tall with a light dumbbell in each hand at your sides. Keep your feet steady, elbows softly bent, and shoulders relaxed.",
+    techniqueTips: [
+      "Raise your arms out to the sides, stopping around shoulder height.",
+      "Lead with your elbows and keep your wrists neutral.",
+      "Lower the dumbbells slowly without swinging.",
+      "Use light weights so the movement stays controlled.",
+    ],
+    commonMistakes: [
+      "Swinging the torso to lift the dumbbells.",
+      "Shrugging the shoulders toward the ears.",
+      "Raising the arms far above shoulder height.",
+      "Using weights that cause the elbows to bend excessively.",
+    ],
+    safetyNotes: [
+      "Begin with light dumbbells and keep a firm grip.",
+      "Raise only through a comfortable shoulder range.",
+      "Stop if you experience pain, dizziness, or unusual symptoms.",
+    ],
   },
 
   {
@@ -621,6 +1134,25 @@ export const exercises: Record<string, Exercise[]> = {
       "Raise your arm outward.",
       "Stop around shoulder height.",
       "Lower slowly under control.",
+    ],
+    startingPosition:
+      "Set the cable low and stand beside the machine with the working arm farthest from it. Hold the handle with a light grip and keep your torso upright.",
+    techniqueTips: [
+      "Raise your arm out to the side until it is near shoulder height.",
+      "Keep a soft bend in your elbow and your torso still.",
+      "Lower the handle slowly against the cable tension.",
+      "Start with light resistance and smooth repetitions.",
+    ],
+    commonMistakes: [
+      "Leaning away from the cable to lift the arm.",
+      "Shrugging or swinging the shoulder.",
+      "Lifting higher than a comfortable range.",
+      "Using too much resistance to control the lowering phase.",
+    ],
+    safetyNotes: [
+      "Check the handle attachment and select a light starting weight.",
+      "Stand securely and avoid pulling the shoulder into discomfort.",
+      "Stop if you experience pain, dizziness, or unusual symptoms.",
     ],
   },
 
@@ -644,6 +1176,25 @@ export const exercises: Record<string, Exercise[]> = {
       "Avoid swinging the weights.",
       "Lower slowly.",
     ],
+    startingPosition:
+      "Hold light dumbbells and hinge forward slightly with a neutral back. Let your arms hang beneath your shoulders with elbows softly bent.",
+    techniqueTips: [
+      "Raise your arms outward while keeping your neck relaxed.",
+      "Move from the shoulders and squeeze gently at the top.",
+      "Lower slowly without changing your torso position.",
+      "Use light weights to keep the motion smooth.",
+    ],
+    commonMistakes: [
+      "Rounding the back while leaning forward.",
+      "Swinging the dumbbells or jerking the arms.",
+      "Shrugging the shoulders toward the ears.",
+      "Using heavy weights that shorten the controlled range.",
+    ],
+    safetyNotes: [
+      "Start with light dumbbells and hinge only as far as comfortable.",
+      "Keep your back neutral and knees softly bent.",
+      "Stop if you experience pain, dizziness, or unusual symptoms.",
+    ],
   },
 
   {
@@ -665,6 +1216,25 @@ export const exercises: Record<string, Exercise[]> = {
       "Move your arms backward.",
       "Squeeze your rear shoulders.",
       "Return slowly.",
+    ],
+    startingPosition:
+      "Adjust the seat so the handles are at shoulder height. Face the machine with your chest against the pad and grip the handles comfortably.",
+    techniqueTips: [
+      "Move your arms outward and back while keeping your chest on the pad.",
+      "Keep a slight bend in your elbows and shoulders relaxed.",
+      "Return the handles slowly without letting the weights clank.",
+      "Use a light weight and focus on smooth movement.",
+    ],
+    commonMistakes: [
+      "Lifting the chest away from the pad.",
+      "Bending the elbows to turn the movement into a row.",
+      "Shrugging or jerking the handles backward.",
+      "Using more weight than you can control.",
+    ],
+    safetyNotes: [
+      "Check the seat position and machine settings before use.",
+      "Keep the movement within a comfortable shoulder range.",
+      "Stop if you experience pain, dizziness, or unusual symptoms.",
     ],
   },
 
@@ -688,6 +1258,25 @@ export const exercises: Record<string, Exercise[]> = {
       "Avoid swinging your body.",
       "Lower slowly.",
     ],
+    startingPosition:
+      "Stand tall with light dumbbells in front of your thighs. Keep your feet planted, elbows slightly bent, and core gently braced.",
+    techniqueTips: [
+      "Raise the dumbbells forward to about shoulder height.",
+      "Keep your palms facing down or toward each other.",
+      "Lower slowly and keep your torso still.",
+      "Use light weights and avoid shrugging.",
+    ],
+    commonMistakes: [
+      "Swinging the body to lift the weights.",
+      "Raising the dumbbells above a comfortable height.",
+      "Shrugging or arching the back.",
+      "Using weights that make the motion jerky.",
+    ],
+    safetyNotes: [
+      "Start with light dumbbells and a stable stance.",
+      "Raise only through a comfortable shoulder range.",
+      "Stop if you experience pain, dizziness, or unusual symptoms.",
+    ],
   },
 
   {
@@ -709,6 +1298,25 @@ export const exercises: Record<string, Exercise[]> = {
       "Keep your elbows high.",
       "Rotate your hands outward.",
       "Return slowly.",
+    ],
+    startingPosition:
+      "Attach a rope around face height. Stand facing the cable with feet steady and hold one end in each hand, arms extended comfortably.",
+    techniqueTips: [
+      "Pull the rope toward your face and separate your hands slightly.",
+      "Keep your elbows lifted and rotate your hands outward gently.",
+      "Keep your torso steady and return the rope with control.",
+      "Use a light weight that lets you maintain smooth form.",
+    ],
+    commonMistakes: [
+      "Pulling the rope down toward the chest.",
+      "Shrugging or letting the elbows drop.",
+      "Leaning back or using momentum.",
+      "Using a weight that makes the outward rotation difficult.",
+    ],
+    safetyNotes: [
+      "Check that the rope is attached securely before starting.",
+      "Use a manageable weight and keep shoulders in a comfortable range.",
+      "Stop if you experience pain, dizziness, or unusual symptoms.",
     ],
   },
 ],
@@ -734,6 +1342,25 @@ Biceps: [
       "Lower the bar slowly.",
       "Avoid swinging your body.",
     ],
+    startingPosition:
+      "Stand with feet about hip-width apart and hold a light barbell with palms facing forward. Keep your elbows near your sides and wrists straight.",
+    techniqueTips: [
+      "Curl the bar toward your shoulders without moving your upper arms.",
+      "Keep your torso tall and wrists aligned with your forearms.",
+      "Lower the bar slowly until your arms are comfortably extended.",
+      "Use a weight you can lift without swinging.",
+    ],
+    commonMistakes: [
+      "Rocking the torso to lift the bar.",
+      "Allowing the elbows to drift far forward.",
+      "Bending the wrists back under the bar.",
+      "Dropping the bar quickly on the way down.",
+    ],
+    safetyNotes: [
+      "Use a manageable barbell weight and a secure grip.",
+      "Keep your feet planted and avoid forcing the elbow range.",
+      "Stop if you experience pain, dizziness, or unusual symptoms.",
+    ],
   },
 
   {
@@ -755,6 +1382,25 @@ Biceps: [
       "Keep your upper arms stationary.",
       "Squeeze your biceps at the top.",
       "Lower the dumbbells slowly.",
+    ],
+    startingPosition:
+      "Stand tall with a light dumbbell in each hand, arms at your sides, palms facing forward, and elbows close to your torso.",
+    techniqueTips: [
+      "Curl the dumbbells smoothly while keeping your upper arms still.",
+      "Keep your wrists straight and shoulders relaxed.",
+      "Lower each dumbbell slowly to the starting position.",
+      "Alternate arms or curl together without rocking your body.",
+    ],
+    commonMistakes: [
+      "Swinging the torso or using the hips to lift.",
+      "Moving the elbows forward on each curl.",
+      "Shrugging the shoulders or bending the wrists.",
+      "Using weights that prevent a controlled lowering phase.",
+    ],
+    safetyNotes: [
+      "Start with manageable dumbbells and keep a firm grip.",
+      "Maintain a stable stance and comfortable elbow motion.",
+      "Stop if you experience pain, dizziness, or unusual symptoms.",
     ],
   },
 
@@ -778,6 +1424,25 @@ Biceps: [
       "Squeeze your arms at the top.",
       "Lower slowly.",
     ],
+    startingPosition:
+      "Stand with feet steady and hold light dumbbells at your sides with palms facing each other. Keep your wrists neutral and elbows close to your body.",
+    techniqueTips: [
+      "Curl the weights toward your shoulders without turning your palms.",
+      "Keep your upper arms still and shoulders relaxed.",
+      "Lower the dumbbells slowly to your sides.",
+      "Choose a weight that allows smooth, controlled repetitions.",
+    ],
+    commonMistakes: [
+      "Swinging the weights or leaning backward.",
+      "Letting the wrists bend during the curl.",
+      "Allowing the elbows to move far forward.",
+      "Using a weight that compromises control.",
+    ],
+    safetyNotes: [
+      "Begin with light dumbbells and a stable stance.",
+      "Keep your wrists comfortable and avoid jerking the weights.",
+      "Stop if you experience pain, dizziness, or unusual symptoms.",
+    ],
   },
 
   {
@@ -799,6 +1464,25 @@ Biceps: [
       "Curl the dumbbells upward.",
       "Squeeze your biceps.",
       "Lower slowly to the starting position.",
+    ],
+    startingPosition:
+      "Set a bench to a comfortable incline and sit back with feet planted. Hold light dumbbells with arms hanging and elbows pointing toward the floor.",
+    techniqueTips: [
+      "Curl the dumbbells without letting your upper arms drift forward.",
+      "Keep your shoulders against the bench and wrists neutral.",
+      "Lower slowly until your arms are comfortably extended.",
+      "Use lighter weights than in standing curls if needed.",
+    ],
+    commonMistakes: [
+      "Swinging the arms or lifting the shoulders off the bench.",
+      "Stretching the elbows beyond a comfortable range.",
+      "Letting the wrists bend back.",
+      "Choosing a weight that causes momentum.",
+    ],
+    safetyNotes: [
+      "Make sure the bench is stable and set securely.",
+      "Use a manageable weight and avoid forcing the bottom stretch.",
+      "Stop if you experience pain, dizziness, or unusual symptoms.",
     ],
   },
 
@@ -822,6 +1506,25 @@ Biceps: [
       "Lower the weight slowly.",
       "Avoid fully relaxing at the bottom.",
     ],
+    startingPosition:
+      "Adjust the preacher bench so your upper arms rest fully on the pad. Hold a light bar or dumbbells with a comfortable grip and elbows softly bent.",
+    techniqueTips: [
+      "Curl the weight smoothly while keeping your upper arms on the pad.",
+      "Pause briefly near the top without lifting your elbows.",
+      "Lower slowly and stop before your elbows fully lock.",
+      "Use a light weight to maintain control through the full movement.",
+    ],
+    commonMistakes: [
+      "Lifting the upper arms off the pad.",
+      "Locking the elbows or dropping the weight at the bottom.",
+      "Using momentum to start each curl.",
+      "Using a weight that causes wrist or elbow strain.",
+    ],
+    safetyNotes: [
+      "Set the pad and seat securely before starting.",
+      "Use a manageable load and keep the elbow movement comfortable.",
+      "Stop if you experience pain, dizziness, or unusual symptoms.",
+    ],
   },
 
   {
@@ -843,6 +1546,25 @@ Biceps: [
       "Curl the bar toward your shoulders.",
       "Squeeze your biceps.",
       "Return slowly under control.",
+    ],
+    startingPosition:
+      "Attach a straight bar to a low cable. Stand facing the machine with feet steady, grip the bar underhand, and keep elbows close to your sides.",
+    techniqueTips: [
+      "Curl the bar toward your shoulders while keeping your upper arms still.",
+      "Keep your torso upright against the cable tension.",
+      "Return the bar slowly until your arms are comfortably extended.",
+      "Choose a weight that allows smooth repetitions.",
+    ],
+    commonMistakes: [
+      "Leaning back to overcome the cable resistance.",
+      "Letting the elbows drift forward.",
+      "Bending the wrists or jerking the bar.",
+      "Letting the cable pull the bar down quickly.",
+    ],
+    safetyNotes: [
+      "Check that the bar is attached securely and begin with light resistance.",
+      "Keep a stable stance and avoid forcing the elbow range.",
+      "Stop if you experience pain, dizziness, or unusual symptoms.",
     ],
   },
 ],
@@ -868,6 +1590,25 @@ Triceps: [
       "Squeeze your triceps at the bottom.",
       "Return the rope slowly.",
     ],
+    startingPosition:
+      "Attach a rope to a high cable and stand facing it with feet steady. Hold one end in each hand and keep your elbows tucked near your sides.",
+    techniqueTips: [
+      "Extend your elbows to press the rope down without moving your upper arms.",
+      "Separate the rope ends slightly near the bottom if comfortable.",
+      "Return slowly while keeping your elbows by your sides.",
+      "Use a weight you can control without leaning.",
+    ],
+    commonMistakes: [
+      "Letting the elbows move forward and backward.",
+      "Leaning over the rope to push it down.",
+      "Snapping the elbows straight at the bottom.",
+      "Using momentum or excessive weight.",
+    ],
+    safetyNotes: [
+      "Check the rope attachment and select a manageable weight.",
+      "Keep your wrists neutral and elbows comfortable.",
+      "Stop if you experience pain, dizziness, or unusual symptoms.",
+    ],
   },
 
   {
@@ -889,6 +1630,25 @@ Triceps: [
       "Lower the dumbbell behind your head.",
       "Extend your arms upward.",
       "Return slowly.",
+    ],
+    startingPosition:
+      "Stand or sit steadily and hold one light dumbbell securely with both hands. Raise it overhead with elbows pointing forward and close to your head.",
+    techniqueTips: [
+      "Bend your elbows to lower the dumbbell behind your head.",
+      "Keep your upper arms mostly still and ribs gently braced.",
+      "Extend your elbows smoothly without arching your back.",
+      "Use a light weight and a comfortable range.",
+    ],
+    commonMistakes: [
+      "Flaring the elbows wide.",
+      "Arching the lower back as the weight lowers.",
+      "Moving the shoulders instead of bending the elbows.",
+      "Using a weight that is difficult to control behind the head.",
+    ],
+    safetyNotes: [
+      "Grip the dumbbell securely and start with a light weight.",
+      "Avoid lowering beyond a comfortable shoulder and elbow range.",
+      "Stop if you experience pain, dizziness, or unusual symptoms.",
     ],
   },
 
@@ -912,6 +1672,25 @@ Triceps: [
       "Extend your elbows to raise the bar.",
       "Lower the weight under control.",
     ],
+    startingPosition:
+      "Lie on a stable bench holding a light EZ bar with a comfortable grip. Extend your arms above your chest with elbows softly bent.",
+    techniqueTips: [
+      "Bend at the elbows to lower the bar toward your forehead or just behind it.",
+      "Keep your upper arms mostly still and wrists aligned.",
+      "Extend your elbows smoothly to raise the bar.",
+      "Use a spotter if needed and keep the weight light while learning.",
+    ],
+    commonMistakes: [
+      "Allowing the elbows to flare wide.",
+      "Moving the upper arms to swing the bar.",
+      "Lowering the bar too quickly or too close to the face.",
+      "Using a heavy weight before the movement feels controlled.",
+    ],
+    safetyNotes: [
+      "Use a manageable weight and consider a spotter when using a bar.",
+      "Keep a secure grip and lower only through a comfortable range.",
+      "Stop if you experience pain, dizziness, or unusual symptoms.",
+    ],
   },
 
   {
@@ -933,6 +1712,25 @@ Triceps: [
       "Lower it toward your lower chest.",
       "Keep your elbows relatively close to your body.",
       "Press the bar upward under control.",
+    ],
+    startingPosition:
+      "Lie on the bench with feet planted and shoulder blades supported. Grip the bar slightly narrower than shoulder-width and hold it above your chest.",
+    techniqueTips: [
+      "Lower the bar toward your lower chest with elbows near your sides.",
+      "Keep wrists stacked over your forearms.",
+      "Press smoothly and return the bar under control.",
+      "Use a weight you can manage while keeping your shoulders steady.",
+    ],
+    commonMistakes: [
+      "Using an excessively narrow grip that strains the wrists.",
+      "Flaring the elbows far out to the sides.",
+      "Bouncing the bar off the chest.",
+      "Lifting the feet or losing contact with the bench.",
+    ],
+    safetyNotes: [
+      "Use a spotter or safety supports for barbell pressing.",
+      "Start with a manageable load and maintain a secure grip.",
+      "Stop if you experience pain, dizziness, or unusual symptoms.",
     ],
   },
 
@@ -956,6 +1754,25 @@ Triceps: [
       "Push through your hands to return upward.",
       "Avoid excessive shoulder movement.",
     ],
+    startingPosition:
+      "Set the dip machine to a manageable assistance or resistance level. Grip the handles, support your body with arms extended comfortably, and keep your torso upright.",
+    techniqueTips: [
+      "Bend your elbows to lower only as far as your shoulders feel comfortable.",
+      "Keep your shoulders down and torso steady.",
+      "Press through the handles smoothly to return to the start.",
+      "Use enough assistance to keep each repetition controlled.",
+    ],
+    commonMistakes: [
+      "Lowering too deeply and straining the shoulders.",
+      "Shrugging or letting the shoulders roll forward.",
+      "Bouncing at the bottom or pushing with momentum.",
+      "Using too little assistance to maintain good form.",
+    ],
+    safetyNotes: [
+      "Check the machine setting and handles before starting.",
+      "Keep the movement within a comfortable shoulder range.",
+      "Stop if you experience pain, dizziness, or unusual symptoms.",
+    ],
   },
 
   {
@@ -977,6 +1794,25 @@ Triceps: [
       "Push the handle downward.",
       "Fully extend your arm without forcing the elbow.",
       "Return slowly.",
+    ],
+    startingPosition:
+      "Attach a single handle to a high cable. Stand facing the machine with feet steady, hold the handle in one hand, and tuck your elbow beside your torso.",
+    techniqueTips: [
+      "Straighten your arm by moving at the elbow while keeping your upper arm still.",
+      "Finish with a gentle extension, not a forceful lockout.",
+      "Return the handle slowly and repeat before switching sides.",
+      "Use a light resistance that allows steady control.",
+    ],
+    commonMistakes: [
+      "Letting the elbow drift away from the body.",
+      "Turning or leaning the torso to push the handle down.",
+      "Snapping the elbow straight.",
+      "Allowing the cable to pull the hand up quickly.",
+    ],
+    safetyNotes: [
+      "Check the handle attachment and start with manageable resistance.",
+      "Keep your wrist straight and elbow comfortable.",
+      "Stop if you experience pain, dizziness, or unusual symptoms.",
     ],
   },
 ],  
@@ -1001,6 +1837,25 @@ Forearms: [
       "Squeeze your forearms at the top.",
       "Lower slowly.",
     ],
+    startingPosition:
+      "Sit with forearms resting on your thighs or a bench and wrists just beyond the edge. Hold light dumbbells with palms facing upward.",
+    techniqueTips: [
+      "Move only your wrists to curl the dumbbells upward.",
+      "Use a small, comfortable range and pause briefly at the top.",
+      "Lower slowly without letting the dumbbells slip.",
+      "Keep your forearms supported throughout.",
+    ],
+    commonMistakes: [
+      "Lifting the forearms instead of moving the wrists.",
+      "Using a heavy weight that strains the wrists.",
+      "Rushing or bouncing through the movement.",
+      "Letting the dumbbells roll toward the fingertips.",
+    ],
+    safetyNotes: [
+      "Begin with very light dumbbells and a secure grip.",
+      "Keep the wrists within a pain-free range.",
+      "Stop if you experience pain, numbness, or unusual symptoms.",
+    ],
   },
 
   {
@@ -1022,6 +1877,25 @@ Forearms: [
       "Raise your wrists upward.",
       "Keep your forearms stationary.",
       "Lower slowly.",
+    ],
+    startingPosition:
+      "Rest your forearms on your thighs or a bench with wrists just beyond the edge. Hold light dumbbells with palms facing down.",
+    techniqueTips: [
+      "Raise the backs of your hands by extending your wrists.",
+      "Keep your forearms planted and move through a small, smooth range.",
+      "Lower the dumbbells slowly to the starting position.",
+      "Use lighter weights than you might use for wrist curls.",
+    ],
+    commonMistakes: [
+      "Lifting the forearms off the support.",
+      "Using momentum to raise the dumbbells.",
+      "Bending the wrists too far or causing discomfort.",
+      "Choosing a load too heavy to control.",
+    ],
+    safetyNotes: [
+      "Start with very light dumbbells and maintain a firm grip.",
+      "Avoid forcing the wrist range in either direction.",
+      "Stop if you experience pain, numbness, or unusual symptoms.",
     ],
   },
 
@@ -1045,6 +1919,25 @@ Forearms: [
       "Maintain an upright posture.",
       "Stop after the planned distance or time.",
     ],
+    startingPosition:
+      "Place a pair of manageable dumbbells beside your feet. Stand between them, bend at the hips and knees with a neutral back, and grip one in each hand.",
+    techniqueTips: [
+      "Stand tall before walking with shoulders relaxed and core braced.",
+      "Take short, steady steps and keep the weights close to your sides.",
+      "Turn carefully and set the dumbbells down with control.",
+      "Choose a load that lets you maintain posture for the planned distance.",
+    ],
+    commonMistakes: [
+      "Rounding the back when lifting or setting weights down.",
+      "Shrugging the shoulders or leaning to one side.",
+      "Taking rushed steps or swinging the dumbbells.",
+      "Carrying more weight than you can hold securely.",
+    ],
+    safetyNotes: [
+      "Use a clear walking path and a load you can grip securely.",
+      "Set weights down carefully rather than dropping them.",
+      "Stop if you experience pain, dizziness, or unusual symptoms.",
+    ],
   },
 
   {
@@ -1067,6 +1960,25 @@ Forearms: [
       "Squeeze your forearms at the top.",
       "Lower the bar slowly.",
     ],
+    startingPosition:
+      "Stand with feet steady and hold a light barbell with palms facing down. Keep your wrists straight and elbows close to your sides.",
+    techniqueTips: [
+      "Curl the bar upward by bending your elbows without moving your upper arms.",
+      "Keep your wrists aligned and shoulders relaxed.",
+      "Lower the bar slowly to the starting position.",
+      "Use a lighter weight than for an underhand curl.",
+    ],
+    commonMistakes: [
+      "Swinging the torso to lift the bar.",
+      "Bending the wrists or letting them collapse.",
+      "Allowing elbows to drift forward.",
+      "Using a weight that causes jerky repetitions.",
+    ],
+    safetyNotes: [
+      "Begin with a light bar and use a secure overhand grip.",
+      "Keep the wrists comfortable and avoid forcing the elbow range.",
+      "Stop if you experience pain, dizziness, or unusual symptoms.",
+    ],
   },
 
   {
@@ -1088,6 +2000,25 @@ Forearms: [
       "Maintain a steady grip.",
       "Avoid excessive swinging.",
       "Hold for the planned duration.",
+    ],
+    startingPosition:
+      "Use a secure, stable pull-up bar and step or reach up to grip it with hands about shoulder-width apart. Begin with your feet supported if needed.",
+    techniqueTips: [
+      "Keep your grip firm and let your arms lengthen comfortably.",
+      "Keep your shoulders gently engaged rather than shrugging completely.",
+      "Breathe steadily and keep your body still.",
+      "Start with short holds and increase time gradually.",
+    ],
+    commonMistakes: [
+      "Swinging or kicking to maintain the hang.",
+      "Holding longer than your grip can safely manage.",
+      "Tensing the neck or shrugging hard.",
+      "Dropping suddenly when the grip tires.",
+    ],
+    safetyNotes: [
+      "Check the bar is secure and use a stable step to reach it.",
+      "Keep a clear area beneath you and dismount carefully.",
+      "Stop if you feel pain, numbness, dizziness, or unusual symptoms.",
     ],
   },
 ],
@@ -1112,6 +2043,25 @@ Forearms: [
       "Squeeze your abdominal muscles.",
       "Lower yourself slowly.",
     ],
+    startingPosition:
+      "Lie on your back with knees bent and feet flat about hip-width apart. Rest your hands lightly behind your head or across your chest.",
+    techniqueTips: [
+      "Gently brace your abdomen and lift your shoulder blades from the floor.",
+      "Keep your lower back comfortably grounded and neck relaxed.",
+      "Exhale as you curl up and lower slowly on the way down.",
+      "Lift only as high as you can without pulling on your head.",
+    ],
+    commonMistakes: [
+      "Pulling the head forward with the hands.",
+      "Using momentum to bounce the shoulders up.",
+      "Trying to sit all the way up.",
+      "Holding your breath through repetitions.",
+    ],
+    safetyNotes: [
+      "Use a padded, clear floor and a comfortable range of motion.",
+      "Keep your neck relaxed and hands light behind your head.",
+      "Stop if you experience pain, dizziness, or unusual symptoms.",
+    ],
   },
 
   {
@@ -1133,6 +2083,25 @@ Forearms: [
       "Brace your abdominal muscles.",
       "Keep your hips from dropping.",
       "Hold the position for the planned duration.",
+    ],
+    startingPosition:
+      "Place your forearms on the floor with elbows under your shoulders. Extend your legs behind you and support your body on your forearms and toes.",
+    techniqueTips: [
+      "Brace your abdomen and keep your head, hips, and heels aligned.",
+      "Breathe steadily instead of holding your breath.",
+      "Keep your shoulders over your elbows and hips level.",
+      "Use a knee plank if you cannot maintain position comfortably.",
+    ],
+    commonMistakes: [
+      "Letting the lower back sag or hips rise too high.",
+      "Holding the breath or tensing the neck.",
+      "Placing elbows too far ahead of the shoulders.",
+      "Holding longer after your body position breaks down.",
+    ],
+    safetyNotes: [
+      "Use a non-slip surface and stop the hold when form begins to change.",
+      "Keep the neck neutral and avoid painful shoulder positions.",
+      "Stop if you experience pain, dizziness, or unusual symptoms.",
     ],
   },
 
@@ -1156,6 +2125,25 @@ Forearms: [
       "Keep your lower back controlled.",
       "Return and repeat on the opposite side.",
     ],
+    startingPosition:
+      "Lie on your back with arms reaching toward the ceiling and hips and knees bent. Gently brace your core and keep your lower back comfortably supported.",
+    techniqueTips: [
+      "Slowly extend one arm and the opposite leg while keeping your trunk steady.",
+      "Reach only as far as you can without your lower back arching.",
+      "Return to center and alternate sides with controlled breathing.",
+      "Shorten the reach if you are learning the movement.",
+    ],
+    commonMistakes: [
+      "Arching the lower back as the arm and leg extend.",
+      "Moving both sides of the same body together.",
+      "Rushing or letting the limbs drop.",
+      "Reaching farther than core control allows.",
+    ],
+    safetyNotes: [
+      "Perform on a comfortable, clear floor surface.",
+      "Keep the range small if your back is uncomfortable.",
+      "Stop if you experience pain, dizziness, or unusual symptoms.",
+    ],
   },
 
   {
@@ -1177,6 +2165,25 @@ Forearms: [
       "Contract your abdominal muscles.",
       "Lower your legs slowly.",
       "Avoid excessive swinging.",
+    ],
+    startingPosition:
+      "Grip a secure pull-up bar with hands about shoulder-width apart. Hang with arms extended comfortably and feet clear of the floor.",
+    techniqueTips: [
+      "Brace your abdomen and raise bent knees toward your chest.",
+      "Keep your torso still and avoid swinging.",
+      "Lower your knees slowly to the starting position.",
+      "Use a captain's chair variation if hanging is difficult.",
+    ],
+    commonMistakes: [
+      "Swinging the body to lift the knees.",
+      "Raising the knees with a quick kick.",
+      "Dropping the legs quickly between repetitions.",
+      "Continuing when grip or shoulder control is lost.",
+    ],
+    safetyNotes: [
+      "Check that the bar is secure and keep the area below clear.",
+      "Use a supported variation if your grip or shoulders feel strained.",
+      "Stop if you experience pain, dizziness, or unusual symptoms.",
     ],
   },
 
@@ -1200,6 +2207,25 @@ Forearms: [
       "Lift your hips slightly from the floor.",
       "Lower your hips slowly.",
     ],
+    startingPosition:
+      "Lie on your back with knees bent and legs lifted so your knees are above your hips. Rest your arms by your sides and brace your abdomen.",
+    techniqueTips: [
+      "Bring your knees toward your chest by curling your pelvis gently upward.",
+      "Keep the movement small and avoid swinging your legs.",
+      "Lower your hips and feet slowly while keeping your core engaged.",
+      "Keep your head and shoulders relaxed on the floor.",
+    ],
+    commonMistakes: [
+      "Swinging the legs to lift the hips.",
+      "Using momentum instead of curling the pelvis.",
+      "Lowering the legs until the lower back arches.",
+      "Pushing the movement through the neck or shoulders.",
+    ],
+    safetyNotes: [
+      "Use a padded surface and keep the movement within a comfortable range.",
+      "Keep the lower back controlled as your legs lower.",
+      "Stop if you experience pain, dizziness, or unusual symptoms.",
+    ],
   },
 
   {
@@ -1221,6 +2247,25 @@ Forearms: [
       "Rotate your torso toward the raised knee.",
       "Switch sides in a controlled motion.",
       "Avoid pulling on your neck.",
+    ],
+    startingPosition:
+      "Lie on your back with knees bent and hands resting lightly behind your head. Lift your shoulders slightly and keep your neck relaxed.",
+    techniqueTips: [
+      "Bring one knee in as you rotate your opposite shoulder toward it.",
+      "Move slowly from your trunk rather than pulling your head.",
+      "Keep the other leg extended only as far as your back stays comfortable.",
+      "Breathe steadily and alternate sides with control.",
+    ],
+    commonMistakes: [
+      "Pulling the head or neck with the hands.",
+      "Rushing and swinging the elbows from side to side.",
+      "Letting the lower back arch excessively.",
+      "Trying to touch elbow to knee by straining the neck.",
+    ],
+    safetyNotes: [
+      "Keep the rotation gentle and use a comfortable range.",
+      "Support your head lightly without pulling on it.",
+      "Stop if you experience pain, dizziness, or unusual symptoms.",
     ],
   },
 
@@ -1244,6 +2289,25 @@ Forearms: [
       "Keep the movement controlled.",
       "Avoid excessive twisting through the lower back.",
     ],
+    startingPosition:
+      "Sit on the floor with knees bent and feet grounded. Lean back slightly while keeping your chest lifted and spine long.",
+    techniqueTips: [
+      "Rotate your rib cage gently from side to side.",
+      "Keep your hips mostly still and move at a steady pace.",
+      "Keep the feet down until you can control the movement comfortably.",
+      "Use a smaller rotation rather than twisting through the lower back.",
+    ],
+    commonMistakes: [
+      "Rounding the back and collapsing the chest.",
+      "Swinging the arms without rotating the torso.",
+      "Twisting too far or moving too quickly.",
+      "Lifting the feet before you can stay balanced.",
+    ],
+    safetyNotes: [
+      "Begin without added weight and rotate within a comfortable range.",
+      "Keep your spine long and avoid forcing lower-back rotation.",
+      "Stop if you experience pain, dizziness, or unusual symptoms.",
+    ],
   },
 
   {
@@ -1266,6 +2330,25 @@ Forearms: [
       "Pause briefly.",
       "Return and switch sides.",
     ],
+    startingPosition:
+      "Start on hands and knees with hands under shoulders and knees under hips. Keep your back neutral and brace your abdomen gently.",
+    techniqueTips: [
+      "Reach one arm forward and the opposite leg back without rotating your hips.",
+      "Keep the reaching arm, torso, and leg in a long line.",
+      "Pause briefly, return slowly, and alternate sides.",
+      "Reach only as far as you can while staying balanced.",
+    ],
+    commonMistakes: [
+      "Arching the back or letting the stomach drop.",
+      "Rotating or shifting the hips to lift the leg.",
+      "Raising the arm or leg higher than the torso.",
+      "Rushing without maintaining balance.",
+    ],
+    safetyNotes: [
+      "Use a padded surface for your hands and knees.",
+      "Keep the movement small if balance or back comfort is limited.",
+      "Stop if you experience pain, dizziness, or unusual symptoms.",
+    ],
   },
 ],
   Cardio: [
@@ -1282,6 +2365,25 @@ Forearms: [
       duration: 20,
       completed: false,
       instructions: [],
+      startingPosition:
+        "Stand on the treadmill side rails, attach the safety clip if available, and set a slow walking speed before stepping onto the belt.",
+      techniqueTips: [
+        "Walk with a comfortable stride and look forward.",
+        "Keep your posture upright and let your arms move naturally.",
+        "Use the handrails only for balance, not to support your body weight.",
+        "Increase speed gradually only while you feel steady.",
+      ],
+      commonMistakes: [
+        "Stepping onto a moving belt before it slows to a safe pace.",
+        "Looking down continuously or taking overly long steps.",
+        "Leaning heavily on the handrails.",
+        "Increasing speed beyond a comfortable walking pace.",
+      ],
+      safetyNotes: [
+        "Check the belt and safety stop before starting.",
+        "Wear secure shoes and keep the area around the treadmill clear.",
+        "Slow the belt before stepping off and stop for unusual symptoms.",
+      ],
     },
 
     {
@@ -1303,6 +2405,25 @@ Forearms: [
         "Keep your steps controlled.",
         "Maintain steady breathing.",
         "Slow down gradually before stopping.",
+      ],
+      startingPosition:
+        "Stand on the treadmill side rails, attach the safety clip if available, and begin at a slow walking pace before increasing speed.",
+      techniqueTips: [
+        "Jog with short, relaxed strides and look ahead.",
+        "Keep your torso upright and arms relaxed.",
+        "Build speed gradually and finish with a slower walking cooldown.",
+        "Choose a pace that lets you maintain steady breathing and control.",
+      ],
+      commonMistakes: [
+        "Starting at a fast pace without warming up.",
+        "Holding the handrails while jogging.",
+        "Taking overly long strides or landing far ahead of the body.",
+        "Stopping abruptly while the belt is moving quickly.",
+      ],
+      safetyNotes: [
+        "Use secure athletic shoes and keep the safety clip attached when available.",
+        "Know how to use the stop controls before increasing speed.",
+        "Slow down and stop if you feel unsteady or unwell.",
       ],
     },
 
@@ -1326,6 +2447,25 @@ Forearms: [
         "Keep your upper body relaxed.",
         "Gradually reduce your pace before stopping.",
       ],
+      startingPosition:
+        "Adjust the seat so your knee remains slightly bent when the pedal is farthest away. Sit securely and place the balls of your feet on the pedals.",
+      techniqueTips: [
+        "Pedal smoothly at a pace you can sustain.",
+        "Keep your knees tracking forward and shoulders relaxed.",
+        "Use light resistance at first and build it gradually.",
+        "Ease your pace for a short cooldown before stopping.",
+      ],
+      commonMistakes: [
+        "Setting the seat too low so the knees bend sharply.",
+        "Pointing the toes or rocking the hips while pedaling.",
+        "Starting with resistance that makes pedaling jerky.",
+        "Stopping suddenly after a hard effort.",
+      ],
+      safetyNotes: [
+        "Check the seat adjustment and secure your feet in the pedals.",
+        "Keep hands relaxed and use a comfortable resistance.",
+        "Stop if you feel pain, dizziness, or unusual symptoms.",
+      ],
     },
 
     {
@@ -1347,6 +2487,25 @@ Forearms: [
         "Maintain a smooth movement.",
         "Keep your posture upright.",
         "Gradually reduce resistance before stopping.",
+      ],
+      startingPosition:
+        "Step onto the stationary pedals carefully and hold the handles for support. Stand upright with feet centered on the pedals before starting.",
+      techniqueTips: [
+        "Begin at low resistance and move the pedals in a smooth rhythm.",
+        "Keep your knees soft and posture upright.",
+        "Use the moving handles gently or hold the fixed handles for balance.",
+        "Reduce resistance and slow down before stepping off.",
+      ],
+      commonMistakes: [
+        "Stepping onto or off the machine while the pedals are moving.",
+        "Leaning heavily on the handles.",
+        "Using a resistance or speed that disrupts balance.",
+        "Locking the knees or taking choppy steps.",
+      ],
+      safetyNotes: [
+        "Mount and dismount carefully while holding the handles.",
+        "Check that the pedals are stable and begin with low resistance.",
+        "Stop if you feel unsteady, have pain, or develop unusual symptoms.",
       ],
     },
 
@@ -1370,6 +2529,25 @@ Forearms: [
         "Return the handle while bending your knees.",
         "Maintain a controlled rhythm.",
       ],
+      startingPosition:
+        "Sit on the rower with feet strapped securely and knees bent. Hold the handle with arms extended and torso leaning slightly forward from the hips.",
+      techniqueTips: [
+        "Drive with your legs first, then lean back slightly and pull the handle to your lower ribs.",
+        "Return by extending your arms, hinging forward, then bending your knees.",
+        "Keep your back long and use a smooth, steady rhythm.",
+        "Start with low resistance and an easy pace while learning the sequence.",
+      ],
+      commonMistakes: [
+        "Pulling with the arms before pushing with the legs.",
+        "Rounding the back or leaning too far backward.",
+        "Bending the knees before the hands pass them on the return.",
+        "Using a fast, uncontrolled stroke rate.",
+      ],
+      safetyNotes: [
+        "Secure your feet and check the handle and seat path before rowing.",
+        "Use a comfortable resistance and keep your back neutral.",
+        "Stop if you experience pain, dizziness, or unusual symptoms.",
+      ],
     },
 
     {
@@ -1391,6 +2569,25 @@ Forearms: [
         "Use the handrails lightly if needed.",
         "Maintain a steady rhythm.",
         "Slow down gradually before stopping.",
+      ],
+      startingPosition:
+        "Step onto the stair climber while it is stopped and hold the handrails. Place your feet securely on the steps before starting at a slow pace.",
+      techniqueTips: [
+        "Step at a steady pace and keep your torso upright.",
+        "Place most of each foot on the step and use the rails lightly for balance.",
+        "Choose a pace that allows controlled steps and steady breathing.",
+        "Slow down gradually before stepping off.",
+      ],
+      commonMistakes: [
+        "Leaning heavily on the handrails.",
+        "Taking steps too quickly to stay controlled.",
+        "Standing only on the toes or letting heels hang excessively.",
+        "Stepping off before the machine has stopped.",
+      ],
+      safetyNotes: [
+        "Mount and dismount only when the steps are stopped.",
+        "Use the handrails for balance and start at a manageable pace.",
+        "Stop if you feel unsteady, have pain, or develop unusual symptoms.",
       ],
     },
 
@@ -1414,6 +2611,25 @@ Forearms: [
         "Land softly.",
         "Maintain a steady rhythm.",
       ],
+      startingPosition:
+        "Stand on a clear, level surface with feet together, arms relaxed at your sides, and knees slightly soft.",
+      techniqueTips: [
+        "Jump feet apart as your arms sweep overhead, then return smoothly.",
+        "Land softly with knees slightly bent.",
+        "Keep a comfortable rhythm and make the jumps smaller if needed.",
+        "Use a step-out version to reduce impact.",
+      ],
+      commonMistakes: [
+        "Landing stiffly with locked knees.",
+        "Jumping on a slippery or crowded surface.",
+        "Rushing until the landings become uncontrolled.",
+        "Forcing overhead arm movement through shoulder discomfort.",
+      ],
+      safetyNotes: [
+        "Wear supportive shoes and use a clear, non-slip surface.",
+        "Choose low-impact step-outs if jumping is uncomfortable.",
+        "Stop if you experience pain, dizziness, or unusual symptoms.",
+      ],
     },
 
     {
@@ -1435,6 +2651,25 @@ Forearms: [
         "Maintain a pace you can sustain.",
         "Keep your breathing steady.",
         "Finish with a gradual walking cooldown.",
+      ],
+      startingPosition:
+        "Choose a clear, even route and begin with a few minutes of easy walking. Wear secure shoes and start at a comfortable pace.",
+      techniqueTips: [
+        "Use relaxed, short strides and look ahead along the route.",
+        "Keep shoulders loose and arms moving naturally.",
+        "Jog at a pace that allows steady breathing and conversation.",
+        "Cool down with walking rather than stopping abruptly.",
+      ],
+      commonMistakes: [
+        "Starting too fast before warming up.",
+        "Taking long strides that make each landing heavy.",
+        "Looking down or tensing the shoulders.",
+        "Stopping suddenly after a sustained jog.",
+      ],
+      safetyNotes: [
+        "Choose a safe route with good footing and visibility.",
+        "Wear appropriate shoes and be aware of traffic and surroundings.",
+        "Slow to a walk or stop if you feel unwell or unusually short of breath.",
       ],
     },
   ],

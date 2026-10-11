@@ -1,6 +1,8 @@
 "use client";
 
-import { Exercise } from "@/app/types/exercise";
+import { useState } from "react";
+import ExerciseDetails from "@/app/components/ExerciseDetails";
+import type { Exercise } from "@/app/types/exercise";
 
 interface Props {
   exercise: Exercise;
@@ -11,6 +13,8 @@ export default function LibraryExerciseCard({
   exercise,
   onAdd,
 }: Props) {
+  const [showDetails, setShowDetails] = useState(false);
+
   return (
     <div className="rounded-lg border border-slate-200 bg-white p-3 shadow-sm transition hover:border-primary/30 hover:shadow-md">
       {/* Exercise Name */}
@@ -54,13 +58,29 @@ export default function LibraryExerciseCard({
       </div>
 
       {/* Add Exercise */}
-      <button
-        type="button"
-        onClick={() => onAdd(exercise)}
-        className="mt-3 w-full rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-primary/90"
-      >
-        + Add Exercise
-      </button>
+      <div className="mt-3 grid grid-cols-2 gap-2">
+        <button
+          type="button"
+          onClick={() => setShowDetails(true)}
+          className="rounded-md border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
+        >
+          View details
+        </button>
+        <button
+          type="button"
+          onClick={() => onAdd(exercise)}
+          className="rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-primary/90"
+        >
+          + Add Exercise
+        </button>
+      </div>
+      {showDetails && (
+        <ExerciseDetails
+          key={exercise.id}
+          exercise={exercise}
+          onClose={() => setShowDetails(false)}
+        />
+      )}
     </div>
   );
 }

@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import ExerciseDetails from "@/app/components/ExerciseDetails";
 import { exercises } from "@/app/data/exercises";
+import type { Exercise } from "@/app/types/exercise";
 
 interface Props {
   muscle: string;
@@ -20,6 +22,8 @@ export default function ExerciseSelector({
 
   const [selected, setSelected] =
     useState<number[]>(initialSelected);
+  const [exerciseForDetails, setExerciseForDetails] =
+    useState<Exercise | null>(null);
 
   function toggleExercise(id: number) {
     setSelected((current) =>
@@ -72,40 +76,49 @@ export default function ExerciseSelector({
               const isSelected = selected.includes(exercise.id);
 
               return (
-                <button
-                  key={exercise.id}
-                  type="button"
-                  onClick={() => toggleExercise(exercise.id)}
-                  className={`w-full rounded-xl border p-4 text-left transition ${
-                    isSelected
-                      ? "border-primary/30 bg-primary/10"
-                      : "border-slate-200 bg-white hover:bg-slate-50"
-                  }`}
-                >
-                  <div className="flex items-center justify-between gap-4">
-                    <div className="min-w-0">
-                      <p className="font-semibold text-slate-900">
-                        {exercise.name}
-                      </p>
+                <div key={exercise.id} className="flex items-stretch gap-2">
+                  <button
+                    type="button"
+                    onClick={() => toggleExercise(exercise.id)}
+                    className={`min-w-0 flex-1 rounded-xl border p-4 text-left transition ${
+                      isSelected
+                        ? "border-primary/30 bg-primary/10"
+                        : "border-slate-200 bg-white hover:bg-slate-50"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="min-w-0">
+                        <p className="font-semibold text-slate-900">
+                          {exercise.name}
+                        </p>
 
-                      <p className="mt-1 text-sm text-slate-500">
-  {exercise.type === "cardio"
-    ? `${exercise.equipment} • ${exercise.duration ?? 0} min`
-    : `${exercise.equipment} • ${exercise.sets} sets × ${exercise.reps} reps`}
-</p>
+                        <p className="mt-1 text-sm text-slate-500">
+                          {exercise.type === "cardio"
+                            ? `${exercise.equipment} • ${exercise.duration ?? 0} min`
+                            : `${exercise.equipment} • ${exercise.sets} sets × ${exercise.reps} reps`}
+                        </p>
+                      </div>
+
+                      <span
+                        className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-md border text-sm font-bold ${
+                          isSelected
+                            ? "border-primary/30 bg-primary text-white"
+                            : "border-slate-300 bg-white text-transparent"
+                        }`}
+                      >
+                        ✓
+                      </span>
                     </div>
-
-                    <span
-                      className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-md border text-sm font-bold ${
-                        isSelected
-                          ? "border-primary/30 bg-primary text-white"
-                          : "border-slate-300 bg-white text-transparent"
-                      }`}
-                    >
-                      ✓
-                    </span>
-                  </div>
-                </button>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setExerciseForDetails(exercise)}
+                    className="shrink-0 self-center rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
+                    aria-label={`View details for ${exercise.name}`}
+                  >
+                    Details
+                  </button>
+                </div>
               );
             })}
           </div>
@@ -133,6 +146,13 @@ export default function ExerciseSelector({
           </button>
         </div>
       </div>
+      {exerciseForDetails && (
+        <ExerciseDetails
+          key={exerciseForDetails.id}
+          exercise={exerciseForDetails}
+          onClose={() => setExerciseForDetails(null)}
+        />
+      )}
     </div>
   );
 }
