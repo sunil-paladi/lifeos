@@ -2356,7 +2356,7 @@ Forearms: [
       id: 801,
       bodyPart: "Cardio",
       name: "Treadmill Walking",
-      image: "...",
+      image: "/images/treadmill-walking.png",
       primaryMuscle: "Cardio",
       secondaryMuscles: [],
       equipment: "Treadmill",
