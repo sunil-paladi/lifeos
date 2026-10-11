@@ -9,6 +9,7 @@ import {
   calculateWaterAdherence,
   createCalendarDateRange,
   getCalendarDates,
+  getCalendarDateInTimeZone,
   getCurrentCalendarDate,
 } from "@/app/lib/reports";
 
@@ -50,36 +51,32 @@ type StoredWaterData = {
   history: WaterDay[];
 };
 
-type SetData = {
-  weight: string;
-  reps: string;
-  completed: boolean;
-};
-
-type WorkoutSetState = Record<number, Record<number, SetData>>;
-
-type SavedWorkout = {
-  sessionId: string;
-  day: string;
+type ReportWorkout = {
+  id: string;
+  startedAt: string;
   date: string;
-  setData: WorkoutSetState;
-  started: boolean;
-  startedAt: string | null;
-  completed: boolean;
   completedAt: string | null;
-  lastActivityAt: string | null;
-  durationSeconds: number;
+  status: string;
+  durationSeconds: number | null;
+  workoutSessionExercises: {
+    id: string;
+    name: string;
+    workoutSets: {
+      id: string;
+      setNumber: number;
+      weight: number | null;
+      reps: number | null;
+      completed: boolean;
+    }[];
+  }[];
 };
 
 type Meal = {
-  id: number;
-  name: string;
+  id: string;
   calories: number;
   protein: number;
   carbs: number;
   fat: number;
-  mealType: string;
-  time: string;
 };
 
 type NutritionDay = {
@@ -92,6 +89,21 @@ type NutritionTargets = {
   protein: number;
   carbs: number;
   fat: number;
+};
+
+type WeightEntry = {
+  id: string;
+  weight: number;
+  recordedAt: string;
+};
+
+type BodyMeasurement = {
+  id: string;
+  chest: number | null;
+  waist: number | null;
+  arms: number | null;
+  thighs: number | null;
+  recordedAt: string;
 };
 
 type JournalEntry = {
@@ -115,19 +127,9 @@ type Summary = {
 
 const HABIT_STORAGE_KEY = "lifeos-habits";
 const WATER_STORAGE_KEY = "lifeos-water-data";
-const WORKOUT_HISTORY_KEY = "lifeos-workout-history";
-const NUTRITION_HISTORY_KEY = "lifeos-nutrition-history";
-const NUTRITION_TARGETS_KEY = "lifeos-nutrition-targets";
 const JOURNAL_STORAGE_KEY = "lifeos-journal";
 
 const WATER_TARGET = 3000;
-
-const DEFAULT_TARGETS: NutritionTargets = {
-  calories: 2300,
-  protein: 150,
-  carbs: 250,
-  fat: 70,
-};
 
 function getCurrentRange(period: ReportPeriod) {
   const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -199,20 +201,16 @@ function nutritionTotals(meals: Meal[]) {
 
 function nutritionPercentage(
   meals: Meal[],
-  targets: NutritionTargets
+  targets: NutritionTargets | null
 ) {
+  if (!targets) return null;
+
   return calculateNutritionAdherence(meals, targets, true)
     ?.averagePercentage ?? null;
 }
 
 function average(values: (number | null)[]) {
   return averageRecorded(values);
-}
-
-function getWorkoutMinutes(workout: SavedWorkout) {
-  return Math.round(
-    Number(workout.durationSeconds || 0) / 60
-  );
 }
 
 export default function ReportsPage() {
@@ -226,121 +224,150 @@ export default function ReportsPage() {
     useState<WaterDay[]>([]);
 
   const [workoutHistory, setWorkoutHistory] =
-    useState<SavedWorkout[]>([]);
+    useState<ReportWorkout[]>([]);
 
   const [nutritionHistory, setNutritionHistory] =
     useState<NutritionDay[]>([]);
 
   const [nutritionTargets, setNutritionTargets] =
-    useState<NutritionTargets>(DEFAULT_TARGETS);
+    useState<NutritionTargets | null>(null);
 
+  const [weightEntries, setWeightEntries] =
+    useState<WeightEntry[]>([]);
+
+  const [bodyMeasurements, setBodyMeasurements] =
+    useState<BodyMeasurement[]>([]);
+
+  const [reportError, setReportError] =
+    useState<string | null>(null);
   const [journalEntries, setJournalEntries] =
     useState<JournalEntry[]>([]);
 
-  const [loaded, setLoaded] =
-    useState(false);
+  const [loadedPeriod, setLoadedPeriod] =
+    useState<ReportPeriod | null>(null);
 
   useEffect(() => {
-    try {
-      const habits = localStorage.getItem(
-        HABIT_STORAGE_KEY
-      );
+    let active = true;
 
-      if (habits) {
-        const parsed: StoredHabitData =
-          JSON.parse(habits);
-
-        if (Array.isArray(parsed.history)) {
-          setHabitHistory(parsed.history);
+    queueMicrotask(() => {
+      if (!active) return;
+      try {
+        const habits = localStorage.getItem(HABIT_STORAGE_KEY);
+        if (habits) {
+          const parsed: StoredHabitData = JSON.parse(habits);
+          if (Array.isArray(parsed.history)) setHabitHistory(parsed.history);
         }
-      }
 
-      const water = localStorage.getItem(
-        WATER_STORAGE_KEY
-      );
-
-      if (water) {
-        const parsed: StoredWaterData =
-          JSON.parse(water);
-
-        if (Array.isArray(parsed.history)) {
-          setWaterHistory(parsed.history);
+        const water = localStorage.getItem(WATER_STORAGE_KEY);
+        if (water) {
+          const parsed: StoredWaterData = JSON.parse(water);
+          if (Array.isArray(parsed.history)) setWaterHistory(parsed.history);
         }
-      }
 
-      const workouts = localStorage.getItem(
-        WORKOUT_HISTORY_KEY
-      );
-
-      if (workouts) {
-        const parsed = JSON.parse(workouts);
-
-        if (Array.isArray(parsed)) {
-          setWorkoutHistory(parsed);
+        const journal = localStorage.getItem(JOURNAL_STORAGE_KEY);
+        if (journal) {
+          const parsed = JSON.parse(journal);
+          if (Array.isArray(parsed)) setJournalEntries(parsed);
         }
+      } catch (error) {
+        console.error("Failed to load browser-only report data:", error);
       }
+    });
 
-      const nutrition = localStorage.getItem(
-        NUTRITION_HISTORY_KEY
-      );
+    const range = getCurrentRange(period);
+    const params = new URLSearchParams({
+      from: range.from,
+      to: range.to,
+      timezone: range.timezone,
+    });
 
-      if (nutrition) {
-        const parsed = JSON.parse(nutrition);
-
-        if (Array.isArray(parsed)) {
-          setNutritionHistory(parsed);
+    fetch(`/api/reports/member?${params.toString()}`)
+      .then(async (response) => {
+        const body = await response.text();
+        const contentType = response.headers.get("content-type") ?? "";
+        if (!contentType.toLowerCase().includes("application/json")) {
+          throw new Error(
+            response.ok
+              ? "The report service returned a non-JSON response."
+              : `The report request failed with HTTP ${response.status} and a non-JSON response.`,
+          );
         }
-      }
 
-      const targets = localStorage.getItem(
-        NUTRITION_TARGETS_KEY
-      );
-
-      if (targets) {
-        const parsed = JSON.parse(targets);
-
-        if (
-          parsed &&
-          Object.values(parsed).every(
-            (value) =>
-              Number.isFinite(Number(value)) &&
-              Number(value) > 0
-          )
-        ) {
-          setNutritionTargets({
-            calories: Number(parsed.calories),
-            protein: Number(parsed.protein),
-            carbs: Number(parsed.carbs),
-            fat: Number(parsed.fat),
-          });
+        let data: unknown;
+        try {
+          data = JSON.parse(body);
+        } catch {
+          throw new Error(
+            `The report service returned invalid JSON (HTTP ${response.status}).`,
+          );
         }
-      }
 
-      /*
-       * Journal history is optional at this stage.
-       * If the Journal component stores an array under
-       * lifeos-journal, Reports will use it automatically.
-       */
-      const journal = localStorage.getItem(
-        JOURNAL_STORAGE_KEY
-      );
-
-      if (journal) {
-        const parsed = JSON.parse(journal);
-
-        if (Array.isArray(parsed)) {
-          setJournalEntries(parsed);
+        if (!response.ok) {
+          const errorMessage =
+            data !== null &&
+            typeof data === "object" &&
+            "error" in data &&
+            typeof data.error === "string"
+              ? data.error
+              : "Unable to load your personal report";
+          throw new Error(
+            `${errorMessage} (HTTP ${response.status})`,
+          );
         }
-      }
-    } catch (error) {
-      console.error(
-        "Failed to load report data:",
-        error
-      );
-    } finally {
-      setLoaded(true);
-    }
-  }, []);
+        if (data === null || typeof data !== "object") {
+          throw new Error("The report service returned an invalid response.");
+        }
+        return data as {
+          range: { timezone: string };
+          workouts: Omit<ReportWorkout, "date">[];
+          nutritionDays: { date: string; meals: Meal[] }[];
+          nutritionTarget: NutritionTargets | null;
+          weightEntries: WeightEntry[];
+          bodyMeasurements: BodyMeasurement[];
+        };
+      })
+      .then((data) => {
+        if (!active) return;
+        setReportError(null);
+        const timezone = data.range.timezone;
+        setWorkoutHistory(
+          data.workouts.map((workout: Omit<ReportWorkout, "date">) => ({
+            ...workout,
+            date: getCalendarDateInTimeZone(
+              new Date(workout.startedAt),
+              timezone,
+            ),
+          })),
+        );
+        setNutritionHistory(
+          data.nutritionDays.map(
+            (day: { date: string; meals: Meal[] }) => ({
+              ...day,
+              date: getCalendarDateInTimeZone(new Date(day.date), timezone),
+            }),
+          ),
+        );
+        setNutritionTargets(data.nutritionTarget);
+        setWeightEntries(data.weightEntries);
+        setBodyMeasurements(data.bodyMeasurements);
+      })
+      .catch((error: unknown) => {
+        if (!active) return;
+        console.error("Failed to load persisted report data:", error);
+        setReportError(
+          error instanceof Error
+            ? error.message
+            : "Unable to load your personal report",
+        );
+      })
+      .finally(() => {
+        if (active) setLoadedPeriod(period);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [period]);
 
   const dates = useMemo(
     () => getDatesForPeriod(period),
@@ -364,7 +391,7 @@ export default function ReportsPage() {
     const workouts = workoutHistory.filter(
       (item) =>
         dateSet.has(item.date) &&
-        item.completed
+        item.status === "COMPLETED"
     );
 
     const nutrition = nutritionHistory.filter(
@@ -387,10 +414,11 @@ export default function ReportsPage() {
         )
     );
 
-    const minutes = workouts.reduce(
-      (sum, workout) =>
-        sum + getWorkoutMinutes(workout),
-      0
+    const minutes = Math.round(
+      workouts.reduce(
+        (sum, workout) => sum + (workout.durationSeconds ?? 0),
+        0,
+      ) / 60,
     );
 
     const journals = journalEntries.filter(
@@ -419,45 +447,20 @@ export default function ReportsPage() {
   ]);
 
   const overallScore = useMemo(() => {
-    const values = [
-      summary.habitAverage,
-      summary.waterAverage,
-      summary.nutritionAverage,
-    ].filter(
-      (value): value is number =>
-        value !== null
-    );
-
-    if (!values.length) return 0;
-
-    /*
-     * Workout consistency is based on the number
-     * of completed workout days in the period.
-     * This avoids treating a non-training day as failure.
-     */
     const workoutDays = new Set(
       workoutHistory
         .filter(
           (workout) =>
             dateSet.has(workout.date) &&
-            workout.completed
+            workout.status === "COMPLETED"
         )
         .map((workout) => workout.date)
     );
 
-    const workoutScore = Math.round(
-      (workoutDays.size / Math.max(dates.length, 1)) * 100
-    );
-
-    return Math.round(
-      [
-        ...values,
-        Math.min(workoutScore, 100),
-      ].reduce((sum, value) => sum + value, 0) /
-        (values.length + 1)
-    );
+    return dates.length
+      ? Math.round((workoutDays.size / dates.length) * 100)
+      : null;
   }, [
-    summary,
     workoutHistory,
     dateSet,
     dates.length,
@@ -470,10 +473,10 @@ export default function ReportsPage() {
 
     if (!days.length) {
       return {
-        calories: 0,
-        protein: 0,
-        carbs: 0,
-        fat: 0,
+        calories: null,
+        protein: null,
+        carbs: null,
+        fat: null,
       };
     }
 
@@ -518,6 +521,29 @@ export default function ReportsPage() {
     };
   }, [nutritionHistory, dateSet]);
 
+  const workoutMetrics = useMemo(() => {
+    const sets = workoutHistory
+      .filter((workout) => workout.status === "COMPLETED")
+      .flatMap((workout) =>
+        workout.workoutSessionExercises.flatMap((exercise) => exercise.workoutSets),
+      );
+
+    return {
+      completedSets: sets.filter((set) => set.completed).length,
+      weightedVolume: sets.reduce(
+        (total, set) =>
+          set.completed && set.weight != null && set.reps != null
+            ? total + set.weight * set.reps
+            : total,
+        0,
+      ),
+    };
+  }, [workoutHistory]);
+
+  const latestWeight = weightEntries.at(-1) ?? null;
+  const firstWeight = weightEntries[0] ?? null;
+  const latestMeasurement = bodyMeasurements.at(-1) ?? null;
+
   function handleGeneratePDF() {
     window.print();
   }
@@ -532,7 +558,7 @@ export default function ReportsPage() {
       ? "A snapshot of your last 7 days."
       : "A snapshot of your progress this month.";
 
-  if (!loaded) {
+  if (loadedPeriod !== period) {
     return (
       <main className="space-y-6">
         <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -580,6 +606,14 @@ export default function ReportsPage() {
       `}</style>
 
       <main className="space-y-6">
+      {reportError && (
+        <div
+          role="alert"
+          className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700"
+        >
+          Report data could not be loaded: {reportError}
+        </div>
+      )}
 
       {/* HEADER */}
       <div>
@@ -656,20 +690,20 @@ export default function ReportsPage() {
             </p>
 
             <h2 className="mt-1 text-4xl font-bold text-slate-900">
-              {overallScore}%
+              {overallScore === null ? "—" : `${overallScore}%`}
             </h2>
 
             <p className="mt-2 max-w-xl text-sm leading-relaxed text-slate-500">
-              This score combines your recorded habits,
-              hydration, nutrition, and completed workout
-              activity for the selected period.
+              Completed workout days divided by calendar days
+              in the selected period. Habit and hydration data
+              are stored in this browser and are not included.
             </p>
           </div>
 
           <div className="flex h-28 w-28 items-center justify-center rounded-full bg-primary/10">
             <div className="text-center">
               <p className="text-3xl font-bold text-primary">
-                {overallScore}
+                {overallScore ?? "—"}
               </p>
               <p className="text-xs font-semibold text-primary">
                 / 100
@@ -682,7 +716,7 @@ export default function ReportsPage() {
           <div
             className="h-full rounded-full bg-primary transition-all duration-500"
             style={{
-              width: `${overallScore}%`,
+              width: `${overallScore ?? 0}%`,
             }}
           />
         </div>
@@ -709,7 +743,7 @@ export default function ReportsPage() {
               : `${summary.habitAverage}%`}
           </p>
           <p className="text-xs text-slate-500">
-            Habit consistency
+            Habit consistency · browser-only
           </p>
         </div>
 
@@ -721,7 +755,7 @@ export default function ReportsPage() {
               : `${summary.waterAverage}%`}
           </p>
           <p className="text-xs text-slate-500">
-            Water goal average
+            Water goal average · browser-only
           </p>
         </div>
 
@@ -743,7 +777,7 @@ export default function ReportsPage() {
             {summary.journalEntries}
           </p>
           <p className="text-xs text-slate-500">
-            Journal entries
+            Journal entries · browser-only
           </p>
         </div>
       </section>
@@ -756,7 +790,7 @@ export default function ReportsPage() {
               💪 Workout Summary
             </h2>
             <p className="mt-1 text-sm text-slate-500">
-              Your completed training during this period.
+              Completed sessions from your account during this period.
             </p>
           </div>
 
@@ -789,6 +823,56 @@ export default function ReportsPage() {
             </p>
           </div>
         </div>
+
+        <div className="mt-4 grid grid-cols-2 gap-3">
+          <div className="rounded-xl bg-slate-50 p-4">
+            <p className="text-xs text-slate-500">Completed sets</p>
+            <p className="mt-1 text-2xl font-bold text-slate-900">
+              {workoutMetrics.completedSets}
+            </p>
+          </div>
+          <div className="rounded-xl bg-slate-50 p-4">
+            <p className="text-xs text-slate-500">Recorded volume</p>
+            <p className="mt-1 text-2xl font-bold text-slate-900">
+              {workoutMetrics.weightedVolume}
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-5 border-t border-slate-100 pt-4">
+          <h3 className="text-sm font-semibold text-slate-800">Workout history</h3>
+          {workoutHistory.length === 0 ? (
+            <p className="mt-2 text-sm text-slate-500">
+              No workout sessions recorded in this period.
+            </p>
+          ) : (
+            <ul className="mt-2 divide-y divide-slate-100">
+              {workoutHistory.map((workout) => (
+                <li key={workout.id} className="py-3">
+                  <div className="flex flex-wrap justify-between gap-2 text-sm">
+                    <span className="font-medium text-slate-800">
+                      {workout.date}
+                      {" · "}
+                      {workout.workoutSessionExercises
+                        .map((exercise) => exercise.name)
+                        .join(", ") || "No exercises recorded"}
+                    </span>
+                    <span className="text-slate-500">
+                      {workout.status === "COMPLETED"
+                        ? "Completed"
+                        : workout.status === "IN_PROGRESS"
+                          ? "In progress"
+                          : "Abandoned"}
+                      {workout.durationSeconds != null
+                        ? ` · ${Math.round(workout.durationSeconds / 60)} min`
+                        : ""}
+                    </span>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </section>
 
       {/* NUTRITION */}
@@ -799,8 +883,7 @@ export default function ReportsPage() {
           </h2>
 
           <p className="mt-1 text-sm text-slate-500">
-            Average daily intake compared with your personal
-            nutrition targets.
+            Persisted meals compared with your recorded nutrition targets.
           </p>
         </div>
 
@@ -811,10 +894,14 @@ export default function ReportsPage() {
               🔥 Calories
             </p>
             <p className="mt-1 text-xl font-bold text-slate-900">
-              {nutritionDetails.calories} kcal
+              {nutritionDetails.calories === null
+                ? "—"
+                : `${nutritionDetails.calories} kcal`}
             </p>
             <p className="mt-1 text-xs text-slate-500">
-              Target {nutritionTargets.calories} kcal
+              {nutritionTargets
+                ? `Target ${nutritionTargets.calories} kcal`
+                : "No target recorded"}
             </p>
           </div>
 
@@ -823,10 +910,14 @@ export default function ReportsPage() {
               💪 Protein
             </p>
             <p className="mt-1 text-xl font-bold text-slate-900">
-              {nutritionDetails.protein} g
+              {nutritionDetails.protein === null
+                ? "—"
+                : `${nutritionDetails.protein} g`}
             </p>
             <p className="mt-1 text-xs text-slate-500">
-              Target {nutritionTargets.protein} g
+              {nutritionTargets
+                ? `Target ${nutritionTargets.protein} g`
+                : "No target recorded"}
             </p>
           </div>
 
@@ -835,10 +926,14 @@ export default function ReportsPage() {
               🌾 Carbs
             </p>
             <p className="mt-1 text-xl font-bold text-slate-900">
-              {nutritionDetails.carbs} g
+              {nutritionDetails.carbs === null
+                ? "—"
+                : `${nutritionDetails.carbs} g`}
             </p>
             <p className="mt-1 text-xs text-slate-500">
-              Target {nutritionTargets.carbs} g
+              {nutritionTargets
+                ? `Target ${nutritionTargets.carbs} g`
+                : "No target recorded"}
             </p>
           </div>
 
@@ -847,11 +942,74 @@ export default function ReportsPage() {
               🥑 Fat
             </p>
             <p className="mt-1 text-xl font-bold text-slate-900">
-              {nutritionDetails.fat} g
+              {nutritionDetails.fat === null
+                ? "—"
+                : `${nutritionDetails.fat} g`}
             </p>
             <p className="mt-1 text-xs text-slate-500">
-              Target {nutritionTargets.fat} g
+              {nutritionTargets
+                ? `Target ${nutritionTargets.fat} g`
+                : "No target recorded"}
             </p>
+          </div>
+        </div>
+      </section>
+
+      {/* FITNESS PROGRESS */}
+      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div>
+          <h2 className="text-lg font-bold text-slate-900">📈 Fitness Progress</h2>
+          <p className="mt-1 text-sm text-slate-500">
+            Weight and body measurements recorded in your account during this period.
+          </p>
+        </div>
+
+        <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="rounded-xl bg-slate-50 p-4">
+            <p className="text-xs text-slate-500">Body weight · account units</p>
+            {latestWeight ? (
+              <>
+                <p className="mt-1 text-2xl font-bold text-slate-900">
+                  {latestWeight.weight}
+                </p>
+                <p className="mt-1 text-xs text-slate-500">
+                  {firstWeight && firstWeight.id !== latestWeight.id
+                    ? `Change in period: ${(latestWeight.weight - firstWeight.weight).toFixed(1)}`
+                    : "Only one weight entry recorded in this period"}
+                </p>
+              </>
+            ) : (
+              <p className="mt-1 text-sm text-slate-500">
+                No weight entries recorded in this period.
+              </p>
+            )}
+          </div>
+
+          <div className="rounded-xl bg-slate-50 p-4">
+            <p className="text-xs text-slate-500">Latest measurements · account units</p>
+            {latestMeasurement ? (
+              <dl className="mt-2 grid grid-cols-2 gap-2 text-sm">
+                {(
+                  [
+                    ["Chest", latestMeasurement.chest],
+                    ["Waist", latestMeasurement.waist],
+                    ["Arms", latestMeasurement.arms],
+                    ["Thighs", latestMeasurement.thighs],
+                  ] as const
+                ).map(([label, value]) => (
+                  <div key={label}>
+                    <dt className="text-xs text-slate-500">{label}</dt>
+                    <dd className="font-semibold text-slate-800">
+                      {value == null ? "—" : value}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            ) : (
+              <p className="mt-1 text-sm text-slate-500">
+                No measurements recorded in this period.
+              </p>
+            )}
           </div>
         </div>
       </section>
@@ -865,7 +1023,7 @@ export default function ReportsPage() {
           </h2>
 
           <p className="mt-1 text-sm text-slate-500">
-            Average completion across recorded habit days.
+            Average completion across recorded habit days · browser-only data.
           </p>
 
           <div className="mt-5">
@@ -897,7 +1055,7 @@ export default function ReportsPage() {
           </h2>
 
           <p className="mt-1 text-sm text-slate-500">
-            Average progress toward your 3 L daily goal.
+            Average progress toward your 3 L daily goal · browser-only data.
           </p>
 
           <div className="mt-5">
@@ -927,11 +1085,11 @@ export default function ReportsPage() {
       {/* REPORT NOTE */}
       <section className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
         <p className="text-sm leading-relaxed text-slate-600">
-          This is the first version of your LifeOS report.
-          It uses the real data already stored by your
-          Workout, Habits, Water, Nutrition, and Journal
-          sections. PDF export and a more detailed
-          day-by-day report can be added next.
+          Workouts, nutrition, body weight, and measurements are loaded from your
+          authenticated account records. Habits, hydration, and journal entries
+          are still read from this browser&apos;s localStorage and are not synced
+          between devices. Missing account data is shown as unavailable rather
+          than estimated.
         </p>
       </section>
     </main>
