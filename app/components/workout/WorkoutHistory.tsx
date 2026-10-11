@@ -12,6 +12,10 @@ import {
 } from "lucide-react";
 
 import { exercises } from "@/app/data/exercises";
+import {
+  WORKOUT_HISTORY_KEY,
+  WORKOUT_HISTORY_UPDATED_EVENT,
+} from "@/app/lib/workout-progress";
 
 interface SetData {
   weight: string;
@@ -22,7 +26,7 @@ interface SetData {
 interface SavedWorkout {
   sessionId: string;
   day: string;
-  date: string;
+  date?: string | null;
   setData: Record<number, Record<number, SetData>>;
   started: boolean;
   startedAt: string | null;
@@ -32,7 +36,83 @@ interface SavedWorkout {
   durationSeconds: number;
 }
 
-const WORKOUT_HISTORY_KEY = "lifeos-workout-history";
+function isRecord(
+  value: unknown
+): value is Record<string, unknown> {
+  return (
+    value !== null &&
+    typeof value === "object" &&
+    !Array.isArray(value)
+  );
+}
+
+function isSavedWorkout(value: unknown): value is SavedWorkout {
+  if (!isRecord(value)) {
+    return false;
+  }
+
+  const setData = value.setData;
+  return (
+    typeof value.sessionId === "string" &&
+    typeof value.day === "string" &&
+    (typeof value.date === "string" ||
+      value.date == null) &&
+    isRecord(setData) &&
+    Object.values(setData).every(
+      (exerciseSets) =>
+        isRecord(exerciseSets) &&
+        Object.values(exerciseSets).every(
+          (set) =>
+            isRecord(set) &&
+            typeof set.weight === "string" &&
+            typeof set.reps === "string" &&
+            typeof set.completed === "boolean"
+        )
+    ) &&
+    typeof value.started === "boolean" &&
+    (typeof value.startedAt === "string" ||
+      value.startedAt === null) &&
+    typeof value.completed === "boolean" &&
+    (typeof value.completedAt === "string" ||
+      value.completedAt === null) &&
+    (typeof value.lastActivityAt === "string" ||
+      value.lastActivityAt === null) &&
+    typeof value.durationSeconds === "number" &&
+    Number.isFinite(value.durationSeconds)
+  );
+}
+
+function getWorkoutWeekday(workout: SavedWorkout) {
+  const match =
+    typeof workout.date === "string"
+      ? /^(\d{4})-(\d{2})-(\d{2})$/.exec(workout.date)
+      : null;
+
+  if (!match) {
+    return workout.day;
+  }
+
+  const [, year, month, day] = match;
+  const localDate = new Date(0);
+  localDate.setFullYear(
+    Number(year),
+    Number(month) - 1,
+    Number(day)
+  );
+  localDate.setHours(0, 0, 0, 0);
+
+  if (
+    localDate.getFullYear() !== Number(year) ||
+    localDate.getMonth() !== Number(month) - 1 ||
+    localDate.getDate() !== Number(day)
+  ) {
+    return workout.day;
+  }
+
+  return localDate.toLocaleDateString(undefined, {
+    weekday: "long",
+  });
+}
 
 export default function WorkoutHistory() {
   const [history, setHistory] = useState<SavedWorkout[]>([]);
@@ -45,38 +125,52 @@ export default function WorkoutHistory() {
   ======================================== */
 
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem(
-        WORKOUT_HISTORY_KEY
-      );
+    function loadHistory() {
+      try {
+        const saved = localStorage.getItem(
+          WORKOUT_HISTORY_KEY
+        );
+        const parsed: unknown = saved
+          ? JSON.parse(saved)
+          : [];
+        const validHistory = Array.isArray(parsed)
+          ? parsed.filter(isSavedWorkout)
+          : [];
+        const sorted = validHistory.sort((a, b) => {
+          const dateA = new Date(
+            a.completedAt || a.date || ""
+          ).getTime();
+          const dateB = new Date(
+            b.completedAt || b.date || ""
+          ).getTime();
 
-      if (saved) {
-        const parsed = JSON.parse(saved);
+          return dateB - dateA;
+        });
 
-        if (Array.isArray(parsed)) {
-          const sorted = [...parsed].sort((a, b) => {
-            const dateA = new Date(
-              a.completedAt || a.date
-            ).getTime();
-
-            const dateB = new Date(
-              b.completedAt || b.date
-            ).getTime();
-
-            return dateB - dateA;
-          });
-
-          setHistory(sorted);
-        }
+        setHistory(sorted);
+      } catch (error) {
+        console.error(
+          "❌ Failed to load workout history:",
+          error
+        );
+        setHistory([]);
+      } finally {
+        setLoaded(true);
       }
-    } catch (error) {
-      console.error(
-        "❌ Failed to load workout history:",
-        error
-      );
-    } finally {
-      setLoaded(true);
     }
+
+    loadHistory();
+    window.addEventListener(
+      WORKOUT_HISTORY_UPDATED_EVENT,
+      loadHistory
+    );
+
+    return () => {
+      window.removeEventListener(
+        WORKOUT_HISTORY_UPDATED_EVENT,
+        loadHistory
+      );
+    };
   }, []);
 
   /* ========================================
@@ -101,7 +195,11 @@ export default function WorkoutHistory() {
      FORMAT DATE
   ======================================== */
 
-  function formatDate(date: string) {
+  function formatDate(date: string | null | undefined) {
+    if (!date) {
+      return "";
+    }
+
     try {
       return new Date(date).toLocaleDateString(
         undefined,
@@ -276,7 +374,7 @@ export default function WorkoutHistory() {
 
             const sessionId =
               workout.sessionId ||
-              `${workout.date}-${index}`;
+              `${workout.date || ""}-${index}`;
 
             const isExpanded =
               expandedWorkout === sessionId;
@@ -301,7 +399,7 @@ export default function WorkoutHistory() {
                     <div className="min-w-0">
 
                       <h3 className="truncate text-sm font-bold text-slate-900">
-                        {workout.day} Workout
+                        {getWorkoutWeekday(workout)} Workout
                       </h3>
 
                       <div className="mt-1 flex flex-wrap items-center gap-3 text-[11px] font-medium text-slate-600">

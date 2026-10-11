@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Check,
   ChevronDown,
@@ -30,16 +30,76 @@ const durationOptions = [
   32,
 ];
 
+function getWeekContainingToday(
+  programStartDate: string | null,
+  durationWeeks: number,
+) {
+  const startDate = programStartDate?.slice(0, 10);
+  const match = startDate?.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+
+  if (!match) {
+    return 0;
+  }
+
+  const [, year, month, day] = match;
+  const startDay = Date.UTC(
+    Number(year),
+    Number(month) - 1,
+    Number(day),
+  );
+  const parsedStart = new Date(startDay);
+
+  if (
+    parsedStart.getUTCFullYear() !== Number(year) ||
+    parsedStart.getUTCMonth() !== Number(month) - 1 ||
+    parsedStart.getUTCDate() !== Number(day)
+  ) {
+    return 0;
+  }
+
+  const now = new Date();
+  const today = Date.UTC(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate(),
+  );
+  const elapsedDays = Math.floor(
+    (today - startDay) / (24 * 60 * 60 * 1000),
+  );
+  const weekIndex = Math.floor(elapsedDays / 7);
+
+  return Math.min(
+    Math.max(weekIndex, 0),
+    durationWeeks - 1,
+  );
+}
+
 export default function ProgramBuilder() {
   const [durationWeeks, setDurationWeeks] = useState(12);
   const [selectedWeek, setSelectedWeek] = useState(0);
+  const initialWeekSelected = useRef(false);
   const [showDurationMenu, setShowDurationMenu] =
     useState(false);
   const [showExerciseLibrary, setShowExerciseLibrary] =
     useState(false);
 
-  const { saveStatus, programStartDate, getWorkoutForWeek } =
-    useProgram();
+  const {
+    saveStatus,
+    programStartDate,
+    programLoaded,
+    getWorkoutForWeek,
+  } = useProgram();
+
+  useEffect(() => {
+    if (!programLoaded || initialWeekSelected.current) {
+      return;
+    }
+
+    setSelectedWeek(
+      getWeekContainingToday(programStartDate, durationWeeks),
+    );
+    initialWeekSelected.current = true;
+  }, [durationWeeks, programLoaded, programStartDate]);
 
   const currentWeekNumber = selectedWeek + 1;
   const weekRange = getWorkoutWeekRange(

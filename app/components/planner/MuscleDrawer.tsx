@@ -9,10 +9,11 @@ import {
 } from "lucide-react";
 
 import { useProgram } from "@/app/context/ProgramContext";
+import type { DayName } from "@/app/context/ProgramContext";
 import { exercises } from "@/app/data/exercises";
 
 interface Props {
-  day: string;
+  day: DayName;
   weekIndex: number;
   onClose: () => void;
 }
@@ -49,10 +50,7 @@ export default function MuscleDrawer({
   const workout =
     getWorkoutForWeek(weekIndex);
 
-  const existing =
-    workout[
-      day as keyof typeof workout
-    ] || [];
+  const existing = workout[day] || [];
 
   const [selectedMuscle, setSelectedMuscle] =
     useState<string | null>(null);

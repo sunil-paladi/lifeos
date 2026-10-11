@@ -69,21 +69,38 @@ const WORKOUT_STORAGE_KEY =
  * finalize the workout.
  */
 const AUTO_FINALIZE_HOURS = 6;
+const weekdays = [
+  "Sunday",
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+] as const;
+
+function getLocalCalendarDate(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
 
 export default function TodaysWorkout() {
   const { workout } = useProgram();
+  const [today, setToday] =
+    useState<(typeof weekdays)[number] | null>(null);
 
-  /*
-   * Temporary testing day.
-   *
-   * We will replace this with automatic
-   * current-day detection later.
-   */
-  const today =
-    "Monday" as keyof typeof workout;
+  useEffect(() => {
+    const timeout = window.setTimeout(() => {
+      setToday(weekdays[new Date().getDay()]);
+    }, 0);
 
-  const todaysMuscles =
-    workout[today] || [];
+    return () => window.clearTimeout(timeout);
+  }, []);
+
+  const todaysMuscles = today ? workout[today] || [] : [];
 
   /*
    * Convert ProgramContext exercises
@@ -378,7 +395,7 @@ export default function TodaysWorkout() {
    */
 
   useEffect(() => {
-    if (!workoutLoaded) {
+    if (!workoutLoaded || !today) {
       return;
     }
 
@@ -397,9 +414,7 @@ export default function TodaysWorkout() {
               `${today}-${Date.now()}`,
             day: today,
 
-            date: new Date()
-              .toISOString()
-              .split("T")[0],
+            date: getLocalCalendarDate(new Date()),
 
             setData,
 
@@ -459,7 +474,7 @@ export default function TodaysWorkout() {
    */
 
   function startWorkout() {
-    if (completed) {
+    if (completed || !today) {
       return;
     }
 
@@ -618,11 +633,11 @@ export default function TodaysWorkout() {
     );
 
   const completedSetCount =
-    Object.values(setData).reduce(
-      (exerciseTotal, exerciseSets) =>
+    todaysExercises.reduce(
+      (exerciseTotal, exercise) =>
         exerciseTotal +
         Object.values(
-          exerciseSets
+          setData[exercise.id] || {}
         ).filter(
           (set) =>
             set.completed
@@ -683,7 +698,10 @@ export default function TodaysWorkout() {
     if (
       !started ||
       completed ||
-      !sessionId
+      !sessionId ||
+      !today ||
+      totalExercises === 0 ||
+      completedSetCount === 0
     ) {
       return;
     }
@@ -712,9 +730,7 @@ export default function TodaysWorkout() {
       {
         sessionId,
         day: today,
-        date: new Date()
-          .toISOString()
-          .split("T")[0],
+        date: getLocalCalendarDate(new Date()),
         setData,
         started: true,
         startedAt,
@@ -785,6 +801,7 @@ export default function TodaysWorkout() {
   useEffect(() => {
     if (
       !workoutLoaded ||
+      !today ||
       !started ||
       completed ||
       !lastActivityAt
@@ -839,6 +856,7 @@ export default function TodaysWorkout() {
     };
   }, [
     workoutLoaded,
+    today,
     started,
     completed,
     lastActivityAt,
@@ -1212,13 +1230,14 @@ export default function TodaysWorkout() {
         <button
           type="button"
           onClick={finishWorkout}
-          className="w-full rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-white transition hover:bg-primary/90"
+          disabled={completedSetCount === 0}
+          className="w-full rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
         >
           ✓ Finish & Update Workout
         </button>
 
         <p className="mt-1.5 text-center text-[11px] text-slate-500">
-          You can finish the workout even if some exercises are incomplete.
+          Complete at least one set to finish; remaining exercises can stay incomplete.
         </p>
       </div>
     )}

@@ -5,6 +5,7 @@ import {
   ReactNode,
   useContext,
   useEffect,
+  useRef,
   useState,
 } from "react";
 
@@ -115,6 +116,8 @@ interface ProgramContextType {
 
   programStartDate: string | null;
 
+  programLoaded: boolean;
+
   saveStatus: SaveStatus;
 
   getWorkoutForWeek: (
@@ -200,6 +203,9 @@ export function ProgramProvider({
 
   const [saveStatus, setSaveStatus] =
     useState<SaveStatus>("loading");
+
+  const databaseWritesInFlight = useRef(0);
+  const databaseWriteFailed = useRef(false);
 
   /* =======================================================
      LOAD PROGRAM
@@ -474,61 +480,61 @@ export function ProgramProvider({
           }
         }
 
+        const saved = localStorage.getItem(STORAGE_KEY);
+        let localWeeks: DayWorkout[] = [];
+
+        if (saved) {
+          const parsed = JSON.parse(saved);
+
+          if (parsed && Array.isArray(parsed.weeks)) {
+            localWeeks = parsed.weeks.map((week: DayWorkout) => ({
+              Monday: week?.Monday || [],
+              Tuesday: week?.Tuesday || [],
+              Wednesday: week?.Wednesday || [],
+              Thursday: week?.Thursday || [],
+              Friday: week?.Friday || [],
+              Saturday: week?.Saturday || [],
+              Sunday: week?.Sunday || [],
+            }));
+          }
+        }
+
         if (hasDbExercises) {
+          for (const [weekIndex, dbWeek] of dbWeeks.entries()) {
+            const localWeek = localWeeks[weekIndex];
+
+            if (!localWeek) {
+              continue;
+            }
+
+            for (const dayName of [
+              "Monday",
+              "Tuesday",
+              "Wednesday",
+              "Thursday",
+              "Friday",
+              "Saturday",
+              "Sunday",
+            ] as const) {
+              if (!newDbDayMap[dayMapKey(weekIndex, dayName)]) {
+                dbWeek[dayName] = localWeek[dayName];
+              }
+            }
+          }
+
           setWeeks(dbWeeks);
 
           console.log(
             "✅ Workout program loaded from database"
           );
-        } else {
+        } else if (localWeeks.length > 0) {
           /* ---------------------------------------------
              LOCAL STORAGE FALLBACK
           --------------------------------------------- */
 
-          const saved =
-            localStorage.getItem(
-              STORAGE_KEY
-            );
-
-          if (saved) {
-            const parsed =
-              JSON.parse(saved);
-
-            if (
-              parsed &&
-              Array.isArray(
-                parsed.weeks
-              )
-            ) {
-              const loadedWeeks =
-                parsed.weeks.map(
-                  (week: DayWorkout) => ({
-                    Monday:
-                      week?.Monday || [],
-                    Tuesday:
-                      week?.Tuesday || [],
-                    Wednesday:
-                      week?.Wednesday || [],
-                    Thursday:
-                      week?.Thursday || [],
-                    Friday:
-                      week?.Friday || [],
-                    Saturday:
-                      week?.Saturday || [],
-                    Sunday:
-                      week?.Sunday || [],
-                  })
-                );
-
-              if (
-                loadedWeeks.length > 0
-              ) {
-                setWeeks(
-                  loadedWeeks
-                );
-              }
-            }
-          }
+          setWeeks(localWeeks);
+        } else {
+          setWeeks(dbWeeks);
         }
 
         setSaveStatus(
@@ -550,6 +556,34 @@ export function ProgramProvider({
 
     loadProgram();
   }, []);
+
+  async function persistDatabaseWrite(
+    action: string,
+    request: () => Promise<Response>,
+  ) {
+    databaseWritesInFlight.current += 1;
+    setSaveStatus("saving");
+
+    try {
+      const response = await request();
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(
+          errorText || `Request failed with status ${response.status}`,
+        );
+      }
+    } catch (error) {
+      databaseWriteFailed.current = true;
+      console.error(`Failed to ${action}:`, error);
+    } finally {
+      databaseWritesInFlight.current -= 1;
+
+      if (databaseWritesInFlight.current === 0) {
+        setSaveStatus(databaseWriteFailed.current ? "error" : "saved");
+      }
+    }
+  }
 
   /* =======================================================
      SAVE EXERCISE TO DATABASE
@@ -586,8 +620,9 @@ export function ProgramProvider({
       return;
     }
 
-    const response =
-      await fetch(
+    await persistDatabaseWrite(
+      "save exercise to database",
+      () => fetch(
         `/api/training-plans/${trainingPlanId}/phases/${dbDay.phaseId}/weeks/${dbDay.weekId}/days/${dbDay.dayId}/exercises`,
         {
           method: "POST",
@@ -606,23 +641,7 @@ export function ProgramProvider({
               exercise.rest ?? 60,
           }),
         }
-      );
-
-    if (!response.ok) {
-      const errorText =
-        await response.text();
-
-      console.error(
-        "Failed to save exercise:",
-        errorText
-      );
-
-      return;
-    }
-
-    console.log(
-      "✅ Exercise saved to database:",
-      exercise.id
+      ),
     );
   }
 
@@ -654,28 +673,24 @@ export function ProgramProvider({
       return;
     }
 
-    const response = await fetch(
-      `/api/training-plans/${trainingPlanId}/phases/${dbDay.phaseId}/weeks/${dbDay.weekId}/days/${dbDay.dayId}/exercises`,
-      {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
+    await persistDatabaseWrite(
+      "update exercise in database",
+      () => fetch(
+        `/api/training-plans/${trainingPlanId}/phases/${dbDay.phaseId}/weeks/${dbDay.weekId}/days/${dbDay.dayId}/exercises`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            exerciseId,
+            sets: settings.sets,
+            reps: settings.reps,
+            restSeconds: settings.rest,
+          }),
         },
-        body: JSON.stringify({
-          exerciseId,
-          sets: settings.sets,
-          reps: settings.reps,
-          restSeconds: settings.rest,
-        }),
-      }
+      ),
     );
-
-    if (!response.ok) {
-      console.error(
-        "Failed to update exercise:",
-        await response.text()
-      );
-    }
   }
 
   async function deleteExerciseFromDatabase(
@@ -696,25 +711,21 @@ export function ProgramProvider({
       return;
     }
 
-    const response = await fetch(
-      `/api/training-plans/${trainingPlanId}/phases/${dbDay.phaseId}/weeks/${dbDay.weekId}/days/${dbDay.dayId}/exercises`,
-      {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
+    await persistDatabaseWrite(
+      "delete exercise from database",
+      () => fetch(
+        `/api/training-plans/${trainingPlanId}/phases/${dbDay.phaseId}/weeks/${dbDay.weekId}/days/${dbDay.dayId}/exercises`,
+        {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            exerciseId,
+          }),
         },
-        body: JSON.stringify({
-          exerciseId,
-        }),
-      }
+      ),
     );
-
-    if (!response.ok) {
-      console.error(
-        "Failed to delete exercise:",
-        await response.text()
-      );
-    }
   }
 
   async function reorderExerciseInDatabase(
@@ -736,26 +747,22 @@ export function ProgramProvider({
       return;
     }
 
-    const response = await fetch(
-      `/api/training-plans/${trainingPlanId}/phases/${dbDay.phaseId}/weeks/${dbDay.weekId}/days/${dbDay.dayId}/exercises`,
-      {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
+    await persistDatabaseWrite(
+      "reorder exercises in database",
+      () => fetch(
+        `/api/training-plans/${trainingPlanId}/phases/${dbDay.phaseId}/weeks/${dbDay.weekId}/days/${dbDay.dayId}/exercises`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            exerciseId,
+            direction,
+          }),
         },
-        body: JSON.stringify({
-          exerciseId,
-          direction,
-        }),
-      }
+      ),
     );
-
-    if (!response.ok) {
-      console.error(
-        "Failed to reorder exercise:",
-        await response.text()
-      );
-    }
   }
 
   /* =======================================================
@@ -768,9 +775,12 @@ export function ProgramProvider({
       return;
     }
 
-    setSaveStatus(
-      "saving"
-    );
+    if (
+      databaseWritesInFlight.current === 0 &&
+      !databaseWriteFailed.current
+    ) {
+      setSaveStatus("saving");
+    }
 
     const timeout =
       setTimeout(() => {
@@ -791,9 +801,12 @@ export function ProgramProvider({
             "✅ Workout program auto-saved"
           );
 
-          setSaveStatus(
-            "saved"
-          );
+          if (
+            databaseWritesInFlight.current === 0 &&
+            !databaseWriteFailed.current
+          ) {
+            setSaveStatus("saved");
+          }
         } catch (error) {
           console.error(
             "Failed to save workout program:",
@@ -1425,6 +1438,7 @@ export function ProgramProvider({
         workout,
         weeks,
         programStartDate,
+        programLoaded: loaded,
         saveStatus,
 
         getWorkoutForWeek,

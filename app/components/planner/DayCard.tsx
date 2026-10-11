@@ -6,9 +6,10 @@ import { Plus, Pencil } from "lucide-react";
 import MuscleDrawer from "./MuscleDrawer";
 import MuscleBadge from "./MuscleBadge";
 import { useProgram } from "@/app/context/ProgramContext";
+import type { DayName } from "@/app/context/ProgramContext";
 
 interface Props {
-  day: string;
+  day: DayName;
   weekIndex: number;
 }
 

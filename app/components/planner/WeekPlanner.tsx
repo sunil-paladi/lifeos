@@ -1,12 +1,13 @@
 "use client";
 
 import DayCard from "./DayCard";
+import type { DayName } from "@/app/context/ProgramContext";
 
 interface Props {
   weekIndex: number;
 }
 
-const days = [
+const days: DayName[] = [
   "Monday",
   "Tuesday",
   "Wednesday",

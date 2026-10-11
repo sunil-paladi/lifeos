@@ -12,6 +12,7 @@ import {
 import ExerciseSelector from "./ExerciseSelector";
 import { exercises } from "@/app/data/exercises";
 import { useProgram } from "@/app/context/ProgramContext";
+import type { DayName } from "@/app/context/ProgramContext";
 
 interface ProgramExercise {
   id: number;
@@ -27,7 +28,7 @@ interface ProgramExercise {
 }
 
 interface Props {
-  day: string;
+  day: DayName;
   weekIndex: number;
   name: string;
   exerciseIds: ProgramExercise[];
@@ -82,9 +83,7 @@ export default function MuscleBadge({
 
   function handleSave(ids: number[]) {
     addExercisesToMuscle(
-      day as keyof ReturnType<
-        typeof useProgram
-      >["workout"],
+      day,
       name,
       ids,
       weekIndex
@@ -104,9 +103,7 @@ export default function MuscleBadge({
       );
 
     addExercisesToMuscle(
-      day as keyof ReturnType<
-        typeof useProgram
-      >["workout"],
+      day,
       name,
       updatedIds,
       weekIndex
@@ -132,9 +129,7 @@ export default function MuscleBadge({
     }
   ) {
     updateExerciseSettings(
-      day as keyof ReturnType<
-        typeof useProgram
-      >["workout"],
+      day,
       name,
       exerciseId,
       settings,
@@ -149,9 +144,7 @@ export default function MuscleBadge({
     direction: "up" | "down"
   ) {
     reorderExercise(
-      day as keyof ReturnType<
-        typeof useProgram
-      >["workout"],
+      day,
       name,
       exerciseId,
       direction,
