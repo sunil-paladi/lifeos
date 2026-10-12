@@ -1,4 +1,11 @@
 import { NextResponse } from "next/server";
+import {
+  isValidActiveTrainerClientPair,
+  trainerAssignmentKey,
+  trainerAssignmentListScope,
+  TRAINER_ASSIGNMENT_MUTATION_ROLES,
+} from "@/app/lib/trainer-assignments";
+import { hasPrismaErrorCode } from "@/app/lib/payments";
 import { prisma } from "@/lib/prisma";
 import { createNotifications, trainerClientPath, writeAuditLog } from "@/app/lib/batch5-events";
 import { requireGymRole } from "@/app/lib/authorization";
@@ -20,7 +27,7 @@ export async function POST(
 ) {
   const { gymId } = await params;
 
-  const access = await requireGymRole(gymId, ["OWNER"]);
+  const access = await requireGymRole(gymId, TRAINER_ASSIGNMENT_MUTATION_ROLES);
 
   if (!access.ok) {
     return access.response;
@@ -54,7 +61,7 @@ export async function POST(
         role: "TRAINER",
         status: "ACTIVE",
       },
-      select: { id: true, userId: true },
+      select: { id: true, gymId: true, role: true, status: true, userId: true },
     });
 
   if (!trainerMembership) {
@@ -75,7 +82,7 @@ export async function POST(
         role: "MEMBER",
         status: "ACTIVE",
       },
-      select: { id: true, userId: true },
+      select: { id: true, gymId: true, role: true, status: true, userId: true },
     });
 
   if (!clientMembership) {
@@ -88,15 +95,16 @@ export async function POST(
     );
   }
 
+  if (!isValidActiveTrainerClientPair(gymId, trainerMembership, clientMembership)) {
+    return NextResponse.json(
+      { error: "An active trainer and member in this gym are required" },
+      { status: 404 }
+    );
+  }
+
   const existingAssignment =
     await prisma.trainerClient.findUnique({
-      where: {
-        gymId_trainerMembershipId_clientMembershipId: {
-          gymId,
-          trainerMembershipId,
-          clientMembershipId,
-        },
-      },
+      where: trainerAssignmentKey(gymId, trainerMembershipId, clientMembershipId),
     });
 
   if (existingAssignment) {
@@ -110,44 +118,54 @@ export async function POST(
   }
 
   const assignment = await prisma.$transaction(async (tx) => {
-    const createdAssignment = await tx.trainerClient.create({
-      data: {
-        gymId,
-        trainerMembershipId,
-        clientMembershipId,
-      },
-    });
+      const createdAssignment = await tx.trainerClient.create({
+        data: {
+          gymId,
+          trainerMembershipId,
+          clientMembershipId,
+        },
+      });
 
-    await writeAuditLog(tx, {
-      gymId,
-      actorUserId: access.user.id,
-      action: "TRAINER_CLIENT_ASSIGNED",
-      subjectType: "TrainerClient",
-      subjectId: createdAssignment.id,
-      metadata: { trainerMembershipId, clientMembershipId },
-    });
+      await writeAuditLog(tx, {
+        gymId,
+        actorUserId: access.user.id,
+        action: "TRAINER_CLIENT_ASSIGNED",
+        subjectType: "TrainerClient",
+        subjectId: createdAssignment.id,
+        metadata: { trainerMembershipId, clientMembershipId },
+      });
 
-    await createNotifications(tx, [
-      {
-        recipientUserId: trainerMembership.userId,
-        gymId,
-        type: "TRAINER_CLIENT_ASSIGNED",
-        title: "Client assigned",
-        body: "A gym owner assigned a member to you.",
-        internalLink: trainerClientPath(clientMembershipId),
-      },
-      {
-        recipientUserId: clientMembership.userId,
-        gymId,
-        type: "TRAINER_CLIENT_ASSIGNED",
-        title: "Trainer assigned",
-        body: "A trainer has been assigned to you.",
-        internalLink: "/dashboard",
-      },
-    ]);
+      await createNotifications(tx, [
+        {
+          recipientUserId: trainerMembership.userId,
+          gymId,
+          type: "TRAINER_CLIENT_ASSIGNED",
+          title: "Client assigned",
+          body: "A gym owner assigned a member to you.",
+          internalLink: trainerClientPath(clientMembershipId),
+        },
+        {
+          recipientUserId: clientMembership.userId,
+          gymId,
+          type: "TRAINER_CLIENT_ASSIGNED",
+          title: "Trainer assigned",
+          body: "A trainer has been assigned to you.",
+          internalLink: "/dashboard",
+        },
+      ]);
 
     return createdAssignment;
+  }).catch((error: unknown) => {
+    if (hasPrismaErrorCode(error, "P2002")) return null;
+    throw error;
   });
+
+  if (!assignment) {
+    return NextResponse.json(
+      { error: "Client is already assigned to this trainer" },
+      { status: 409 }
+    );
+  }
 
   return NextResponse.json(
     {
@@ -182,14 +200,14 @@ export async function GET(
             },
           }
         : {
-            gymId,
-            trainerMembershipId: membership.id,
+            ...trainerAssignmentListScope(gymId, membership.id),
             clientMembership: {
               is: { role: "MEMBER", status: "ACTIVE" },
             },
           },
     select: {
       id: true,
+      gymId: true,
       assignedAt: true,
       clientMembershipId: true,
       trainerMembershipId: true,
@@ -229,6 +247,7 @@ export async function GET(
       assignedAt: assignment.assignedAt,
       clientMembershipId: assignment.clientMembershipId,
       trainerMembershipId: assignment.trainerMembershipId,
+      gymId: assignment.gymId,
       client: assignment.clientMembership.user,
       trainer: assignment.trainerMembership.user,
     })),

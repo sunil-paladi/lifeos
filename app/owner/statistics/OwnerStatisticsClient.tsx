@@ -57,7 +57,7 @@ type StatsResponse = {
     id: string;
     name: string;
     status: string;
-    trainerName: string | null;
+    trainerNames: string[];
   }>;
   memberOverviewTotal: number;
   range: {
@@ -387,7 +387,9 @@ export default function OwnerStatisticsClient({
                       <span className="min-w-0 truncate font-medium text-slate-800">{member.name}</span>
                       <span className="text-slate-500">{member.status === "ACTIVE" ? "Active" : "Inactive"}</span>
                       <span className="w-full text-slate-500 sm:w-auto sm:text-right">
-                        {member.trainerName ? `Trainer: ${member.trainerName}` : "No trainer assigned"}
+                        {member.trainerNames.length
+                          ? `Trainers: ${member.trainerNames.join(", ")}`
+                          : "No trainer assigned"}
                       </span>
                     </li>
                   ))}

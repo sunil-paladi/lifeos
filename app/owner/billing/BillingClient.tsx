@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import { DEFAULT_TEST_CURRENCY, formatMoney, normalizeCurrency, SUPPORTED_CURRENCIES } from "@/app/lib/currency";
+import { calculatePaidPaymentTotals, getPTSessionPaymentStatus, isPTSessionAvailableForPayment } from "@/app/lib/payments";
 
 type CatalogItem = {
   id: string;
@@ -138,10 +139,12 @@ export default function BillingClient({ gymId }: { gymId: string }) {
   const [plans, setPlans] = useState<CatalogItem[]>([]);
   const [pricing, setPricing] = useState<CatalogItem[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
+  const [allPayments, setAllPayments] = useState<Payment[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
   const [sessions, setSessions] = useState<PTSession[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [updatingPaymentId, setUpdatingPaymentId] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [catalogDraft, setCatalogDraft] = useState<CatalogDraft>(emptyCatalog);
@@ -185,6 +188,14 @@ export default function BillingClient({ gymId }: { gymId: string }) {
       await fetch(`/api/owner/payments${suffix}`, { cache: "no-store" })
     );
     setPayments(data.payments);
+    if (!params.size) setAllPayments(data.payments);
+  }
+
+  async function loadPaymentLedger() {
+    const data = await readResponse<{ payments: Payment[] }>(
+      await fetch("/api/owner/payments", { cache: "no-store" })
+    );
+    setAllPayments(data.payments);
   }
 
   async function loadAll() {
@@ -379,7 +390,8 @@ export default function BillingClient({ gymId }: { gymId: string }) {
         body: JSON.stringify(payload),
       }));
       setPaymentDraft(emptyPayment);
-      await loadPayments();
+      await loadPayments(filters);
+      if (Object.values(filters).some(Boolean)) await loadPaymentLedger();
       setSuccess("Payment recorded.");
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : "Unable to record payment.");
@@ -401,11 +413,36 @@ export default function BillingClient({ gymId }: { gymId: string }) {
     }
   }
 
+  async function updatePaymentStatus(paymentId: string, status: "PENDING" | "PAID" | "FAILED" | "REFUNDED" | "CANCELLED") {
+    if (status === "REFUNDED" && !window.confirm("Mark this payment as refunded?")) return;
+    setError("");
+    setSuccess("");
+    setUpdatingPaymentId(paymentId);
+    try {
+      await readResponse(await fetch(`/api/owner/payments/${encodeURIComponent(paymentId)}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      }));
+      await loadPayments(filters);
+      if (Object.values(filters).some(Boolean)) await loadPaymentLedger();
+      setSuccess("Payment status updated.");
+    } catch (updateError) {
+      setError(updateError instanceof Error ? updateError.message : "Unable to update payment status.");
+    } finally {
+      setUpdatingPaymentId(null);
+    }
+  }
+
   const activeMemberSessions = sessions.filter((session) => session.clientMembershipId === paymentDraft.memberMembershipId);
   const selectedSession = activeMemberSessions.find((session) => session.id === paymentDraft.ptSessionId);
   const selectedSessionPricing =
     selectedSession?.ptPricing ??
     pricing.find((item) => item.id === selectedSession?.ptPricingId);
+  const paidTotals = calculatePaidPaymentTotals(allPayments);
+  const ptPaidTotals = calculatePaidPaymentTotals(
+    allPayments.filter((payment) => payment.paymentType === "PT_SESSION")
+  );
   const catalogItems = view === "plans" ? plans : pricing;
   const catalogType = view === "plans" ? "plan" : "pricing";
   const durationLabel = view === "plans" ? "Duration (days)" : "Duration (minutes)";
@@ -463,7 +500,11 @@ export default function BillingClient({ gymId }: { gymId: string }) {
                 <label className={labelClass}>PT session
                   <select required className={inputClass} value={paymentDraft.ptSessionId} disabled={!paymentDraft.memberMembershipId} onChange={(event) => selectPTSession(event.target.value)}>
                     <option value="">{paymentDraft.memberMembershipId ? "Select this member's session" : "Select a member first"}</option>
-                    {activeMemberSessions.map((session) => <option key={session.id} value={session.id}>{new Date(session.scheduledAt).toLocaleString()} · {session.ptPricing?.durationMinutes ?? session.durationMinutes} min · {session.trainerMembership.user.name} · {formatLabel(session.status)}</option>)}
+                    {activeMemberSessions.map((session) => {
+                      const sessionPayments = allPayments.filter((payment) => payment.ptSession?.id === session.id);
+                      const paymentStatus = getPTSessionPaymentStatus(sessionPayments);
+                      return <option key={session.id} value={session.id} disabled={sessionPayments.length > 0 || !isPTSessionAvailableForPayment(session.status)}>{new Date(session.scheduledAt).toLocaleString()} · {session.ptPricing?.durationMinutes ?? session.durationMinutes} min · {session.trainerMembership.user.name} · {formatLabel(session.status)} · {formatLabel(paymentStatus)}</option>;
+                    })}
                   </select>
                   {paymentDraft.memberMembershipId && activeMemberSessions.length === 0 ? <span className="mt-1 block text-xs text-slate-500">No PT sessions available for this member.</span> : null}
                 </label>
@@ -485,7 +526,7 @@ export default function BillingClient({ gymId }: { gymId: string }) {
               </label>
               <label className={labelClass}>Status
                 <select className={inputClass} value={paymentDraft.status} onChange={(event) => setPaymentDraft({ ...paymentDraft, status: event.target.value })}>
-                  {[["PENDING", "Pending"], ["PAID", "Paid"], ["FAILED", "Failed"], ["REFUNDED", "Refunded"], ["CANCELLED", "Cancelled"]].map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                  {[["PENDING", "Pending"], ["PAID", "Paid"], ["FAILED", "Failed"], ["CANCELLED", "Cancelled"]].map(([value, label]) => <option key={value} value={value}>{label}</option>)}
                 </select>
               </label>
               <label className={`${labelClass} sm:col-span-2 lg:col-span-3`}>Notes <textarea rows={2} maxLength={1000} className={inputClass} value={paymentDraft.notes} onChange={(event) => setPaymentDraft({ ...paymentDraft, notes: event.target.value })} /></label>
@@ -496,6 +537,20 @@ export default function BillingClient({ gymId }: { gymId: string }) {
 
           <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
             <h2 className="text-lg font-bold text-slate-900">Payment history</h2>
+            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+              <div className="rounded-lg bg-slate-50 p-3">
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Recorded paid totals</p>
+                <p className="mt-1 text-sm font-semibold text-slate-800">
+                  {paidTotals.length ? paidTotals.map(({ amount, currency }) => formatMoney(amount, currency)).join(" · ") : "No paid records"}
+                </p>
+              </div>
+              <div className="rounded-lg bg-slate-50 p-3">
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">PT paid totals</p>
+                <p className="mt-1 text-sm font-semibold text-slate-800">
+                  {ptPaidTotals.length ? ptPaidTotals.map(({ amount, currency }) => formatMoney(amount, currency)).join(" · ") : "No paid PT records"}
+                </p>
+              </div>
+            </div>
             <form onSubmit={applyFilters} className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
               <label className={labelClass}>Status<select className={inputClass} value={filters.status} onChange={(event) => setFilters({ ...filters, status: event.target.value })}><option value="">All statuses</option>{["PENDING", "PAID", "FAILED", "REFUNDED", "CANCELLED"].map((value) => <option key={value} value={value}>{formatLabel(value)}</option>)}</select></label>
               <label className={labelClass}>Member<select className={inputClass} value={filters.memberMembershipId} onChange={(event) => setFilters({ ...filters, memberMembershipId: event.target.value })}><option value="">All members</option>{members.map((member) => <option key={member.id} value={member.id}>{member.name}</option>)}</select></label>
@@ -512,7 +567,7 @@ export default function BillingClient({ gymId }: { gymId: string }) {
                 tabIndex={0}
               >
                 <table className="w-full min-w-[1050px] text-left text-sm">
-                  <thead className="border-b border-slate-200 text-xs uppercase tracking-wide text-slate-500"><tr>{["Member", "Type", "Amount", "Method / provider", "Status", "Plan / session", "Paid", "Created"].map((heading) => <th key={heading} className="px-3 py-3 font-semibold">{heading}</th>)}</tr></thead>
+                  <thead className="border-b border-slate-200 text-xs uppercase tracking-wide text-slate-500"><tr>{["Member", "Type", "Amount", "Method / provider", "Status", "Plan / session", "Paid", "Created", "Actions"].map((heading) => <th key={heading} className="px-3 py-3 font-semibold">{heading}</th>)}</tr></thead>
                   <tbody className="divide-y divide-slate-100">{payments.map((payment) => <tr key={payment.id}>
                     <td className="px-3 py-3 font-medium text-slate-900">{payment.memberMembership.user.name}</td>
                     <td className="px-3 py-3">{payment.paymentType === "MEMBERSHIP" ? "Membership" : "PT session"}</td>
@@ -522,6 +577,22 @@ export default function BillingClient({ gymId }: { gymId: string }) {
                     <td className="px-3 py-3">{payment.membershipPlan?.name ?? (payment.ptSession ? `Session ${payment.ptSession.id.slice(-6)}` : "—")}</td>
                     <td className="px-3 py-3 whitespace-nowrap">{formatDate(payment.paidAt)}</td>
                     <td className="px-3 py-3 whitespace-nowrap">{formatDate(payment.createdAt)}</td>
+                    <td className="px-3 py-3">
+                      <div className="flex gap-2">
+                        {payment.status === "PENDING" ? (
+                          <>
+                            <button type="button" disabled={updatingPaymentId !== null} onClick={() => void updatePaymentStatus(payment.id, "PAID")} className="text-xs font-semibold text-primary disabled:opacity-50">Mark paid</button>
+                            <button type="button" disabled={updatingPaymentId !== null} onClick={() => void updatePaymentStatus(payment.id, "FAILED")} className="text-xs font-semibold text-red-700 disabled:opacity-50">Mark failed</button>
+                          </>
+                        ) : null}
+                        {payment.status === "FAILED" ? (
+                          <button type="button" disabled={updatingPaymentId !== null} onClick={() => void updatePaymentStatus(payment.id, "PENDING")} className="text-xs font-semibold text-primary disabled:opacity-50">Retry</button>
+                        ) : null}
+                        {payment.status === "PAID" ? (
+                          <button type="button" disabled={updatingPaymentId !== null} onClick={() => void updatePaymentStatus(payment.id, "REFUNDED")} className="text-xs font-semibold text-red-700 disabled:opacity-50">Refund</button>
+                        ) : null}
+                      </div>
+                    </td>
                   </tr>)}</tbody>
                 </table>
               </div>

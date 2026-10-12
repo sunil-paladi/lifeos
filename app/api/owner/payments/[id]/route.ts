@@ -3,34 +3,16 @@ import { Prisma } from "@/app/generated/prisma/client";
 import { getAuthenticatedUser } from "@/app/lib/authorization";
 import { writeAuditLog } from "@/app/lib/batch5-events";
 import { parseJsonObject } from "@/app/lib/input-validation";
+import {
+  activeOwnerPaymentScope,
+  canTransitionPaymentStatus,
+  isOneOf,
+  isValidPaymentCurrency,
+  PAYMENT_METHODS,
+  PAYMENT_STATUSES,
+  parsePaymentAmount,
+} from "@/app/lib/payments";
 import { prisma } from "@/lib/prisma";
-
-const PAYMENT_METHODS = ["CASH", "CARD", "UPI", "BANK_TRANSFER", "OTHER", "ONLINE"] as const;
-const PAYMENT_STATUSES = ["PENDING", "PAID", "FAILED", "REFUNDED", "CANCELLED"] as const;
-const MAX_AMOUNT = 99_999_999.99;
-
-function parseAmount(value: unknown): number | null {
-  if (typeof value === "number") {
-    return Number.isFinite(value) && value > 0 && value <= MAX_AMOUNT ? value : null;
-  }
-
-  if (typeof value === "string") {
-    const trimmed = value.trim();
-    if (!trimmed) return null;
-    const parsed = Number(trimmed);
-    return Number.isFinite(parsed) && parsed > 0 && parsed <= MAX_AMOUNT ? parsed : null;
-  }
-
-  return null;
-}
-
-function isValidCurrency(value: unknown): value is string {
-  return typeof value === "string" && /^[A-Za-z]{3}$/.test(value.trim());
-}
-
-function isOneOf<T extends readonly string[]>(value: unknown, options: T): value is T[number] {
-  return typeof value === "string" && options.some((option) => option === value);
-}
 
 type RouteContext = {
   params: Promise<{ id: string }>;
@@ -43,9 +25,7 @@ export async function GET(_request: Request, context: RouteContext) {
   const { id } = await context.params;
   const ownerMembership = await prisma.gymMembership.findFirst({
     where: {
-      userId: user.id,
-      role: "OWNER",
-      status: "ACTIVE",
+      ...activeOwnerPaymentScope(user.id),
     },
     orderBy: { joinedAt: "desc" },
     select: { gymId: true },
@@ -56,7 +36,11 @@ export async function GET(_request: Request, context: RouteContext) {
   }
 
   const payment = await prisma.payment.findFirst({
-    where: { id, gymId: ownerMembership.gymId },
+    where: {
+      id,
+      gymId: ownerMembership.gymId,
+      memberMembership: { is: { gymId: ownerMembership.gymId, role: "MEMBER" } },
+    },
     include: {
       memberMembership: {
         select: { user: { select: { name: true } }, role: true },
@@ -80,9 +64,7 @@ export async function PATCH(request: Request, context: RouteContext) {
   const { id } = await context.params;
   const ownerMembership = await prisma.gymMembership.findFirst({
     where: {
-      userId: user.id,
-      role: "OWNER",
-      status: "ACTIVE",
+      ...activeOwnerPaymentScope(user.id),
     },
     orderBy: { joinedAt: "desc" },
     select: { gymId: true },
@@ -93,7 +75,11 @@ export async function PATCH(request: Request, context: RouteContext) {
   }
 
   const payment = await prisma.payment.findFirst({
-    where: { id, gymId: ownerMembership.gymId },
+    where: {
+      id,
+      gymId: ownerMembership.gymId,
+      memberMembership: { is: { gymId: ownerMembership.gymId, role: "MEMBER" } },
+    },
     select: {
       id: true,
       memberMembershipId: true,
@@ -101,6 +87,8 @@ export async function PATCH(request: Request, context: RouteContext) {
       ptSessionId: true,
       amount: true,
       gymId: true,
+      status: true,
+      paidAt: true,
       ptSession: {
         select: {
           ptPricing: {
@@ -121,38 +109,43 @@ export async function PATCH(request: Request, context: RouteContext) {
   }
 
   const updateData: Record<string, unknown> = {};
+  const nextStatus = payload.status === undefined ? payment.status : payload.status;
+  if (payload.status !== undefined && !isOneOf(payload.status, PAYMENT_STATUSES)) {
+    return NextResponse.json({ error: "Invalid payment status" }, { status: 400 });
+  }
+  if (
+    payload.status !== undefined &&
+    !canTransitionPaymentStatus(payment.status, nextStatus as typeof payment.status)
+  ) {
+    return NextResponse.json(
+      { error: `Payment status cannot change from ${payment.status} to ${String(nextStatus)}` },
+      { status: 409 }
+    );
+  }
 
   const linkedPricing = payment.ptSession?.ptPricing ?? null;
   if (linkedPricing && linkedPricing.gymId !== ownerMembership.gymId) {
     return NextResponse.json({ error: "PT pricing does not belong to this gym" }, { status: 400 });
   }
 
+  if (linkedPricing && (payload.amount !== undefined || payload.currency !== undefined)) {
+    return NextResponse.json({ error: "PT session payment amounts and currency cannot be changed after recording" }, { status: 400 });
+  }
+
   if (payload.amount !== undefined && !linkedPricing) {
-    const amount = parseAmount(payload.amount);
+    const amount = parsePaymentAmount(payload.amount);
     if (amount === null) return NextResponse.json({ error: "Payment amount must be positive and within the supported range" }, { status: 400 });
     updateData.amount = new Prisma.Decimal(amount.toString());
   }
 
   if (payload.currency !== undefined && !linkedPricing) {
-    if (!isValidCurrency(payload.currency)) {
+    if (!isValidPaymentCurrency(payload.currency)) {
       return NextResponse.json({ error: "Currency is required" }, { status: 400 });
     }
     updateData.currency = payload.currency.trim().toUpperCase();
   }
 
-  if (linkedPricing) {
-    const amount = parseAmount(linkedPricing.price.toString());
-    if (amount === null) {
-      return NextResponse.json({ error: "PT pricing amount is outside the supported range" }, { status: 400 });
-    }
-    updateData.amount = new Prisma.Decimal(amount.toString());
-    updateData.currency = linkedPricing.currency.toUpperCase();
-  }
-
   if (payload.status !== undefined) {
-    if (!isOneOf(payload.status, PAYMENT_STATUSES)) {
-      return NextResponse.json({ error: "Invalid payment status" }, { status: 400 });
-    }
     updateData.status = payload.status;
   }
 
@@ -175,7 +168,15 @@ export async function PATCH(request: Request, context: RouteContext) {
     if (payload.paidAt !== null && (!date || Number.isNaN(date.getTime()))) {
       return NextResponse.json({ error: "paidAt must be a valid date string or null" }, { status: 400 });
     }
+    if (nextStatus !== "PAID" || payload.paidAt === null) {
+      return NextResponse.json({ error: "paidAt can only be changed while the payment is paid" }, { status: 400 });
+    }
     updateData.paidAt = date;
+  }
+  if (nextStatus === "PAID" && payment.status !== "PAID") {
+    updateData.paidAt = payload.paidAt ? new Date(payload.paidAt as string) : new Date();
+  } else if (nextStatus !== "PAID" && payment.status === "PENDING") {
+    updateData.paidAt = null;
   }
 
   if (Object.keys(updateData).length === 0) {
@@ -183,15 +184,30 @@ export async function PATCH(request: Request, context: RouteContext) {
   }
 
   const updated = await prisma.$transaction(async (tx) => {
-    const updatedPayment = await tx.payment.update({
-      where: { id },
+    const result = await tx.payment.updateMany({
+      where: {
+        id,
+        gymId: ownerMembership.gymId,
+        memberMembershipId: payment.memberMembershipId,
+        status: payment.status,
+      },
       data: updateData,
+    });
+    if (result.count === 0) return null;
+
+    const updatedPayment = await tx.payment.findFirst({
+      where: {
+        id,
+        gymId: ownerMembership.gymId,
+        memberMembership: { is: { gymId: ownerMembership.gymId, role: "MEMBER" } },
+      },
       include: {
         memberMembership: { select: { user: { select: { name: true } } } },
         membershipPlan: { select: { name: true } },
         ptSession: { select: { id: true } },
       },
     });
+    if (!updatedPayment) throw new Error("Updated payment could not be read");
 
     await writeAuditLog(tx, {
       gymId: ownerMembership.gymId,
@@ -206,6 +222,10 @@ export async function PATCH(request: Request, context: RouteContext) {
 
     return updatedPayment;
   });
+
+  if (!updated) {
+    return NextResponse.json({ error: "Payment changed concurrently; reload it and try again" }, { status: 409 });
+  }
 
   return NextResponse.json({ payment: { ...updated, amount: updated.amount.toString() } });
 }

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { trainerAssignmentKey, trainerAssignmentRemovalScope, TRAINER_ASSIGNMENT_MUTATION_ROLES } from "@/app/lib/trainer-assignments";
 import { prisma } from "@/lib/prisma";
 import { requireGymRole } from "@/app/lib/authorization";
 import { writeAuditLog } from "@/app/lib/batch5-events";
@@ -24,13 +25,7 @@ export async function GET(
   }
 
   const assignment = await prisma.trainerClient.findUnique({
-    where: {
-      gymId_trainerMembershipId_clientMembershipId: {
-        gymId,
-        trainerMembershipId: access.membership.id,
-        clientMembershipId,
-      },
-    },
+    where: trainerAssignmentKey(gymId, access.membership.id, clientMembershipId),
     select: {
       assignedAt: true,
       clientMembership: {
@@ -83,7 +78,7 @@ export async function DELETE(
   context: TrainerClientDetailRouteContext
 ) {
   const { gymId, clientMembershipId } = await context.params;
-  const access = await requireGymRole(gymId, ["OWNER"]);
+  const access = await requireGymRole(gymId, TRAINER_ASSIGNMENT_MUTATION_ROLES);
 
   if (!access.ok) {
     return access.response;
@@ -104,13 +99,7 @@ export async function DELETE(
   }
 
   const assignment = await prisma.trainerClient.findUnique({
-    where: {
-      gymId_trainerMembershipId_clientMembershipId: {
-        gymId,
-        trainerMembershipId,
-        clientMembershipId,
-      },
-    },
+    where: trainerAssignmentKey(gymId, trainerMembershipId, clientMembershipId),
     select: { id: true },
   });
 
@@ -120,7 +109,7 @@ export async function DELETE(
 
   const removed = await prisma.$transaction(async (tx) => {
     const result = await tx.trainerClient.deleteMany({
-      where: { id: assignment.id, gymId },
+      where: trainerAssignmentRemovalScope(assignment.id, gymId),
     });
 
     if (result.count === 0) {

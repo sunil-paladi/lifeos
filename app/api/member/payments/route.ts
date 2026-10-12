@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAuthenticatedUser } from "@/app/lib/authorization";
+import { activeMemberPaymentMembershipScope, memberPaymentQueryScope } from "@/app/lib/payments";
 import { prisma } from "@/lib/prisma";
 
 export async function GET() {
@@ -8,11 +9,10 @@ export async function GET() {
 
   const membership = await prisma.gymMembership.findFirst({
     where: {
-      userId: user.id,
-      status: "ACTIVE",
+      ...activeMemberPaymentMembershipScope(user.id),
     },
     orderBy: { joinedAt: "desc" },
-    select: { id: true },
+    select: { id: true, gymId: true },
   });
 
   if (!membership) {
@@ -20,7 +20,10 @@ export async function GET() {
   }
 
   const payments = await prisma.payment.findMany({
-    where: { memberMembershipId: membership.id },
+    where: {
+      ...memberPaymentQueryScope(membership.id),
+      gymId: membership.gymId,
+    },
     orderBy: [{ paidAt: "desc" }, { createdAt: "desc" }],
     include: {
       membershipPlan: { select: { name: true } },

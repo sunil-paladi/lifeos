@@ -221,7 +221,6 @@ export async function GET(request: Request, context: RouteContext) {
             },
           },
           orderBy: { assignedAt: "desc" },
-          take: 1,
         },
       },
       orderBy: { user: { name: "asc" } },
@@ -351,7 +350,9 @@ export async function GET(request: Request, context: RouteContext) {
     id: member.id,
     name: member.user.name,
     status: member.status,
-    trainerName: member.clientAssignments[0]?.trainerMembership.user.name ?? null,
+    trainerNames: member.clientAssignments.map(
+      (assignment) => assignment.trainerMembership.user.name,
+    ),
   }));
 
   return NextResponse.json({

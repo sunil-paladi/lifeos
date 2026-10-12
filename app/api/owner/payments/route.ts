@@ -3,36 +3,22 @@ import { Prisma } from "@/app/generated/prisma/client";
 import { getAuthenticatedUser } from "@/app/lib/authorization";
 import { writeAuditLog } from "@/app/lib/batch5-events";
 import { parseDateOnly, parseJsonObject } from "@/app/lib/input-validation";
+import {
+  hasPrismaErrorCode,
+  activeOwnerPaymentScope,
+  isDuplicatePTSessionPayment,
+  isOneOf,
+  isPTSessionAvailableForPayment,
+  isValidPaymentCurrency,
+  PAYMENT_METHODS,
+  PAYMENT_PROVIDERS,
+  PAYMENT_STATUSES,
+  PAYMENT_TYPES,
+  parsePaymentAmount,
+  paymentQueryScope,
+  ptSessionPaymentQueryScope,
+} from "@/app/lib/payments";
 import { prisma } from "@/lib/prisma";
-
-const PAYMENT_METHODS = ["CASH", "CARD", "UPI", "BANK_TRANSFER", "OTHER", "ONLINE"] as const;
-const PAYMENT_PROVIDERS = ["MANUAL", "STRIPE", "RAZORPAY", "OTHER"] as const;
-const PAYMENT_STATUSES = ["PENDING", "PAID", "FAILED", "REFUNDED", "CANCELLED"] as const;
-const PAYMENT_TYPES = ["MEMBERSHIP", "PT_SESSION"] as const;
-const MAX_AMOUNT = 99_999_999.99;
-
-function parseAmount(value: unknown): number | null {
-  if (typeof value === "number") {
-    return Number.isFinite(value) && value > 0 && value <= MAX_AMOUNT ? value : null;
-  }
-
-  if (typeof value === "string") {
-    const trimmed = value.trim();
-    if (!trimmed) return null;
-    const parsed = Number(trimmed);
-    return Number.isFinite(parsed) && parsed > 0 && parsed <= MAX_AMOUNT ? parsed : null;
-  }
-
-  return null;
-}
-
-function isValidCurrency(value: unknown) {
-  return typeof value === "string" && /^[A-Za-z]{3}$/.test(value.trim());
-}
-
-function isOneOf<T extends readonly string[]>(value: unknown, options: T): value is T[number] {
-  return typeof value === "string" && options.some((option) => option === value);
-}
 
 export async function GET(request: Request) {
   const { user, response } = await getAuthenticatedUser();
@@ -40,9 +26,7 @@ export async function GET(request: Request) {
 
   const ownerMembership = await prisma.gymMembership.findFirst({
     where: {
-      userId: user.id,
-      role: "OWNER",
-      status: "ACTIVE",
+      ...activeOwnerPaymentScope(user.id),
     },
     orderBy: { joinedAt: "desc" },
     select: { gymId: true },
@@ -78,7 +62,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "from must be on or before to" }, { status: 400 });
   }
 
-  const where: Record<string, unknown> = { gymId: ownerMembership.gymId };
+  const where: Record<string, unknown> = paymentQueryScope(ownerMembership.gymId);
 
   if (status !== null) where.status = status;
   if (memberId !== null) where.memberMembershipId = memberId;
@@ -119,9 +103,7 @@ export async function POST(request: Request) {
 
   const ownerMembership = await prisma.gymMembership.findFirst({
     where: {
-      userId: user.id,
-      role: "OWNER",
-      status: "ACTIVE",
+      ...activeOwnerPaymentScope(user.id),
     },
     orderBy: { joinedAt: "desc" },
     select: { gymId: true },
@@ -139,7 +121,7 @@ export async function POST(request: Request) {
   const memberMembershipId = typeof payload.memberMembershipId === "string" ? payload.memberMembershipId.trim() : "";
   const membershipPlanId = typeof payload.membershipPlanId === "string" ? payload.membershipPlanId.trim() || null : null;
   const ptSessionId = typeof payload.ptSessionId === "string" ? payload.ptSessionId.trim() || null : null;
-  const requestedAmount = parseAmount(payload.amount);
+  const requestedAmount = parsePaymentAmount(payload.amount);
   const requestedCurrency = typeof payload.currency === "string" ? payload.currency.trim() : "";
   const paymentType = payload.paymentType;
   const paymentMethod = payload.paymentMethod === undefined ? "CASH" : payload.paymentMethod;
@@ -174,6 +156,9 @@ export async function POST(request: Request) {
   if (!isOneOf(status, PAYMENT_STATUSES)) {
     return NextResponse.json({ error: "Invalid payment status" }, { status: 400 });
   }
+  if (status === "REFUNDED") {
+    return NextResponse.json({ error: "A payment must be recorded as paid before it can be refunded" }, { status: 400 });
+  }
   if (
     (payload.paymentMethod !== undefined && typeof payload.paymentMethod !== "string") ||
     (payload.provider !== undefined && typeof payload.provider !== "string") ||
@@ -198,6 +183,9 @@ export async function POST(request: Request) {
   ) {
     return NextResponse.json({ error: "paidAt must be a valid date string or null" }, { status: 400 });
   }
+  if (status !== "PAID" && payload.paidAt != null) {
+    return NextResponse.json({ error: "paidAt can only be supplied for a paid payment" }, { status: 400 });
+  }
 
   if (membershipPlanId && ptSessionId) {
     return NextResponse.json({ error: "A payment cannot reference both a membership plan and a PT session" }, { status: 400 });
@@ -208,27 +196,28 @@ export async function POST(request: Request) {
   }
   
   if (paymentType === "MEMBERSHIP" && !membershipPlanId) {
-  return NextResponse.json(
-    { error: "Membership payment requires a membership plan" },
-    { status: 400 },
-  );
-}
+    return NextResponse.json(
+      { error: "Membership payment requires a membership plan" },
+      { status: 400 },
+    );
+  }
 
-if (paymentType === "PT_SESSION" && !ptSessionId) {
-  return NextResponse.json(
-    { error: "PT payment requires a PT session" },
-    { status: 400 },
-  );
-}
+  if (paymentType === "PT_SESSION" && !ptSessionId) {
+    return NextResponse.json(
+      { error: "PT payment requires a PT session" },
+      { status: 400 },
+    );
+  }
+
   const memberMembership = await prisma.gymMembership.findFirst({
     where: {
       id: memberMembershipId,
       gymId: ownerMembership.gymId,
+      role: "MEMBER",
+      status: "ACTIVE",
     },
     select: { id: true, userId: true, role: true, gymId: true },
   });
-
- 
 
   if (!memberMembership) {
     return NextResponse.json({ error: "Selected member membership not found in this gym" }, { status: 404 });
@@ -239,12 +228,13 @@ if (paymentType === "PT_SESSION" && !ptSessionId) {
       where: {
         id: membershipPlanId,
         gymId: ownerMembership.gymId,
+        isActive: true,
       },
       select: { id: true },
     });
 
     if (!plan) {
-      return NextResponse.json({ error: "Membership plan does not belong to this gym" }, { status: 400 });
+      return NextResponse.json({ error: "Active membership plan not found in this gym" }, { status: 400 });
     }
   }
 
@@ -260,6 +250,7 @@ if (paymentType === "PT_SESSION" && !ptSessionId) {
       select: {
         id: true,
         clientMembershipId: true,
+        status: true,
         ptPricing: {
           select: {
             gymId: true,
@@ -278,11 +269,15 @@ if (paymentType === "PT_SESSION" && !ptSessionId) {
       return NextResponse.json({ error: "PT payment member must match the PT session client" }, { status: 400 });
     }
 
+    if (!isPTSessionAvailableForPayment(session.status)) {
+      return NextResponse.json({ error: "Cancelled or missed PT sessions cannot be paid" }, { status: 409 });
+    }
+
     if (session.ptPricing) {
       if (session.ptPricing.gymId !== ownerMembership.gymId) {
         return NextResponse.json({ error: "PT pricing does not belong to this gym" }, { status: 400 });
       }
-      amount = parseAmount(session.ptPricing.price.toString());
+      amount = parsePaymentAmount(session.ptPricing.price.toString());
       currency = session.ptPricing.currency;
     }
   }
@@ -291,11 +286,30 @@ if (paymentType === "PT_SESSION" && !ptSessionId) {
     return NextResponse.json({ error: "Payment amount must be positive and within the supported range" }, { status: 400 });
   }
 
-  if (!isValidCurrency(currency)) {
+  if (!isValidPaymentCurrency(currency)) {
     return NextResponse.json({ error: "Currency must be a three-letter currency code" }, { status: 400 });
   }
 
   const payment = await prisma.$transaction(async (tx) => {
+    if (ptSessionId) {
+      const existingPayment = await tx.payment.findFirst({
+        where: ptSessionPaymentQueryScope(ownerMembership.gymId, ptSessionId),
+        select: { id: true },
+      });
+      if (isDuplicatePTSessionPayment(existingPayment)) return null;
+    }
+    if (typeof providerPaymentId === "string" && providerPaymentId.trim()) {
+      const existingProviderPayment = await tx.payment.findFirst({
+        where: {
+          gymId: ownerMembership.gymId,
+          provider,
+          providerPaymentId: providerPaymentId.trim(),
+        },
+        select: { id: true },
+      });
+      if (existingProviderPayment) return null;
+    }
+
     const createdPayment = await tx.payment.create({
       data: {
         gymId: ownerMembership.gymId,
@@ -310,7 +324,7 @@ if (paymentType === "PT_SESSION" && !ptSessionId) {
         status,
         providerPaymentId: typeof providerPaymentId === "string" ? providerPaymentId.trim() || null : null,
         notes: typeof notes === "string" ? notes.trim() || null : null,
-        paidAt: paidAt && !Number.isNaN(paidAt.getTime()) ? paidAt : null,
+        paidAt: status === "PAID" ? paidAt ?? new Date() : null,
       },
       include: {
         memberMembership: {
@@ -331,7 +345,14 @@ if (paymentType === "PT_SESSION" && !ptSessionId) {
     });
 
     return createdPayment;
+  }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }).catch((error: unknown) => {
+    if (hasPrismaErrorCode(error, "P2034") || hasPrismaErrorCode(error, "P2002")) return null;
+    throw error;
   });
+
+  if (!payment) {
+    return NextResponse.json({ error: "A duplicate payment was detected for this session or provider transaction" }, { status: 409 });
+  }
 
   return NextResponse.json({
     payment: {
