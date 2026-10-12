@@ -129,6 +129,37 @@ type TrainerReportPayload = {
   clients: TrainerReportClient[];
 };
 
+type OwnerReportGym = {
+  id: string;
+  name: string;
+  memberships: {
+    currentTotal: number;
+    currentActive: number;
+    currentNonActive: number;
+    joinedInRange: number;
+    statusChangesInRange: number;
+  };
+  membershipPayments: {
+    paidCount: number;
+    totalsByCurrency: { currency: string; amount: number }[];
+  };
+  attendance: {
+    checkIns: number;
+    uniqueMembers: number;
+  };
+  retention: {
+    activeAtStart: number;
+    activeAtEnd: number;
+    retainedMembers: number;
+    rate: number | null;
+  };
+};
+
+type OwnerReportPayload = {
+  range: ReportPayload["range"];
+  gyms: OwnerReportGym[];
+};
+
 type JournalEntry = {
   date: string;
   mood?: string;
@@ -287,6 +318,14 @@ function isTrainerReportPayload(
   );
 }
 
+function isOwnerReportPayload(value: unknown): value is OwnerReportPayload {
+  return (
+    isRecord(value) &&
+    hasReportRange(value.range) &&
+    Array.isArray(value.gyms)
+  );
+}
+
 function isReportPayload(value: unknown): value is ReportPayload {
   return (
     isRecord(value) &&
@@ -333,6 +372,9 @@ export default function ReportsPage() {
   const [selectedTrainerClientId, setSelectedTrainerClientId] =
     useState("");
   const [isTrainerReport, setIsTrainerReport] = useState(false);
+  const [ownerGyms, setOwnerGyms] = useState<OwnerReportGym[]>([]);
+  const [selectedOwnerGymId, setSelectedOwnerGymId] = useState("");
+  const [isOwnerReport, setIsOwnerReport] = useState(false);
 
   const range = useMemo(() => {
     if (period === "custom") {
@@ -357,6 +399,8 @@ export default function ReportsPage() {
     () => selectTrainerReportClient(trainerClients, selectedTrainerClientId),
     [trainerClients, selectedTrainerClientId],
   );
+  const selectedOwnerGym =
+    ownerGyms.find((gym) => gym.id === selectedOwnerGymId) ?? null;
   const selectedReportData = isTrainerReport
     ? selectedTrainerClient
     : memberReportData;
@@ -426,21 +470,37 @@ export default function ReportsPage() {
       timezone: range.timezone,
     });
 
-    fetch(`/api/reports/trainer?${params.toString()}`)
-      .then(async (trainerResponse) => {
+    fetch(`/api/reports/owner?${params.toString()}`)
+      .then(async (ownerResponse) => {
+        if (ownerResponse.status !== 403) {
+          return readReportResponse(ownerResponse);
+        }
+
+        const trainerResponse = await fetch(
+          `/api/reports/trainer?${params.toString()}`,
+        );
         if (trainerResponse.status !== 403) {
           return readReportResponse(trainerResponse);
         }
 
-        const memberResponse = await fetch(
-          `/api/reports/member?${params.toString()}`,
-        );
+        const memberResponse = await fetch(`/api/reports/member?${params.toString()}`);
         return readReportResponse(memberResponse);
       })
       .then((data) => {
         if (!active) return;
         setReportError(null);
-        if (isTrainerReportPayload(data)) {
+        if (isOwnerReportPayload(data)) {
+          setIsOwnerReport(true);
+          setIsTrainerReport(false);
+          setMemberReportData(null);
+          setOwnerGyms(data.gyms);
+          setSelectedOwnerGymId(data.gyms[0]?.id ?? "");
+          setTrainerClients([]);
+          setSelectedTrainerClientId("");
+        } else if (isTrainerReportPayload(data)) {
+          setIsOwnerReport(false);
+          setOwnerGyms([]);
+          setSelectedOwnerGymId("");
           const trainerData = data;
           setIsTrainerReport(true);
           setMemberReportData(null);
@@ -448,6 +508,9 @@ export default function ReportsPage() {
           const firstClient = trainerData.clients[0];
           setSelectedTrainerClientId(firstClient?.id ?? "");
         } else if (isReportPayload(data)) {
+          setIsOwnerReport(false);
+          setOwnerGyms([]);
+          setSelectedOwnerGymId("");
           const memberData = data;
           setIsTrainerReport(false);
           setTrainerClients([]);
@@ -460,6 +523,9 @@ export default function ReportsPage() {
       .catch((error: unknown) => {
         if (!active) return;
         console.error("Failed to load persisted report data:", error);
+        setIsOwnerReport(false);
+        setOwnerGyms([]);
+        setSelectedOwnerGymId("");
         setIsTrainerReport(false);
         setMemberReportData(null);
         setTrainerClients([]);
@@ -662,15 +728,18 @@ export default function ReportsPage() {
     window.print();
   }
 
-  const reportTitle =
-    period === "weekly"
+  const reportTitle = isOwnerReport
+    ? "Gym Owner Report"
+    : period === "weekly"
       ? "Weekly Report"
       : period === "monthly"
         ? "Monthly Report"
         : "Custom Report";
 
   const reportDescription =
-    isTrainerReport
+    isOwnerReport
+      ? "Persisted membership, payment, attendance, and retention data for your gym."
+      : isTrainerReport
       ? "A snapshot of assigned client progress in this period."
       : period === "weekly"
       ? "A snapshot of your last 7 days."
@@ -751,6 +820,11 @@ export default function ReportsPage() {
         {isTrainerReport && trainerClients.length === 0 && (
           <p className="mt-2 text-sm text-slate-500" role="status">
             No active assigned clients are available for reporting.
+          </p>
+        )}
+        {isOwnerReport && ownerGyms.length === 0 && (
+          <p className="mt-2 text-sm text-slate-500" role="status">
+            No active owner-managed gyms are available for reporting.
           </p>
         )}
 
@@ -878,6 +952,201 @@ export default function ReportsPage() {
         </div>
       )}
 
+      {isOwnerReport ? (
+        <>
+          {ownerGyms.length > 1 && (
+            <div className="max-w-sm no-print">
+              <label
+                htmlFor="owner-report-gym"
+                className="mb-1.5 block text-xs font-medium text-slate-500"
+              >
+                Gym report
+              </label>
+              <select
+                id="owner-report-gym"
+                value={selectedOwnerGymId}
+                onChange={(event) => setSelectedOwnerGymId(event.target.value)}
+                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700"
+              >
+                {ownerGyms.map((gym) => (
+                  <option key={gym.id} value={gym.id}>
+                    {gym.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {selectedOwnerGym && (
+            <>
+              <p className="text-sm font-semibold text-slate-700">
+                {selectedOwnerGym.name}
+              </p>
+
+              <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                  <div className="text-2xl">👥</div>
+                  <p className="mt-3 text-2xl font-bold text-slate-900">
+                    {selectedOwnerGym.memberships.currentActive}
+                  </p>
+                  <p className="text-xs text-slate-500">
+                    Active memberships · current
+                  </p>
+                </div>
+                <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                  <div className="text-2xl">➕</div>
+                  <p className="mt-3 text-2xl font-bold text-primary">
+                    {selectedOwnerGym.memberships.joinedInRange}
+                  </p>
+                  <p className="text-xs text-slate-500">
+                    Memberships joined in period
+                  </p>
+                </div>
+                <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                  <div className="text-2xl">💳</div>
+                  <p className="mt-3 text-2xl font-bold text-emerald-700">
+                    {selectedOwnerGym.membershipPayments.totalsByCurrency.length
+                      ? selectedOwnerGym.membershipPayments.totalsByCurrency
+                          .map(({ currency, amount }) => `${currency} ${amount.toFixed(2)}`)
+                          .join(" · ")
+                      : "—"}
+                  </p>
+                  <p className="text-xs text-slate-500">
+                    Paid membership payments · {selectedOwnerGym.membershipPayments.paidCount}
+                  </p>
+                </div>
+                <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                  <div className="text-2xl">📍</div>
+                  <p className="mt-3 text-2xl font-bold text-blue-700">
+                    {selectedOwnerGym.attendance.checkIns}
+                  </p>
+                  <p className="text-xs text-slate-500">
+                    Attendance check-ins in period
+                  </p>
+                </div>
+              </section>
+
+              <section className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+                <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                  <h2 className="text-lg font-bold text-slate-900">
+                    👥 Memberships
+                  </h2>
+                  <p className="mt-1 text-sm text-slate-500">
+                    Current persisted membership status and changes in the selected period.
+                  </p>
+                  <dl className="mt-5 grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <dt className="text-slate-500">Total members · current</dt>
+                      <dd className="mt-1 text-xl font-bold text-slate-900">
+                        {selectedOwnerGym.memberships.currentTotal}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-slate-500">Non-active · current</dt>
+                      <dd className="mt-1 text-xl font-bold text-slate-900">
+                        {selectedOwnerGym.memberships.currentNonActive}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-slate-500">Joined in period</dt>
+                      <dd className="mt-1 text-xl font-bold text-slate-900">
+                        {selectedOwnerGym.memberships.joinedInRange}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-slate-500">Status changes in period</dt>
+                      <dd className="mt-1 text-xl font-bold text-slate-900">
+                        {selectedOwnerGym.memberships.statusChangesInRange}
+                      </dd>
+                    </div>
+                  </dl>
+                </div>
+
+                <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                  <h2 className="text-lg font-bold text-slate-900">
+                    📈 Retention
+                  </h2>
+                  <p className="mt-1 text-sm text-slate-500">
+                    Share of memberships active at the start that remained active at the end of this period.
+                  </p>
+                  <p className="mt-5 text-3xl font-bold text-primary">
+                    {selectedOwnerGym.retention.rate === null
+                      ? "—"
+                      : `${selectedOwnerGym.retention.rate}%`}
+                  </p>
+                  <p className="mt-2 text-sm text-slate-500">
+                    {selectedOwnerGym.retention.retainedMembers} of{" "}
+                    {selectedOwnerGym.retention.activeAtStart} start-of-period active memberships retained
+                  </p>
+                  <p className="mt-1 text-xs text-slate-400">
+                    Active at period end: {selectedOwnerGym.retention.activeAtEnd}
+                  </p>
+                </div>
+
+                <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                  <h2 className="text-lg font-bold text-slate-900">
+                    💳 Membership Payments
+                  </h2>
+                  <p className="mt-1 text-sm text-slate-500">
+                    Recorded paid membership payments by currency; PT-session payments are excluded.
+                  </p>
+                  {selectedOwnerGym.membershipPayments.totalsByCurrency.length ? (
+                    <ul className="mt-4 space-y-2">
+                      {selectedOwnerGym.membershipPayments.totalsByCurrency.map(
+                        ({ currency, amount }) => (
+                          <li
+                            key={currency}
+                            className="flex justify-between rounded-lg bg-slate-50 p-3 text-sm"
+                          >
+                            <span className="text-slate-600">{currency}</span>
+                            <span className="font-semibold text-slate-900">
+                              {amount.toFixed(2)}
+                            </span>
+                          </li>
+                        ),
+                      )}
+                    </ul>
+                  ) : (
+                    <p className="mt-4 text-sm text-slate-500">
+                      No paid membership payments recorded in this period.
+                    </p>
+                  )}
+                </div>
+
+                <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                  <h2 className="text-lg font-bold text-slate-900">
+                    📍 Attendance
+                  </h2>
+                  <p className="mt-1 text-sm text-slate-500">
+                    Check-ins recorded during the selected period.
+                  </p>
+                  <dl className="mt-5 grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <dt className="text-slate-500">Check-ins</dt>
+                      <dd className="mt-1 text-2xl font-bold text-slate-900">
+                        {selectedOwnerGym.attendance.checkIns}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-slate-500">Unique members</dt>
+                      <dd className="mt-1 text-2xl font-bold text-slate-900">
+                        {selectedOwnerGym.attendance.uniqueMembers}
+                      </dd>
+                    </div>
+                  </dl>
+                </div>
+              </section>
+
+              <section className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                <p className="text-sm leading-relaxed text-slate-600">
+                  Owner metrics use persisted gym memberships, membership status history, paid membership payments, and attendance records. Current membership counts are current snapshots; period activity uses the selected date range. Missing history or payments are not estimated.
+                </p>
+              </section>
+            </>
+          )}
+        </>
+      ) : (
+        <>
       {/* OVERALL SCORE */}
       <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-center">
@@ -1327,6 +1596,8 @@ export default function ReportsPage() {
             : "Workouts, nutrition, body weight, and measurements are loaded from your authenticated account records. Habits, hydration, and journal entries are still read from this browser&apos;s localStorage and are not synced between devices. Missing account data is shown as unavailable rather than estimated."}
         </p>
       </section>
+        </>
+      )}
     </main>
     </>
   );
