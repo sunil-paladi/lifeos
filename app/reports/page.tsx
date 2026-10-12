@@ -12,8 +12,10 @@ import {
   getCalendarDateInTimeZone,
   getCurrentCalendarDate,
   parseCalendarDate,
+  serializeCsv,
 } from "@/app/lib/reports";
 import type { CalendarDateRange } from "@/app/lib/reports";
+import type { CsvCell } from "@/app/lib/reports";
 import { selectTrainerReportClient } from "@/app/lib/reports/member-report";
 
 type ReportPeriod = "weekly" | "monthly" | "custom";
@@ -736,6 +738,96 @@ export default function ReportsPage() {
         ? "Monthly Report"
         : "Custom Report";
 
+  function handleExportCsv() {
+    if (!range) return;
+
+    const rows: CsvCell[][] = [
+      ["Report", reportTitle],
+      ["From", range.from],
+      ["To", range.to],
+      ["Timezone", range.timezone],
+      [],
+      ["Metric", "Value", "Unit", "Data source"],
+    ];
+
+    if (isOwnerReport) {
+      rows.push(["Gym", selectedOwnerGym?.name ?? null, null, "Database"]);
+      if (selectedOwnerGym) {
+        rows.push(
+          ["Current memberships", selectedOwnerGym.memberships.currentTotal, "members", "Database"],
+          ["Active memberships", selectedOwnerGym.memberships.currentActive, "members", "Database"],
+          ["Non-active memberships", selectedOwnerGym.memberships.currentNonActive, "members", "Database"],
+          ["Memberships joined in period", selectedOwnerGym.memberships.joinedInRange, "members", "Database"],
+          ["Membership status changes", selectedOwnerGym.memberships.statusChangesInRange, "changes", "Database"],
+          ["Paid membership payments", selectedOwnerGym.membershipPayments.paidCount, "payments", "Database"],
+          ["Attendance check-ins", selectedOwnerGym.attendance.checkIns, "check-ins", "Database"],
+          ["Unique attending members", selectedOwnerGym.attendance.uniqueMembers, "members", "Database"],
+          ["Active at period start", selectedOwnerGym.retention.activeAtStart, "members", "Database"],
+          ["Active at period end", selectedOwnerGym.retention.activeAtEnd, "members", "Database"],
+          ["Retained memberships", selectedOwnerGym.retention.retainedMembers, "members", "Database"],
+          ["Retention rate", selectedOwnerGym.retention.rate, "%", "Database"],
+        );
+        for (const { currency, amount } of selectedOwnerGym.membershipPayments.totalsByCurrency) {
+          rows.push(["Paid membership revenue", amount, currency, "Database"]);
+        }
+      }
+    } else {
+      rows.push([
+        isTrainerReport ? "Assigned client" : "Report subject",
+        isTrainerReport
+          ? selectedTrainerClient?.name ?? null
+          : "Authenticated member",
+        null,
+        "Database",
+      ]);
+      rows.push(
+        ["Completed workouts", summary.workouts, "workouts", "Database"],
+        ["Workout duration", summary.workoutMinutes, "minutes", "Database"],
+        ["Workout consistency", overallScore, "%", "Database"],
+        ["Completed sets", workoutMetrics.completedSets, "sets", "Database"],
+        ["Recorded workout volume", workoutMetrics.weightedVolume, null, "Database"],
+        ["Nutrition days recorded", summary.nutritionDays, "days", "Database"],
+        ["Average calories", nutritionDetails.calories, "kcal/day", "Database"],
+        ["Average protein", nutritionDetails.protein, "g/day", "Database"],
+        ["Average carbohydrates", nutritionDetails.carbs, "g/day", "Database"],
+        ["Average fat", nutritionDetails.fat, "g/day", "Database"],
+        ["First recorded weight", firstWeight?.weight ?? null, null, "Database"],
+        ["Latest recorded weight", latestWeight?.weight ?? null, null, "Database"],
+        [
+          "Weight change",
+          firstWeight && latestWeight ? latestWeight.weight - firstWeight.weight : null,
+          null,
+          "Database",
+        ],
+      );
+      if (isTrainerReport) {
+        rows.push(
+          ["Habits", null, null, "Unavailable: browser-only data"],
+          ["Hydration", null, null, "Unavailable: browser-only data"],
+          ["Journal", null, null, "Unavailable: browser-only data"],
+        );
+      } else {
+        rows.push(
+          ["Habit consistency", summary.habitAverage, "%", "Browser localStorage"],
+          ["Water goal average", summary.waterAverage, "%", "Browser localStorage"],
+          ["Journal entries", summary.journalEntries, "entries", "Browser localStorage"],
+        );
+      }
+    }
+
+    const blob = new Blob([`\uFEFF${serializeCsv(rows)}`], {
+      type: "text/csv;charset=utf-8",
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `lifeos-report-${range.from}-to-${range.to}.csv`;
+    document.body.append(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  }
+
   const reportDescription =
     isOwnerReport
       ? "Persisted membership, payment, attendance, and retention data for your gym."
@@ -843,8 +935,16 @@ export default function ReportsPage() {
           📄 Generate PDF
         </button>
 
+        <button
+          type="button"
+          onClick={handleExportCsv}
+          className="rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
+        >
+          Export CSV
+        </button>
+
         <p className="text-xs text-slate-500">
-          Opens the print window. Choose <strong>Save as PDF</strong> to download your report.
+          PDF opens the print window; CSV downloads the selected report data.
         </p>
       </div>
 

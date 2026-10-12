@@ -6,15 +6,26 @@ import {
 import type { CalendarDateRange, WorkoutSetInput } from "@/app/lib/reports";
 
 export function parseMemberReportRange(searchParams: URLSearchParams): CalendarDateRange {
-  const from = searchParams.get("from");
-  const to = searchParams.get("to");
-  const timezone = searchParams.get("timezone");
+  const fromValues = searchParams.getAll("from");
+  const toValues = searchParams.getAll("to");
+  const timezoneValues = searchParams.getAll("timezone");
 
-  if (!from || !to || !timezone) {
+  if (!fromValues.length || !toValues.length || !timezoneValues.length) {
     throw new RangeError("from, to, and timezone are required");
   }
+  if (
+    fromValues.length !== 1 ||
+    toValues.length !== 1 ||
+    timezoneValues.length !== 1
+  ) {
+    throw new RangeError("from, to, and timezone must each be supplied once");
+  }
 
-  return createCalendarDateRange(from, to, timezone);
+  return createCalendarDateRange(
+    fromValues[0],
+    toValues[0],
+    timezoneValues[0],
+  );
 }
 
 export function buildMemberReportWhere(

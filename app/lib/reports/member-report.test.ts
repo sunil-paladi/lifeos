@@ -33,6 +33,18 @@ test("rejects missing and invalid date filters", () => {
   assert.throws(
     () =>
       parseMemberReportRange(
+        new URLSearchParams([
+          ["from", "2024-03-01"],
+          ["from", "2024-03-02"],
+          ["to", "2024-03-07"],
+          ["timezone", "UTC"],
+        ]),
+      ),
+    /must each be supplied once/,
+  );
+  assert.throws(
+    () =>
+      parseMemberReportRange(
         new URLSearchParams({
           from: "2024-02-30",
           to: "2024-03-01",
@@ -121,9 +133,9 @@ test("passes custom member date ranges through every persisted report filter", (
 
 test("filters trainer report data to the authenticated trainer's assigned client IDs", () => {
   const range = parseMemberReportRange(new URLSearchParams({
-    from: "2024-05-01",
-    to: "2024-05-07",
-    timezone: "UTC",
+    from: "2024-03-10",
+    to: "2024-03-10",
+    timezone: "America/Los_Angeles",
   }));
   const clientUserIds = ["client-1", "client-2"];
   const filters = buildTrainerReportWhere(clientUserIds, range);
@@ -142,6 +154,14 @@ test("filters trainer report data to the authenticated trainer's assigned client
       lt: range.endExclusiveAt,
     });
   }
+  assert.equal(
+    filters.workouts.startedAt.gte.toISOString(),
+    "2024-03-10T08:00:00.000Z",
+  );
+  assert.equal(
+    filters.workouts.startedAt.lt.toISOString(),
+    "2024-03-11T07:00:00.000Z",
+  );
 });
 
 test("selects one assigned client's complete report without mixing other clients", () => {

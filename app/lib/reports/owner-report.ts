@@ -35,11 +35,6 @@ export function buildOwnerReportWhere(
         is: { gymId, role: "MEMBER" as const },
       },
     },
-    membershipsJoinedInRange: {
-      gymId,
-      role: "MEMBER" as const,
-      joinedAt: date,
-    },
   };
 }
 

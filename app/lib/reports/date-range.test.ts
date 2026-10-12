@@ -41,6 +41,18 @@ test("uses inclusive local dates and exclusive next-day boundary", () => {
   );
 });
 
+test("preserves inclusive start and exclusive end instants across daylight saving", () => {
+  const range = createCalendarDateRange(
+    "2024-11-02",
+    "2024-11-03",
+    "America/Los_Angeles",
+  );
+
+  assert.equal(range.startAt.toISOString(), "2024-11-02T07:00:00.000Z");
+  assert.equal(range.endExclusiveAt.toISOString(), "2024-11-04T08:00:00.000Z");
+  assert.equal(range.dayCount, 2);
+});
+
 test("supports timezone offsets that cross UTC date boundaries", () => {
   const range = createCalendarDateRange(
     "2024-01-01",

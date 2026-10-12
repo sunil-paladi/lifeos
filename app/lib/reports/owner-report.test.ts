@@ -6,6 +6,7 @@ import {
   summarizeOwnerGymReport,
   type OwnerReportMembership,
 } from "./owner-report";
+import { parseMemberReportRange } from "./member-report";
 
 const range = createCalendarDateRange(
   "2024-05-01",
@@ -33,10 +34,6 @@ test("filters all owner report queries by authorized gyms and selected range", (
   });
   assert.deepEqual(filters.membershipPayments.memberMembership.is.role, "MEMBER");
   assert.deepEqual(filters.statusChanges.membership.is.role, "MEMBER");
-  assert.deepEqual(filters.membershipsJoinedInRange.joinedAt, {
-    gte: range.startAt,
-    lt: range.endExclusiveAt,
-  });
   assert.deepEqual(filters.statusChanges.changedAt, {
     gte: range.startAt,
     lt: range.endExclusiveAt,
@@ -45,6 +42,24 @@ test("filters all owner report queries by authorized gyms and selected range", (
     buildOwnerReportWhere([], range).memberships.gymId,
     { in: [] },
   );
+});
+
+test("uses shared validation for missing, invalid, and reversed owner ranges", () => {
+  assert.throws(
+    () => parseMemberReportRange(new URLSearchParams()),
+    /from, to, and timezone are required/,
+  );
+  for (const [from, to] of [
+    ["2024-02-30", "2024-03-01"],
+    ["2024-05-08", "2024-05-01"],
+  ]) {
+    assert.throws(
+      () =>
+        parseMemberReportRange(
+          new URLSearchParams({ from, to, timezone: "UTC" }),
+        ),
+    );
+  }
 });
 
 test("reports empty persisted results without inventing payments, attendance, or retention", () => {
