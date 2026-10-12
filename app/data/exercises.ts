@@ -1282,7 +1282,7 @@ export const exercises: Record<string, Exercise[]> = {
   {
     id: 308,
     bodyPart: "Shoulders",
-    name: "Face Pull",
+    name: "Face Pull with External Rotation",
     image: "/images/face-pull.png",
     primaryMuscle: "Rear Deltoids",
     secondaryMuscles: ["Upper Back"],
@@ -2364,7 +2364,13 @@ Forearms: [
       type: "cardio",
       duration: 20,
       completed: false,
-      instructions: [],
+      instructions: [
+        "Set the treadmill to a slow walking speed before stepping onto the belt.",
+        "Walk with a comfortable stride while looking forward.",
+        "Keep your posture upright and let your arms move naturally.",
+        "Increase the speed gradually only while you feel steady.",
+        "Slow the treadmill before stepping off.",
+      ],
       startingPosition:
         "Stand on the treadmill side rails, attach the safety clip if available, and set a slow walking speed before stepping onto the belt.",
       techniqueTips: [

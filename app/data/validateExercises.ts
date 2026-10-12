@@ -9,8 +9,6 @@ const requiredFields = [
   "secondaryMuscles",
   "equipment",
   "difficulty",
-  "sets",
-  "reps",
   "completed",
   "instructions",
 ];
@@ -18,6 +16,7 @@ const requiredFields = [
 export function validateExerciseDatabase() {
   const errors: string[] = [];
   const ids = new Set<number>();
+  const names = new Set<string>();
 
   Object.entries(exercises).forEach(([category, exerciseList]) => {
     if (exerciseList.length === 0) {
@@ -33,6 +32,12 @@ export function validateExerciseDatabase() {
       }
 
       ids.add(exercise.id);
+
+      const normalizedName = exercise.name.trim().toLowerCase();
+      if (normalizedName && names.has(normalizedName)) {
+        errors.push(`Duplicate exercise name: ${exercise.name}`);
+      }
+      names.add(normalizedName);
 
       // Check required fields
       requiredFields.forEach((field) => {
@@ -50,24 +55,17 @@ export function validateExerciseDatabase() {
         }
       });
 
-      // Check sets
-      if (
-        exercise.sets !== undefined &&
-        exercise.sets <= 0
-      ) {
-        errors.push(
-          `${exercise.name}: Invalid sets`
-        );
-      }
-
-      // Check reps
-      if (
-        exercise.reps !== undefined &&
-        exercise.reps <= 0
-      ) {
-        errors.push(
-          `${exercise.name}: Invalid reps`
-        );
+      if (exercise.type === "cardio") {
+        if (exercise.duration === undefined || exercise.duration <= 0) {
+          errors.push(`${exercise.name}: Missing or invalid duration`);
+        }
+      } else {
+        if (exercise.sets === undefined || exercise.sets <= 0) {
+          errors.push(`${exercise.name}: Missing or invalid sets`);
+        }
+        if (exercise.reps === undefined || exercise.reps <= 0) {
+          errors.push(`${exercise.name}: Missing or invalid reps`);
+        }
       }
 
       // Check instructions
