@@ -11,9 +11,12 @@ import {
   getCalendarDates,
   getCalendarDateInTimeZone,
   getCurrentCalendarDate,
+  parseCalendarDate,
 } from "@/app/lib/reports";
+import type { CalendarDateRange } from "@/app/lib/reports";
+import { selectTrainerReportClient } from "@/app/lib/reports/member-report";
 
-type ReportPeriod = "weekly" | "monthly";
+type ReportPeriod = "weekly" | "monthly" | "custom";
 
 type Goal = {
   id: number;
@@ -79,11 +82,6 @@ type Meal = {
   fat: number;
 };
 
-type NutritionDay = {
-  date: string;
-  meals: Meal[];
-};
-
 type NutritionTargets = {
   calories: number;
   protein: number;
@@ -104,6 +102,31 @@ type BodyMeasurement = {
   arms: number | null;
   thighs: number | null;
   recordedAt: string;
+};
+
+type ReportPayload = {
+  range: { timezone: string };
+  workouts: Omit<ReportWorkout, "date">[];
+  nutritionDays: { date: string; meals: Meal[] }[];
+  nutritionTarget: NutritionTargets | null;
+  weightEntries: WeightEntry[];
+  bodyMeasurements: BodyMeasurement[];
+};
+
+type TrainerReportClient = {
+  id: string;
+  name: string;
+  username: string | null;
+  workouts: ReportPayload["workouts"];
+  nutritionDays: ReportPayload["nutritionDays"];
+  nutritionTarget: NutritionTargets | null;
+  weightEntries: WeightEntry[];
+  bodyMeasurements: BodyMeasurement[];
+};
+
+type TrainerReportPayload = {
+  range: ReportPayload["range"];
+  clients: TrainerReportClient[];
 };
 
 type JournalEntry = {
@@ -131,7 +154,7 @@ const JOURNAL_STORAGE_KEY = "lifeos-journal";
 
 const WATER_TARGET = 3000;
 
-function getCurrentRange(period: ReportPeriod) {
+function getCurrentRange(period: Exclude<ReportPeriod, "custom">) {
   const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   const today = getCurrentCalendarDate(timezone);
   const start = new Date(`${today}T00:00:00.000Z`);
@@ -149,12 +172,7 @@ function getCurrentRange(period: ReportPeriod) {
   );
 }
 
-function getDatesForPeriod(period: ReportPeriod) {
-  return getCalendarDates(getCurrentRange(period));
-}
-
-function formatDateRange(period: ReportPeriod) {
-  const range = getCurrentRange(period);
+function formatDateRange(range: CalendarDateRange, period: ReportPeriod) {
   const start = range.startAt;
   const end = new Date(range.endExclusiveAt.getTime() - 1);
 
@@ -213,9 +231,84 @@ function average(values: (number | null)[]) {
   return averageRecorded(values);
 }
 
+async function readReportResponse(response: Response): Promise<unknown> {
+  const body = await response.text();
+  const contentType = response.headers.get("content-type") ?? "";
+
+  if (!contentType.toLowerCase().includes("application/json")) {
+    throw new Error(
+      response.ok
+        ? "The report service returned a non-JSON response."
+        : `The report request failed with HTTP ${response.status} and a non-JSON response.`,
+    );
+  }
+
+  let data: unknown;
+  try {
+    data = JSON.parse(body);
+  } catch {
+    throw new Error(
+      `The report service returned invalid JSON (HTTP ${response.status}).`,
+    );
+  }
+
+  if (!response.ok) {
+    const message =
+      data !== null &&
+      typeof data === "object" &&
+      "error" in data &&
+      typeof data.error === "string"
+        ? data.error
+        : "Unable to load your personal report";
+    throw new Error(`${message} (HTTP ${response.status})`);
+  }
+
+  if (data === null || typeof data !== "object") {
+    throw new Error("The report service returned an invalid response.");
+  }
+  return data;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object";
+}
+
+function hasReportRange(value: unknown): value is { timezone: string } {
+  return isRecord(value) && typeof value.timezone === "string";
+}
+
+function isTrainerReportPayload(
+  value: unknown,
+): value is TrainerReportPayload {
+  return (
+    isRecord(value) &&
+    hasReportRange(value.range) &&
+    Array.isArray(value.clients)
+  );
+}
+
+function isReportPayload(value: unknown): value is ReportPayload {
+  return (
+    isRecord(value) &&
+    hasReportRange(value.range) &&
+    Array.isArray(value.workouts) &&
+    Array.isArray(value.nutritionDays) &&
+    Array.isArray(value.weightEntries) &&
+    Array.isArray(value.bodyMeasurements) &&
+    "nutritionTarget" in value
+  );
+}
+
 export default function ReportsPage() {
   const [period, setPeriod] =
     useState<ReportPeriod>("weekly");
+  const [initialWeeklyRange] = useState(() => getCurrentRange("weekly"));
+  const [customStartDate, setCustomStartDate] =
+    useState(initialWeeklyRange.from);
+  const [customEndDate, setCustomEndDate] =
+    useState(initialWeeklyRange.to);
+  const [customRange, setCustomRange] =
+    useState<Pick<CalendarDateRange, "from" | "to"> | null>(null);
 
   const [habitHistory, setHabitHistory] =
     useState<HabitDay[]>([]);
@@ -223,28 +316,75 @@ export default function ReportsPage() {
   const [waterHistory, setWaterHistory] =
     useState<WaterDay[]>([]);
 
-  const [workoutHistory, setWorkoutHistory] =
-    useState<ReportWorkout[]>([]);
-
-  const [nutritionHistory, setNutritionHistory] =
-    useState<NutritionDay[]>([]);
-
-  const [nutritionTargets, setNutritionTargets] =
-    useState<NutritionTargets | null>(null);
-
-  const [weightEntries, setWeightEntries] =
-    useState<WeightEntry[]>([]);
-
-  const [bodyMeasurements, setBodyMeasurements] =
-    useState<BodyMeasurement[]>([]);
+  const [memberReportData, setMemberReportData] =
+    useState<ReportPayload | null>(null);
 
   const [reportError, setReportError] =
     useState<string | null>(null);
   const [journalEntries, setJournalEntries] =
     useState<JournalEntry[]>([]);
 
-  const [loadedPeriod, setLoadedPeriod] =
-    useState<ReportPeriod | null>(null);
+  const [loadedRangeKey, setLoadedRangeKey] =
+    useState<string | null>(null);
+
+  const [trainerClients, setTrainerClients] =
+    useState<TrainerReportClient[]>([]);
+
+  const [selectedTrainerClientId, setSelectedTrainerClientId] =
+    useState("");
+  const [isTrainerReport, setIsTrainerReport] = useState(false);
+
+  const range = useMemo(() => {
+    if (period === "custom") {
+      if (!customRange) return null;
+      return createCalendarDateRange(
+        customRange.from,
+        customRange.to,
+        Intl.DateTimeFormat().resolvedOptions().timeZone,
+      );
+    }
+    return getCurrentRange(period);
+  }, [period, customRange]);
+  const rangeKey = range
+    ? `${period}:${range.from}:${range.to}:${range.timezone}`
+    : null;
+  const customRangeIsValid =
+    parseCalendarDate(customStartDate) !== null &&
+    parseCalendarDate(customEndDate) !== null &&
+    customStartDate <= customEndDate;
+
+  const selectedTrainerClient = useMemo(
+    () => selectTrainerReportClient(trainerClients, selectedTrainerClientId),
+    [trainerClients, selectedTrainerClientId],
+  );
+  const selectedReportData = isTrainerReport
+    ? selectedTrainerClient
+    : memberReportData;
+  const workoutHistory = useMemo(
+    () =>
+      (selectedReportData?.workouts ?? []).map((workout) => ({
+        ...workout,
+        date: getCalendarDateInTimeZone(
+          new Date(workout.startedAt),
+          range?.timezone ?? "UTC",
+        ),
+      })),
+    [selectedReportData, range?.timezone],
+  );
+  const nutritionHistory = useMemo(
+    () =>
+      (selectedReportData?.nutritionDays ?? []).map((day) => ({
+        ...day,
+        date: getCalendarDateInTimeZone(
+          new Date(day.date),
+          range?.timezone ?? "UTC",
+        ),
+      })),
+    [selectedReportData, range?.timezone],
+  );
+  const nutritionTargets = selectedReportData?.nutritionTarget ?? null;
+  const weightEntries = selectedReportData?.weightEntries ?? [];
+  const bodyMeasurements = selectedReportData?.bodyMeasurements ?? [];
 
   useEffect(() => {
     let active = true;
@@ -274,86 +414,56 @@ export default function ReportsPage() {
       }
     });
 
-    const range = getCurrentRange(period);
+    if (!range || !rangeKey) {
+      return () => {
+        active = false;
+      };
+    }
+
     const params = new URLSearchParams({
       from: range.from,
       to: range.to,
       timezone: range.timezone,
     });
 
-    fetch(`/api/reports/member?${params.toString()}`)
-      .then(async (response) => {
-        const body = await response.text();
-        const contentType = response.headers.get("content-type") ?? "";
-        if (!contentType.toLowerCase().includes("application/json")) {
-          throw new Error(
-            response.ok
-              ? "The report service returned a non-JSON response."
-              : `The report request failed with HTTP ${response.status} and a non-JSON response.`,
-          );
+    fetch(`/api/reports/trainer?${params.toString()}`)
+      .then(async (trainerResponse) => {
+        if (trainerResponse.status !== 403) {
+          return readReportResponse(trainerResponse);
         }
 
-        let data: unknown;
-        try {
-          data = JSON.parse(body);
-        } catch {
-          throw new Error(
-            `The report service returned invalid JSON (HTTP ${response.status}).`,
-          );
-        }
-
-        if (!response.ok) {
-          const errorMessage =
-            data !== null &&
-            typeof data === "object" &&
-            "error" in data &&
-            typeof data.error === "string"
-              ? data.error
-              : "Unable to load your personal report";
-          throw new Error(
-            `${errorMessage} (HTTP ${response.status})`,
-          );
-        }
-        if (data === null || typeof data !== "object") {
-          throw new Error("The report service returned an invalid response.");
-        }
-        return data as {
-          range: { timezone: string };
-          workouts: Omit<ReportWorkout, "date">[];
-          nutritionDays: { date: string; meals: Meal[] }[];
-          nutritionTarget: NutritionTargets | null;
-          weightEntries: WeightEntry[];
-          bodyMeasurements: BodyMeasurement[];
-        };
+        const memberResponse = await fetch(
+          `/api/reports/member?${params.toString()}`,
+        );
+        return readReportResponse(memberResponse);
       })
       .then((data) => {
         if (!active) return;
         setReportError(null);
-        const timezone = data.range.timezone;
-        setWorkoutHistory(
-          data.workouts.map((workout: Omit<ReportWorkout, "date">) => ({
-            ...workout,
-            date: getCalendarDateInTimeZone(
-              new Date(workout.startedAt),
-              timezone,
-            ),
-          })),
-        );
-        setNutritionHistory(
-          data.nutritionDays.map(
-            (day: { date: string; meals: Meal[] }) => ({
-              ...day,
-              date: getCalendarDateInTimeZone(new Date(day.date), timezone),
-            }),
-          ),
-        );
-        setNutritionTargets(data.nutritionTarget);
-        setWeightEntries(data.weightEntries);
-        setBodyMeasurements(data.bodyMeasurements);
+        if (isTrainerReportPayload(data)) {
+          const trainerData = data;
+          setIsTrainerReport(true);
+          setMemberReportData(null);
+          setTrainerClients(trainerData.clients);
+          const firstClient = trainerData.clients[0];
+          setSelectedTrainerClientId(firstClient?.id ?? "");
+        } else if (isReportPayload(data)) {
+          const memberData = data;
+          setIsTrainerReport(false);
+          setTrainerClients([]);
+          setSelectedTrainerClientId("");
+          setMemberReportData(memberData);
+        } else {
+          throw new Error("The report service returned an invalid response.");
+        }
       })
       .catch((error: unknown) => {
         if (!active) return;
         console.error("Failed to load persisted report data:", error);
+        setIsTrainerReport(false);
+        setMemberReportData(null);
+        setTrainerClients([]);
+        setSelectedTrainerClientId("");
         setReportError(
           error instanceof Error
             ? error.message
@@ -361,17 +471,17 @@ export default function ReportsPage() {
         );
       })
       .finally(() => {
-        if (active) setLoadedPeriod(period);
+        if (active) setLoadedRangeKey(rangeKey);
       });
 
     return () => {
       active = false;
     };
-  }, [period]);
+  }, [range, rangeKey]);
 
   const dates = useMemo(
-    () => getDatesForPeriod(period),
-    [period]
+    () => (range ? getCalendarDates(range) : []),
+    [range],
   );
 
   const dateSet = useMemo(
@@ -380,13 +490,13 @@ export default function ReportsPage() {
   );
 
   const summary = useMemo<Summary>(() => {
-    const habits = habitHistory.filter(
-      (item) => dateSet.has(item.date)
-    );
+    const habits = isTrainerReport
+      ? []
+      : habitHistory.filter((item) => dateSet.has(item.date));
 
-    const water = waterHistory.filter(
-      (item) => dateSet.has(item.date)
-    );
+    const water = isTrainerReport
+      ? []
+      : waterHistory.filter((item) => dateSet.has(item.date));
 
     const workouts = workoutHistory.filter(
       (item) =>
@@ -421,9 +531,9 @@ export default function ReportsPage() {
       ) / 60,
     );
 
-    const journals = journalEntries.filter(
-      (entry) => dateSet.has(entry.date)
-    );
+    const journals = isTrainerReport
+      ? []
+      : journalEntries.filter((entry) => dateSet.has(entry.date));
 
     return {
       workouts: workouts.length,
@@ -444,6 +554,7 @@ export default function ReportsPage() {
     nutritionTargets,
     journalEntries,
     dateSet,
+    isTrainerReport,
   ]);
 
   const overallScore = useMemo(() => {
@@ -523,7 +634,10 @@ export default function ReportsPage() {
 
   const workoutMetrics = useMemo(() => {
     const sets = workoutHistory
-      .filter((workout) => workout.status === "COMPLETED")
+      .filter(
+        (workout) =>
+          dateSet.has(workout.date) && workout.status === "COMPLETED",
+      )
       .flatMap((workout) =>
         workout.workoutSessionExercises.flatMap((exercise) => exercise.workoutSets),
       );
@@ -538,7 +652,7 @@ export default function ReportsPage() {
         0,
       ),
     };
-  }, [workoutHistory]);
+  }, [workoutHistory, dateSet]);
 
   const latestWeight = weightEntries.at(-1) ?? null;
   const firstWeight = weightEntries[0] ?? null;
@@ -551,19 +665,25 @@ export default function ReportsPage() {
   const reportTitle =
     period === "weekly"
       ? "Weekly Report"
-      : "Monthly Report";
+      : period === "monthly"
+        ? "Monthly Report"
+        : "Custom Report";
 
   const reportDescription =
-    period === "weekly"
+    isTrainerReport
+      ? "A snapshot of assigned client progress in this period."
+      : period === "weekly"
       ? "A snapshot of your last 7 days."
-      : "A snapshot of your progress this month.";
+      : period === "monthly"
+        ? "A snapshot of your progress this month."
+        : "A snapshot of your progress in the selected date range.";
 
-  if (loadedPeriod !== period) {
+  if (!range || loadedRangeKey !== rangeKey) {
     return (
       <main className="space-y-6">
         <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <p className="text-sm text-slate-500">
-            Loading your report...
+            Loading report...
           </p>
         </div>
       </main>
@@ -628,9 +748,14 @@ export default function ReportsPage() {
         <p className="mt-1 text-sm text-slate-500">
           {reportDescription}
         </p>
+        {isTrainerReport && trainerClients.length === 0 && (
+          <p className="mt-2 text-sm text-slate-500" role="status">
+            No active assigned clients are available for reporting.
+          </p>
+        )}
 
         <p className="mt-2 text-xs font-medium text-slate-400">
-          {formatDateRange(period)}
+          {range ? formatDateRange(range, period) : ""}
         </p>
       </div>
 
@@ -678,7 +803,80 @@ export default function ReportsPage() {
         >
           📊 Monthly
         </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            setCustomRange((current) =>
+              current ?? {
+                from: initialWeeklyRange.from,
+                to: initialWeeklyRange.to,
+              },
+            );
+            setPeriod("custom");
+          }}
+          className={`flex-1 rounded-lg px-4 py-2.5 text-sm font-semibold transition ${
+            period === "custom"
+              ? "bg-primary text-white"
+              : "text-slate-500 hover:bg-slate-50"
+          }`}
+        >
+          🗓️ Custom
+        </button>
       </div>
+
+      {period === "custom" && (
+        <div className="flex flex-wrap items-end gap-3 rounded-xl border border-slate-200 bg-white p-4 no-print">
+          <div>
+            <label
+              htmlFor="report-start-date"
+              className="mb-1.5 block text-xs font-medium text-slate-500"
+            >
+              Start date
+            </label>
+            <input
+              id="report-start-date"
+              type="date"
+              value={customStartDate}
+              onChange={(event) => setCustomStartDate(event.target.value)}
+              className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700"
+            />
+          </div>
+          <div>
+            <label
+              htmlFor="report-end-date"
+              className="mb-1.5 block text-xs font-medium text-slate-500"
+            >
+              End date
+            </label>
+            <input
+              id="report-end-date"
+              type="date"
+              value={customEndDate}
+              onChange={(event) => setCustomEndDate(event.target.value)}
+              className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700"
+            />
+          </div>
+          <button
+            type="button"
+            disabled={!customRangeIsValid}
+            onClick={() =>
+              setCustomRange({
+                from: customStartDate,
+                to: customEndDate,
+              })
+            }
+            className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Apply range
+          </button>
+          {!customRangeIsValid && (
+            <p className="text-sm text-red-600" role="alert">
+              Choose valid dates with the start date on or before the end date.
+            </p>
+          )}
+        </div>
+      )}
 
       {/* OVERALL SCORE */}
       <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -774,10 +972,11 @@ export default function ReportsPage() {
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           <div className="text-2xl">📝</div>
           <p className="mt-3 text-2xl font-bold text-purple-600">
-            {summary.journalEntries}
+            {isTrainerReport ? "—" : summary.journalEntries}
           </p>
           <p className="text-xs text-slate-500">
             Journal entries · browser-only
+            {isTrainerReport ? " · unavailable in trainer reports" : ""}
           </p>
         </div>
       </section>
@@ -790,7 +989,9 @@ export default function ReportsPage() {
               💪 Workout Summary
             </h2>
             <p className="mt-1 text-sm text-slate-500">
-              Completed sessions from your account during this period.
+              {isTrainerReport
+                ? "Completed sessions for the selected client during this period."
+                : "Completed sessions from your account during this period."}
             </p>
           </div>
 
@@ -803,6 +1004,32 @@ export default function ReportsPage() {
             </p>
           </div>
         </div>
+
+        {trainerClients.length > 0 && (
+          <div className="mt-4 max-w-sm">
+            <label
+              htmlFor="trainer-report-client"
+              className="mb-1.5 block text-xs font-medium text-slate-500"
+            >
+              Client report
+            </label>
+            <select
+              id="trainer-report-client"
+              value={selectedTrainerClientId}
+              onChange={(event) =>
+                setSelectedTrainerClientId(event.target.value)
+              }
+              className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700"
+            >
+              {trainerClients.map((client) => (
+                <option key={client.id} value={client.id}>
+                  {client.name}
+                  {client.username ? ` (@${client.username})` : ""}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
         <div className="mt-5 grid grid-cols-2 gap-3">
           <div className="rounded-xl bg-slate-50 p-4">
@@ -883,7 +1110,9 @@ export default function ReportsPage() {
           </h2>
 
           <p className="mt-1 text-sm text-slate-500">
-            Persisted meals compared with your recorded nutrition targets.
+            {isTrainerReport
+              ? "Client meals compared with recorded nutrition targets."
+              : "Persisted meals compared with your recorded nutrition targets."}
           </p>
         </div>
 
@@ -960,7 +1189,9 @@ export default function ReportsPage() {
         <div>
           <h2 className="text-lg font-bold text-slate-900">📈 Fitness Progress</h2>
           <p className="mt-1 text-sm text-slate-500">
-            Weight and body measurements recorded in your account during this period.
+            {isTrainerReport
+              ? "Client weight and body measurements recorded during this period."
+              : "Weight and body measurements recorded in your account during this period."}
           </p>
         </div>
 
@@ -1023,7 +1254,9 @@ export default function ReportsPage() {
           </h2>
 
           <p className="mt-1 text-sm text-slate-500">
-            Average completion across recorded habit days · browser-only data.
+            {isTrainerReport
+              ? "Not available in trainer reports · browser-only data."
+              : "Average completion across recorded habit days · browser-only data."}
           </p>
 
           <div className="mt-5">
@@ -1055,7 +1288,9 @@ export default function ReportsPage() {
           </h2>
 
           <p className="mt-1 text-sm text-slate-500">
-            Average progress toward your 3 L daily goal · browser-only data.
+            {isTrainerReport
+              ? "Not available in trainer reports · browser-only data."
+              : "Average progress toward your 3 L daily goal · browser-only data."}
           </p>
 
           <div className="mt-5">
@@ -1066,7 +1301,9 @@ export default function ReportsPage() {
                   : `${summary.waterAverage}%`}
               </span>
               <span className="text-xs text-slate-400">
-                {summary.waterDays} recorded days
+                {isTrainerReport
+                  ? "Unavailable"
+                  : `${summary.waterDays} recorded days`}
               </span>
             </div>
 
@@ -1085,11 +1322,9 @@ export default function ReportsPage() {
       {/* REPORT NOTE */}
       <section className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
         <p className="text-sm leading-relaxed text-slate-600">
-          Workouts, nutrition, body weight, and measurements are loaded from your
-          authenticated account records. Habits, hydration, and journal entries
-          are still read from this browser&apos;s localStorage and are not synced
-          between devices. Missing account data is shown as unavailable rather
-          than estimated.
+          {isTrainerReport
+            ? "Workouts, nutrition, body weight, and measurements are loaded from the selected assigned client's account records. Habits, hydration, and journal entries are browser-only and are not included in trainer reports. Missing account data is shown as unavailable rather than estimated."
+            : "Workouts, nutrition, body weight, and measurements are loaded from your authenticated account records. Habits, hydration, and journal entries are still read from this browser&apos;s localStorage and are not synced between devices. Missing account data is shown as unavailable rather than estimated."}
         </p>
       </section>
     </main>

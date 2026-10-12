@@ -21,6 +21,20 @@ export function buildMemberReportWhere(
   userId: string,
   range: CalendarDateRange,
 ) {
+  return buildReportWhere(userId, range);
+}
+
+export function buildTrainerReportWhere(
+  clientUserIds: readonly string[],
+  range: CalendarDateRange,
+) {
+  return buildReportWhere({ in: [...clientUserIds] }, range);
+}
+
+function buildReportWhere(
+  userId: string | { in: string[] },
+  range: CalendarDateRange,
+) {
   const date = {
     gte: range.startAt,
     lt: range.endExclusiveAt,
@@ -33,6 +47,56 @@ export function buildMemberReportWhere(
     bodyMeasurements: { userId, recordedAt: date },
     nutritionTargets: { userId },
   };
+}
+
+export interface TrainerAssignmentClient {
+  trainerMembershipId: string;
+  clientMembership: {
+    userId: string;
+    role: string;
+    status: string;
+    user: {
+      name: string;
+      username: string | null;
+    };
+  };
+}
+
+export function getTrainerAssignedClients(
+  trainerMembershipIds: readonly string[],
+  assignments: readonly TrainerAssignmentClient[],
+) {
+  const allowedMembershipIds = new Set(trainerMembershipIds);
+  const clients = new Map<
+    string,
+    { id: string; name: string; username: string | null }
+  >();
+
+  for (const assignment of assignments) {
+    const membership = assignment.clientMembership;
+    if (
+      !allowedMembershipIds.has(assignment.trainerMembershipId) ||
+      membership.role !== "MEMBER" ||
+      membership.status !== "ACTIVE"
+    ) {
+      continue;
+    }
+
+    clients.set(membership.userId, {
+      id: membership.userId,
+      name: membership.user.name,
+      username: membership.user.username,
+    });
+  }
+
+  return [...clients.values()];
+}
+
+export function selectTrainerReportClient<T extends { id: string }>(
+  clients: readonly T[],
+  clientId: string,
+): T | null {
+  return clients.find((client) => client.id === clientId) ?? null;
 }
 
 export interface MemberReportWorkout {
