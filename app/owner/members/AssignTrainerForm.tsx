@@ -3,9 +3,12 @@
 import { FormEvent, useState } from "react";
 import { UserRound, X } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { getAvailableTrainers } from "@/app/lib/trainer-assignments";
 
 type Trainer = {
   membershipId: string;
+  gymId: string;
+  status: string;
   name: string;
   username: string | null;
 };
@@ -38,8 +41,10 @@ export default function AssignTrainerForm({
   const assignedTrainerIds = new Set(
     currentTrainers.map((trainer) => trainer.membershipId)
   );
-  const availableTrainers = trainers.filter(
-    (trainer) => !assignedTrainerIds.has(trainer.membershipId)
+  const availableTrainers = getAvailableTrainers(
+    gymId,
+    trainers,
+    [...assignedTrainerIds],
   );
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {

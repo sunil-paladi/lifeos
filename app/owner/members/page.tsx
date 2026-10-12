@@ -21,6 +21,8 @@ type GymMember = {
 
 type Trainer = {
   membershipId: string;
+  gymId: string;
+  status: string;
   name: string;
   username: string | null;
 };
@@ -311,6 +313,11 @@ export default async function OwnerMembersPage() {
                 </div>
                 {member.role === "MEMBER" && membership ? (
                   <>
+                    {trainersResponse.error ? (
+                      <p role="alert" className="sm:col-span-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
+                        Unable to load active trainers: {trainersResponse.error}
+                      </p>
+                    ) : null}
                     <AssignTrainerForm
                       gymId={membership.gymId}
                       clientMembershipId={member.id}

@@ -62,6 +62,7 @@ export async function GET(
     },
     select: {
       id: true,
+      gymId: true,
       status: true,
       joinedAt: true,
       user: {
@@ -78,6 +79,7 @@ export async function GET(
   return NextResponse.json({
     trainers: trainers.map((trainer) => ({
       membershipId: trainer.id,
+      gymId: trainer.gymId,
       userId: trainer.user.id,
       name: trainer.user.name,
       username: trainer.user.username,

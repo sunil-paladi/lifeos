@@ -3,6 +3,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { CalendarPlus, CalendarDays, Clock3, Pencil, UserRound, X } from "lucide-react";
 import { formatMoney, normalizeCurrency } from "@/app/lib/currency";
+import { getAssignedTrainersForClient } from "@/app/lib/trainer-assignments";
 
 type SessionStatus = "SCHEDULED" | "COMPLETED" | "CANCELLED" | "NO_SHOW";
 
@@ -193,12 +194,7 @@ export default function PTSessionsClient({ gymId }: { gymId: string }) {
   }
 
   function trainersForClient(clientMembershipId: string) {
-    const assignedTrainerIds = new Set(
-      assignments
-        .filter((assignment) => assignment.clientMembershipId === clientMembershipId)
-        .map((assignment) => assignment.trainerMembershipId)
-    );
-    return trainers.filter((trainer) => assignedTrainerIds.has(trainer.membershipId));
+    return getAssignedTrainersForClient(clientMembershipId, trainers, assignments);
   }
 
   function selectCreateClient(clientMembershipId: string) {
