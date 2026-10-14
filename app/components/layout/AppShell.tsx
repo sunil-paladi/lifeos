@@ -36,65 +36,71 @@ export default function AppShell({
   const [hasOwnerMembership, setHasOwnerMembership] =
     useState(false);
   const [loading, setLoading] = useState(true);
+  const [sessionError, setSessionError] = useState(false);
 
   const isPublicRoute = publicRoutes.includes(pathname);
 
   useEffect(() => {
     async function checkSession() {
-      const session = await authClient.getSession();
+      setSessionError(false);
+      try {
+        const session = await authClient.getSession();
 
-      if (session.data?.user) {
-        let trainerMembership = false;
-        let ownerMembership = false;
+        if (session.data?.user) {
+          let trainerMembership = false;
+          let ownerMembership = false;
 
-        try {
-          const membershipsResponse = await fetch("/api/gyms", {
-            cache: "no-store",
-          });
+          try {
+            const membershipsResponse = await fetch("/api/gyms", {
+              cache: "no-store",
+            });
 
-          if (membershipsResponse.ok) {
-            const data = (await membershipsResponse.json()) as {
-              memberships?: Array<{ role?: string }>;
-            };
+            if (membershipsResponse.ok) {
+              const data = (await membershipsResponse.json()) as {
+                memberships?: Array<{ role?: string }>;
+              };
 
-            trainerMembership =
-              data.memberships?.some(
-                (membership) => membership.role === "TRAINER"
-              ) ?? false;
-            ownerMembership =
-              data.memberships?.some(
-                (membership) => membership.role === "OWNER"
-              ) ?? false;
+              trainerMembership =
+                data.memberships?.some(
+                  (membership) => membership.role === "TRAINER"
+                ) ?? false;
+              ownerMembership =
+                data.memberships?.some(
+                  (membership) => membership.role === "OWNER"
+                ) ?? false;
+            }
+          } catch {
+            trainerMembership = false;
           }
-        } catch {
-          trainerMembership = false;
-        }
 
-        setUser({
-          id: session.data.user.id,
-          name: session.data.user.name,
-          username: session.data.user.username,
-          email: session.data.user.email,
-        });
-        setHasTrainerMembership(trainerMembership);
-        setHasOwnerMembership(ownerMembership);
-      } else {
-        setUser(null);
-        setHasTrainerMembership(false);
-        setHasOwnerMembership(false);
+          setUser({
+            id: session.data.user.id,
+            name: session.data.user.name,
+            username: session.data.user.username,
+            email: session.data.user.email,
+          });
+          setHasTrainerMembership(trainerMembership);
+          setHasOwnerMembership(ownerMembership);
+        } else {
+          setUser(null);
+          setHasTrainerMembership(false);
+          setHasOwnerMembership(false);
 
-        // Root "/" is our public landing page.
-        // Login and signup are also public.
-        if (pathname !== "/" && !isPublicRoute) {
-          router.replace("/login");
-          return;
+          // Root "/" is our public landing page.
+          // Login and signup are also public.
+          if (pathname !== "/" && !isPublicRoute) {
+            router.replace("/login");
+          }
         }
+      } catch (error) {
+        console.error("Failed to verify the LifeOS session:", error);
+        setSessionError(true);
+      } finally {
+        setLoading(false);
       }
-
-      setLoading(false);
     }
 
-    checkSession();
+    void checkSession();
   }, [pathname, router, isPublicRoute]);
 
   if (loading) {
@@ -106,6 +112,29 @@ export default function AppShell({
           <p className="mt-3 text-sm text-slate-500">
             Loading LifeOS...
           </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (sessionError) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background px-4">
+        <div className="max-w-md rounded-xl border border-border bg-card p-6 text-center">
+          <h1 className="text-lg font-semibold text-foreground">
+            Unable to verify your session
+          </h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            LifeOS could not reach its authentication service. Your session was not changed.
+            Check your connection and try again.
+          </p>
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            className="mt-4 min-h-11 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
+          >
+            Retry
+          </button>
         </div>
       </div>
     );

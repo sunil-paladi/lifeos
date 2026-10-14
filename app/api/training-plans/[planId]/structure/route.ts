@@ -211,6 +211,7 @@ export async function GET(
         id: completePlan.id,
         name: completePlan.name,
         totalWeeks: completePlan.totalWeeks,
+        startDate: completePlan.startDate?.toISOString() ?? null,
       },
       phases: completePlan.phases,
     });

@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { redirect } from "next/navigation";
 import { auth } from "@/app/lib/auth";
+import TodaysWorkout from "@/app/components/workout/TodaysWorkout";
 import { Badge } from "@/app/components/ui/badge";
 import { Button } from "@/app/components/ui/button";
 import { Card } from "@/app/components/ui/card";
@@ -19,7 +20,7 @@ const dailyActions = [
   {
     title: "Workout",
     description: "Plan a session or pick up where you left off.",
-    href: "/workout",
+    href: "/workout#todays-workout",
     icon: Dumbbell,
     accent: "bg-primary/10 text-primary",
   },
@@ -100,7 +101,7 @@ export default async function DashboardPage() {
           </div>
 
           <Button asChild size="lg" className="shrink-0 rounded-xl">
-            <Link href="/workout">
+            <Link href="/workout#todays-workout">
               <Dumbbell size={17} />
               Go to workout
               <ArrowUpRight size={16} />
@@ -108,6 +109,10 @@ export default async function DashboardPage() {
           </Button>
         </div>
       </Card>
+
+      <div id="todays-workout" className="min-w-0 scroll-mt-20">
+        <TodaysWorkout />
+      </div>
 
       <section aria-labelledby="daily-actions-heading">
         <div className="mb-4">

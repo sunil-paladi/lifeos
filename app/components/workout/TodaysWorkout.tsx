@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import {
   Check,
   Clock,
@@ -903,18 +904,18 @@ export default function TodaysWorkout() {
    */
 
   return (
-    <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+    <section className="min-w-0 rounded-xl border border-slate-200 bg-white p-3 shadow-sm sm:p-4">
 
       {/* ================================= */}
       {/* HEADER */}
       {/* ================================= */}
 
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
 
-        <div>
+        <div className="min-w-0">
 
           <p className="text-sm font-medium text-primary">
-            TODAY'S WORKOUT
+            TODAY&apos;S WORKOUT
           </p>
 
           <h1 className="mt-1 text-xl font-bold text-slate-800">
@@ -939,7 +940,7 @@ export default function TodaysWorkout() {
         {/* TOP-RIGHT CONTROLS */}
         {/* ================================= */}
 
-        <div className="flex flex-col items-end gap-2">
+        <div className="flex flex-wrap items-start gap-2 sm:flex-col sm:items-end">
 
           {/* Save Status */}
           <div className="flex items-center gap-2 text-xs">
@@ -1007,7 +1008,7 @@ export default function TodaysWorkout() {
                   totalExercises ===
                   0
                 }
-                className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:bg-slate-300"
+                className="flex min-h-11 items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:bg-slate-300"
               >
 
                 <Play
@@ -1144,8 +1145,8 @@ export default function TodaysWorkout() {
     }`}
   >
     {/* Progress Header */}
-    <div className="flex items-center justify-between">
-      <div className="flex items-center gap-2">
+    <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
+      <div className="flex min-w-0 items-center gap-2">
         <div
           className={`flex h-7 w-7 items-center justify-center rounded-full ${
             completed || progress === 100
@@ -1265,7 +1266,7 @@ export default function TodaysWorkout() {
 )}
       {totalExercises ===
         0 && (
-        <div className="mt-6 rounded-xl border border-dashed border-slate-300 p-8 text-center">
+        <div className="mt-6 rounded-xl border border-dashed border-slate-300 p-4 text-center sm:p-8">
 
           <Dumbbell
             size={32}
@@ -1277,10 +1278,23 @@ export default function TodaysWorkout() {
           </h2>
 
           <p className="mt-1 text-sm text-slate-500">
-            Add exercises to{" "}
-            {today} in the
-            Program Builder.
+            Create a saved program or add exercises in the Program Builder.
           </p>
+
+          <div className="mt-4 flex flex-col justify-center gap-2 sm:flex-row">
+            <Link
+              href="/workout#program-builder"
+              className="inline-flex min-h-11 items-center justify-center rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary/90"
+            >
+              Create a program
+            </Link>
+            <Link
+              href="/workout#add-exercises"
+              className="inline-flex min-h-11 items-center justify-center rounded-lg border border-primary/30 px-4 py-2 text-sm font-semibold text-primary transition hover:bg-primary/5"
+            >
+              Add exercises
+            </Link>
+          </div>
 
         </div>
       )}
@@ -1341,8 +1355,9 @@ export default function TodaysWorkout() {
                     <button
                       type="button"
                       onClick={() => openExercise(exerciseIndex)}
-                      className="flex min-w-0 flex-1 items-center gap-3 px-3 py-2.5 text-left transition hover:bg-slate-50"
+                      className="flex min-h-11 min-w-0 flex-1 items-center gap-3 px-3 py-2.5 text-left transition hover:bg-slate-50"
                       aria-expanded={isExpanded}
+                      aria-controls={isExpanded ? `today-exercise-details-${exerciseIndex}` : undefined}
                     >
                     <div
                       className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${
@@ -1401,7 +1416,7 @@ export default function TodaysWorkout() {
                     <button
                       type="button"
                       onClick={() => setExerciseForDetails(exercise)}
-                      className="my-2 mr-2 shrink-0 rounded-md border border-slate-200 px-2 py-1 text-[10px] font-semibold text-slate-700 transition hover:bg-slate-50"
+                      className="my-2 mr-2 min-h-11 shrink-0 rounded-md border border-slate-200 px-2 py-1 text-[10px] font-semibold text-slate-700 transition hover:bg-slate-50"
                       aria-label={`View details for ${exercise.name}`}
                     >
                       Details
@@ -1409,7 +1424,7 @@ export default function TodaysWorkout() {
                   </div>
 
                   {isExpanded && (
-                    <div className="border-t border-slate-100 bg-slate-50/60 px-3 py-3">
+                    <div id={`today-exercise-details-${exerciseIndex}`} className="border-t border-slate-100 bg-slate-50/60 px-3 py-3">
 
                   {/* Exercise Progress */}
                   <div className="mt-3 rounded-lg bg-slate-50 px-3 py-2">
@@ -1586,7 +1601,7 @@ export default function TodaysWorkout() {
                                         exercise.reps
                                       )
                                     }
-                                    className="w-full rounded-md border border-slate-300 bg-white px-2 py-1.5 text-[11px] outline-none focus:border-primary/30 focus:ring-1 focus:ring-primary/20 disabled:cursor-not-allowed disabled:bg-slate-100 sm:rounded-lg sm:text-sm"
+                                    className="min-h-11 w-full rounded-md border border-slate-300 bg-white px-2 py-1.5 text-[11px] outline-none focus:border-primary/30 focus:ring-1 focus:ring-primary/20 disabled:cursor-not-allowed disabled:bg-slate-100 sm:rounded-lg sm:text-sm"
                                   />
                                 </div>
 
@@ -1612,7 +1627,7 @@ export default function TodaysWorkout() {
                                         exercise.reps
                                       )
                                     }
-                                    className="w-full rounded-md border border-slate-300 bg-white px-2 py-1.5 text-[11px] outline-none focus:border-primary/30 focus:ring-1 focus:ring-primary/20 disabled:cursor-not-allowed disabled:bg-slate-100 sm:rounded-lg sm:text-sm"
+                                    className="min-h-11 w-full rounded-md border border-slate-300 bg-white px-2 py-1.5 text-[11px] outline-none focus:border-primary/30 focus:ring-1 focus:ring-primary/20 disabled:cursor-not-allowed disabled:bg-slate-100 sm:rounded-lg sm:text-sm"
                                   />
                                 </div>
 
@@ -1627,7 +1642,7 @@ export default function TodaysWorkout() {
                                     )
                                   }
                                   disabled={completed}
-                                  className={`h-[30px] w-full shrink-0 rounded-md px-1 text-[9px] font-semibold transition sm:mt-4 sm:h-[34px] sm:rounded-lg sm:px-2.5 sm:text-xs ${
+                                  className={`min-h-11 w-full shrink-0 rounded-md px-1 text-[9px] font-semibold transition sm:mt-4 sm:h-[34px] sm:rounded-lg sm:px-2.5 sm:text-xs ${
                                     currentSet.completed
                                       ? "bg-primary text-white hover:bg-primary/90"
                                       : "border border-slate-300 bg-white text-slate-600 hover:bg-slate-100"
@@ -1671,7 +1686,7 @@ export default function TodaysWorkout() {
                             onClick={() =>
                               goToNextExercise(exerciseIndex)
                             }
-                            className="rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-primary/90"
+                            className="min-h-11 rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-primary/90"
                           >
                             Next Exercise →
                           </button>
@@ -1681,7 +1696,7 @@ export default function TodaysWorkout() {
                             onClick={() =>
                               setExpandedExerciseIndex(null)
                             }
-                            className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
+                            className="min-h-11 rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
                           >
                             Finish Exercises
                           </button>

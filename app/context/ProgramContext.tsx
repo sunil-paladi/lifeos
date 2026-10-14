@@ -10,6 +10,12 @@ import {
 } from "react";
 
 import { exercises } from "@/app/data/exercises";
+import {
+  isCurrentProgramLoad,
+  mapTrainingPlanStructureToWeeks,
+  verifySavedWorkoutStructure,
+} from "@/app/lib/program-workout-structure";
+import type { GeneratedWorkout } from "@/app/lib/ai-workout-types";
 
 /* =========================================================
    TYPES
@@ -105,6 +111,28 @@ interface StoredProgram {
   weeks: DayWorkout[];
 }
 
+function readStoredProgramWeeks(): DayWorkout[] {
+  const saved = localStorage.getItem(STORAGE_KEY);
+  if (!saved) {
+    return [];
+  }
+
+  const parsed = JSON.parse(saved) as Partial<StoredProgram> | null;
+  if (!parsed || !Array.isArray(parsed.weeks)) {
+    return [];
+  }
+
+  return parsed.weeks.map((week) => ({
+    Monday: week?.Monday || [],
+    Tuesday: week?.Tuesday || [],
+    Wednesday: week?.Wednesday || [],
+    Thursday: week?.Thursday || [],
+    Friday: week?.Friday || [],
+    Saturday: week?.Saturday || [],
+    Sunday: week?.Sunday || [],
+  }));
+}
+
 /* =========================================================
    CONTEXT TYPE
    ========================================================= */
@@ -115,6 +143,8 @@ interface ProgramContextType {
   weeks: DayWorkout[];
 
   programStartDate: string | null;
+
+  trainingPlanId: string | null;
 
   programLoaded: boolean;
 
@@ -165,6 +195,12 @@ interface ProgramContextType {
   ) => void;
 
   saveProgram: () => void;
+
+  refreshProgram: (
+    planId: string,
+    workout: GeneratedWorkout,
+    expectedWeeks: number,
+  ) => Promise<void>;
 }
 
 /* =========================================================
@@ -206,71 +242,116 @@ export function ProgramProvider({
 
   const databaseWritesInFlight = useRef(0);
   const databaseWriteFailed = useRef(false);
+  const loadProgramRef = useRef<
+    ((planId?: string, expectedWorkout?: GeneratedWorkout, expectedWeeks?: number) => Promise<boolean>) | null
+  >(null);
+  const loadRequestVersion = useRef(0);
 
   /* =======================================================
      LOAD PROGRAM
      ======================================================= */
 
-  useEffect(() => {
-    async function loadProgram() {
-      try {
-        /* -----------------------------------------------
+  async function loadProgram(
+    requestedPlanId?: string,
+    expectedWorkout?: GeneratedWorkout,
+    expectedWeeks?: number,
+  ): Promise<boolean> {
+    const requestVersion = ++loadRequestVersion.current;
+    setSaveStatus("loading");
+    try {
+      /* -----------------------------------------------
            LOAD TRAINING PLAN
         ----------------------------------------------- */
 
-        const planResponse =
-          await fetch("/api/training-plans");
+        let planId = requestedPlanId;
+        let startDate: string | null = null;
+        if (!planId) {
+          const planResponse = await fetch("/api/training-plans");
+          if (!isCurrentProgramLoad(requestVersion, loadRequestVersion.current)) {
+            return false;
+          }
+          if (planResponse.status === 401) {
+            setSaveStatus("saved");
+            return true;
+          }
+          if (!planResponse.ok) {
+            throw new Error("Failed to load training plans");
+          }
 
-        if (planResponse.status === 401) {
-          setSaveStatus("saved");
-          return;
+          const planData = await planResponse.json() as {
+            plans?: Array<{
+              id: string;
+              startDate?: string | null;
+              createdAt?: string | null;
+            }>;
+          };
+          if (!isCurrentProgramLoad(requestVersion, loadRequestVersion.current)) {
+            return false;
+          }
+          if (!Array.isArray(planData.plans)) {
+            throw new Error("Training plans response is invalid");
+          }
+          const plan = planData.plans?.[0];
+          if (!plan) {
+            setTrainingPlanId(null);
+            setProgramStartDate(null);
+            setDbDayMap({});
+            const storedWeeks = readStoredProgramWeeks();
+            setWeeks(
+              storedWeeks.length > 0
+                ? storedWeeks
+                : createInitialWeeks(),
+            );
+            setSaveStatus("saved");
+            return true;
+          }
+          planId = plan.id;
+          startDate = plan.startDate ?? plan.createdAt ?? null;
         }
-
-        if (!planResponse.ok) {
-          throw new Error(
-            "Failed to load training plans"
-          );
+        if (!planId) {
+          throw new Error("No training plan found");
         }
-
-        const planData =
-          await planResponse.json();
-
-        const plan =
-          planData.plans?.[0];
-
-        if (!plan) {
-          throw new Error(
-            "No training plan found"
-          );
-        }
-
-        setTrainingPlanId(plan.id);
-        setProgramStartDate(
-          plan.startDate ?? plan.createdAt ?? null
-        );
-
-        console.log(
-          "✅ Training plan loaded:",
-          plan.id
-        );
 
         /* -----------------------------------------------
            LOAD DATABASE STRUCTURE
         ----------------------------------------------- */
 
-        const structureResponse =
-          await fetch(
-            `/api/training-plans/${plan.id}/structure`
-          );
-
+        const structureResponse = await fetch(
+          `/api/training-plans/${planId}/structure`,
+          { cache: "no-store" },
+        );
+        if (!isCurrentProgramLoad(requestVersion, loadRequestVersion.current)) {
+          return false;
+        }
         if (!structureResponse.ok) {
-          throw new Error(
-            "Failed to load training plan structure"
-          );
+          throw new Error("Failed to load training plan structure");
+        }
+        const structure = await structureResponse.json();
+        if (!isCurrentProgramLoad(requestVersion, loadRequestVersion.current)) {
+          return false;
+        }
+        const verifiedStructure = requestedPlanId && expectedWorkout && expectedWeeks !== undefined
+          ? verifySavedWorkoutStructure(
+              structure,
+              requestedPlanId,
+              expectedWorkout,
+              expectedWeeks,
+            )
+          : structure;
+        if (verifiedStructure.plan.id !== planId) {
+          throw new Error("Loaded workout structure belongs to a different plan");
         }
 
-        const structure =
-          await structureResponse.json();
+        setTrainingPlanId(planId);
+        const structureStartDate =
+          "startDate" in verifiedStructure.plan &&
+          typeof verifiedStructure.plan.startDate === "string"
+            ? verifiedStructure.plan.startDate
+            : null;
+        const effectiveStartDate = startDate ?? structureStartDate;
+        if (effectiveStartDate !== null) {
+          setProgramStartDate(effectiveStartDate);
+        }
 
         const newDbDayMap: DbDayMap = {};
 
@@ -344,160 +425,16 @@ export function ProgramProvider({
            LOAD PROGRAM FROM DATABASE
         ----------------------------------------------- */
 
-        const dbWeeks =
-          createInitialWeeks();
-
-        let hasDbExercises = false;
-
-        for (
-          const phase of
-            structure.phases || []
-        ) {
-          for (
-            const week of
-              phase.weeks || []
-          ) {
-            const weekIndex =
-              Number(week.weekNumber) - 1;
-
-            if (
-              weekIndex < 0 ||
-              weekIndex >= dbWeeks.length
-            ) {
-              continue;
-            }
-
-            for (
-              const workoutDay of
-                week.workoutDays || []
-            ) {
-              const dayName =
-                workoutDay.name as DayName;
-
-              const validDayNames = [
-                "Monday",
-                "Tuesday",
-                "Wednesday",
-                "Thursday",
-                "Friday",
-                "Saturday",
-                "Sunday",
-              ];
-
-              if (
-                !validDayNames.includes(
-                  dayName
-                )
-              ) {
-                continue;
-              }
-
-              const programExercises =
-                workoutDay.programExercises || [];
-
-              if (
-                programExercises.length === 0
-              ) {
-                continue;
-              }
-
-              hasDbExercises = true;
-
-              const muscleGroups: MuscleGroup[] = [];
-
-              for (
-                const programExercise of
-                  programExercises
-              ) {
-                const libraryExercise =
-                  programExercise.exercise;
-
-                if (!libraryExercise) {
-                  continue;
-                }
-
-                const exerciseId = Number(
-                  libraryExercise.id
-                );
-                const primaryMuscle =
-                  libraryExercise.primaryMuscle;
-                const muscleName =
-                  findExerciseGroupById(exerciseId) ??
-                  ([
-                    "Middle Back",
-                    "Upper Back",
-                    "Lats",
-                    "Lower Back",
-                    "Back",
-                  ].includes(primaryMuscle)
-                    ? "Back"
-                    : primaryMuscle);
-                const catalogExercise =
-                  findExerciseById(exerciseId);
-
-                let muscle =
-                  muscleGroups.find(
-                    (item) =>
-                      item.name ===
-                      muscleName
-                  );
-
-                if (!muscle) {
-                  muscle = {
-                    id:
-                      muscleGroups.length + 1,
-                    name: muscleName,
-                    exercises: [],
-                  };
-
-                  muscleGroups.push(
-                    muscle
-                  );
-                }
-
-                muscle.exercises.push({
-                  id: exerciseId,
-                  type: catalogExercise?.type === "cardio"
-                    ? "cardio"
-                    : "strength",
-                  ...(catalogExercise?.type === "cardio"
-                    ? {
-                        duration: catalogExercise.duration ?? 20,
-                        rest: programExercise.restSeconds ?? 0,
-                      }
-                    : {
-                        sets: programExercise.sets,
-                        reps: programExercise.minReps,
-                        rest: programExercise.restSeconds ?? 60,
-                      }),
-                });
-              }
-
-              dbWeeks[weekIndex][
-                dayName
-              ] = muscleGroups;
-            }
-          }
+        const { weeks: dbWeeks, hasExercises: hasDbExercises } =
+          mapTrainingPlanStructureToWeeks(
+            structure.phases,
+            structure.plan.totalWeeks,
+          );
+        if (!isCurrentProgramLoad(requestVersion, loadRequestVersion.current)) {
+          return false;
         }
 
-        const saved = localStorage.getItem(STORAGE_KEY);
-        let localWeeks: DayWorkout[] = [];
-
-        if (saved) {
-          const parsed = JSON.parse(saved);
-
-          if (parsed && Array.isArray(parsed.weeks)) {
-            localWeeks = parsed.weeks.map((week: DayWorkout) => ({
-              Monday: week?.Monday || [],
-              Tuesday: week?.Tuesday || [],
-              Wednesday: week?.Wednesday || [],
-              Thursday: week?.Thursday || [],
-              Friday: week?.Friday || [],
-              Saturday: week?.Saturday || [],
-              Sunday: week?.Sunday || [],
-            }));
-          }
-        }
+        const localWeeks = readStoredProgramWeeks();
 
         if (hasDbExercises) {
           for (const [weekIndex, dbWeek] of dbWeeks.entries()) {
@@ -540,22 +477,40 @@ export function ProgramProvider({
         setSaveStatus(
           "saved"
         );
-      } catch (error) {
-        console.error(
-          "Failed to load workout program:",
-          error
-        );
+      return true;
+    } catch (error) {
+      console.error(
+        "Failed to load workout program:",
+        error
+      );
 
-        setSaveStatus(
-          "error"
-        );
-      } finally {
-        setLoaded(true);
-      }
+      setSaveStatus(
+        "error"
+      );
+      return false;
+    } finally {
+      setLoaded(true);
     }
+  }
 
-    loadProgram();
+  useEffect(() => {
+    loadProgramRef.current = loadProgram;
+    void Promise.resolve().then(() => loadProgram());
+    return () => {
+      loadProgramRef.current = null;
+    };
   }, []);
+
+  async function refreshProgram(
+    planId: string,
+    workout: GeneratedWorkout,
+    expectedWeeks: number,
+  ) {
+    const load = loadProgramRef.current;
+    if (!load || !(await load(planId, workout, expectedWeeks))) {
+      throw new Error("Failed to refresh the saved workout structure");
+    }
+  }
 
   async function persistDatabaseWrite(
     action: string,
@@ -1038,22 +993,6 @@ export function ProgramProvider({
     return undefined;
   }
 
-  function findExerciseGroupById(
-    exerciseId: number
-  ) {
-    for (const [muscleName, muscleExercises] of Object.entries(exercises)) {
-      if (
-        muscleExercises.some(
-          (exercise) => exercise.id === exerciseId
-        )
-      ) {
-        return muscleName;
-      }
-    }
-
-    return undefined;
-  }
-
   /* =======================================================
      ADD EXERCISES TO MUSCLE
      ======================================================= */
@@ -1437,7 +1376,9 @@ export function ProgramProvider({
       value={{
         workout,
         weeks,
+
         programStartDate,
+        trainingPlanId,
         programLoaded: loaded,
         saveStatus,
 
@@ -1450,6 +1391,7 @@ export function ProgramProvider({
         reorderExercise,
 
         saveProgram,
+        refreshProgram,
       }}
     >
       {children}

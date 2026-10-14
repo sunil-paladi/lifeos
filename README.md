@@ -11,6 +11,8 @@ LifeOS is a Next.js application backed by PostgreSQL and Prisma.
 
 `SHADOW_DATABASE_URL` is used for local `prisma migrate dev`; it is not needed by production `prisma migrate deploy`.
 
+AI workout generation requires `GROQ_API_KEY` in the local `.env` file. `GROQ_MODEL` is optional; it defaults to `openai/gpt-oss-20b`, which Groq documents in its [structured outputs examples](https://console.groq.com/docs/structured-outputs) and recommends in its [model deprecation guidance](https://console.groq.com/docs/deprecations). If overriding the default, use an active model ID from the [Groq model catalog](https://console.groq.com/docs/models).
+
 ### User regional preferences
 
 Timezone, locale, currency, unit, and date/time display preferences are stored on each user profile. Future daily calculations must use `getUserLocalDate()` from `app/lib/user-time.ts` with that user's saved timezone; do not derive a user's "today" from the server timezone. Existing habit and other daily-module date behavior is unchanged until those modules are intentionally migrated.
@@ -50,6 +52,8 @@ Configure these values in the Render service environment, never in source files:
 | `BETTER_AUTH_SECRET` | Yes | Long, randomly generated Better Auth secret; generate/store it securely |
 | `BETTER_AUTH_URL` | Yes | Public HTTPS origin of the app, e.g. `https://<service>.onrender.com` |
 | `NEXT_PUBLIC_APP_URL` | Yes | Same public HTTPS origin; set before the first build because Next.js embeds `NEXT_PUBLIC_*` values in browser bundles |
+| `GROQ_API_KEY` | Yes, for AI workout generation | Groq API key; store it only in the Render service environment |
+| `GROQ_MODEL` | No | Active Groq model ID; defaults to `openai/gpt-oss-20b` |
 | `RESEND_API_KEY` | For password reset emails | Resend API key |
 | `EMAIL_FROM` | For password reset emails | Verified sender address configured with Resend |
 

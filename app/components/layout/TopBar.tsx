@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import {
   Bell,
   ChevronDown,
@@ -56,7 +57,6 @@ export default function TopBar({
   hasOwnerMembership,
 }: TopBarProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
@@ -418,7 +418,7 @@ export default function TopBar({
                 </div>
 
                 {/* User Menu */}
-                <DropdownMenu open={userMenuOpen} onOpenChange={setUserMenuOpen}>
+                <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <button
                       type="button"
@@ -443,32 +443,23 @@ export default function TopBar({
                       </span>
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      className="px-3 py-2.5"
-                      onSelect={() => {
-                        window.location.href = "/profile";
-                      }}
-                    >
+                    <DropdownMenuItem asChild className="px-3 py-2.5">
+                      <Link href="/profile">
                       <User size={18} className="text-muted-foreground" />
                       <span>Profile</span>
+                      </Link>
                     </DropdownMenuItem>
-                    <DropdownMenuItem
-                      className="px-3 py-2.5"
-                      onSelect={() => {
-                        window.location.href = "/settings";
-                      }}
-                    >
+                    <DropdownMenuItem asChild className="px-3 py-2.5">
+                      <Link href="/settings">
                       <Settings size={18} className="text-muted-foreground" />
-                      <span>Settings</span>
+                      <span>Account &amp; Preferences</span>
+                      </Link>
                     </DropdownMenuItem>
-                    <DropdownMenuItem
-                      className="px-3 py-2.5"
-                      onSelect={() => {
-                        window.location.href = "/settings";
-                      }}
-                    >
+                    <DropdownMenuItem asChild className="px-3 py-2.5">
+                      <Link href="/settings/security">
                       <Shield size={18} className="text-muted-foreground" />
                       <span>Security</span>
+                      </Link>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem

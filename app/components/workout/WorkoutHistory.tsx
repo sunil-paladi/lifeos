@@ -304,7 +304,7 @@ export default function WorkoutHistory() {
 
   if (!loaded) {
     return (
-      <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+      <section className="min-w-0 rounded-xl border border-slate-200 bg-white p-3 shadow-sm sm:p-4">
         <p className="text-xs font-medium text-slate-600">
           Loading workout history...
         </p>
@@ -317,13 +317,13 @@ export default function WorkoutHistory() {
   ======================================== */
 
   return (
-    <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+    <section className="min-w-0 rounded-xl border border-slate-200 bg-white p-3 shadow-sm sm:p-4">
 
       {/* HEADER */}
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex min-w-0 flex-wrap items-center justify-between gap-3">
 
-        <div>
-          <h2 className="flex items-center gap-2 text-lg font-bold text-slate-900">
+        <div className="min-w-0">
+          <h2 className="flex flex-wrap items-center gap-2 text-lg font-bold text-slate-900">
             📚 Workout History
           </h2>
 
@@ -391,6 +391,8 @@ export default function WorkoutHistory() {
                   onClick={() =>
                     toggleWorkout(sessionId)
                   }
+                  aria-expanded={isExpanded}
+                  aria-controls={isExpanded ? `workout-history-details-${index}` : undefined}
                   className="w-full p-3 text-left"
                 >
 
@@ -552,7 +554,7 @@ export default function WorkoutHistory() {
 
                 {/* WORKOUT DETAILS */}
                 {isExpanded && (
-                  <div className="border-t border-slate-200 bg-slate-50 p-3">
+                  <div id={`workout-history-details-${index}`} className="border-t border-slate-200 bg-slate-50 p-3">
 
                     <div className="mb-3 flex items-center gap-2">
 

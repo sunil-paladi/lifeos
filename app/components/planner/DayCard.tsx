@@ -43,12 +43,12 @@ export default function DayCard({
     <>
 
       {/* Day Card */}
-      <div className="rounded-lg border border-slate-200 bg-white p-3 shadow-sm">
+      <div className="min-w-0 rounded-lg border border-slate-200 bg-white p-3 shadow-sm">
 
         {/* Day Header */}
-        <div className="flex items-center justify-between gap-2">
+        <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
 
-          <h3 className="text-sm font-bold text-slate-900">
+          <h3 className="min-w-0 text-sm font-bold text-slate-900">
             {day}
           </h3>
 
@@ -95,7 +95,7 @@ export default function DayCard({
           onClick={() =>
             setDrawerOpen(true)
           }
-          className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-primary/90"
+          className="mt-3 flex min-h-11 w-full items-center justify-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-primary/90"
         >
           {muscleGroups.length > 0 ? (
             <>

@@ -480,7 +480,7 @@ export default function Sidebar({
               }
             />
 
-            <span>Settings</span>
+            <span>Account &amp; Preferences</span>
           </Link>
         </div>
       </nav>
