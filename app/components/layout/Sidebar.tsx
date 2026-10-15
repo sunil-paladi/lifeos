@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import {
   BarChart3,
@@ -19,6 +20,7 @@ import {
   UserCog,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
+import { useTheme } from "@/app/components/theme/ThemeProvider";
 import type { AppUser } from "./AppShell";
 
 const mainMenu = [
@@ -88,6 +90,7 @@ export default function Sidebar({
   hasOwnerMembership,
 }: SidebarProps) {
   const pathname = usePathname();
+  const { theme } = useTheme();
 
   function isActive(path: string) {
     if (path === "/") {
@@ -116,20 +119,17 @@ export default function Sidebar({
         <Link
           href="/dashboard"
           onClick={onNavigate}
-          className="flex items-center gap-3 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+          className="flex w-full items-center justify-center rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
         >
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary shadow-sm">
-            <Dumbbell size={21} strokeWidth={2.2} />
-          </div>
-
-          <div>
-            <h1 className="text-xl font-bold tracking-tight">
-              LifeOS
-            </h1>
-
-            <p className="mt-0.5 text-[10px] font-medium uppercase tracking-wide text-primary">
-              Stay Consistent
-            </p>
+          <div className="flex w-full flex-col items-center gap-0.5">
+            <Image
+              src={theme === "dark" ? "/consistfit-wordmark-dark.svg" : "/consistfit-wordmark-light.svg"}
+              alt="ConsistFit"
+              width={1800}
+              height={615}
+              className="h-auto w-full max-w-[208px] object-contain"
+              priority
+            />
           </div>
         </Link>
       </div>

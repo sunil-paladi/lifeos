@@ -20,10 +20,8 @@ type ThemeContextValue = {
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 const themeListeners = new Set<() => void>();
 
-function isThemeMode(value: string | null | undefined): value is ThemeMode 
-
-{  return value === "light" || value === "dark" || value === "system";
-
+function isThemeMode(value: string | null | undefined): value is ThemeMode {
+  return value === "light" || value === "dark" || value === "system";
 }
 
 function subscribeToTheme(listener: () => void) {
@@ -50,7 +48,11 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   );
 
   const setTheme = useCallback((nextTheme: ThemeMode) => {
-    document.documentElement.dataset.theme = nextTheme;
+    const root = document.documentElement;
+
+    root.dataset.theme = nextTheme;
+    root.classList.toggle("dark", nextTheme === "dark");
+    root.classList.toggle("light", nextTheme === "light");
 
     try {
       window.localStorage.setItem(THEME_STORAGE_KEY, nextTheme);

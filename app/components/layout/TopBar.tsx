@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import {
   Bell,
@@ -12,6 +13,7 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import Sidebar from "./Sidebar";
+import { useTheme } from "@/app/components/theme/ThemeProvider";
 import type { AppUser } from "./AppShell";
 import {
   DropdownMenu,
@@ -56,6 +58,7 @@ export default function TopBar({
   hasTrainerMembership,
   hasOwnerMembership,
 }: TopBarProps) {
+  const { theme } = useTheme();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
@@ -175,7 +178,7 @@ export default function TopBar({
   // ========================================
 
   const displayName =
-    user?.name || "LifeOS User";
+    user?.name || "ConsistFit User";
 
   const initials = displayName
     .split(" ")
@@ -226,15 +229,25 @@ export default function TopBar({
           {/* ======================================== */}
 
           <div className="hidden lg:block">
-            <p className="text-xs font-medium text-muted-foreground">
-              PERSONAL OPERATING SYSTEM
-            </p>
-
-            <p className="text-sm font-semibold text-foreground">
-              {authenticated
-                ? "Your daily progress"
-                : "Build a better life"}
-            </p>
+            {authenticated ? (
+              <>
+                <p className="text-xs font-medium text-muted-foreground">
+                  PERSONAL OPERATING SYSTEM
+                </p>
+                <p className="text-sm font-semibold text-foreground">
+                  Your daily progress
+                </p>
+              </>
+            ) : (
+              <Image
+                src="/consistfit-wordmark.svg"
+                alt="ConsistFit — Train consistently. Progress confidently."
+                width={1794}
+                height={510}
+                className="h-auto w-[168px]"
+                priority
+              />
+            )}
           </div>
 
           {/* ======================================== */}
@@ -242,9 +255,14 @@ export default function TopBar({
           {/* ======================================== */}
 
           <div className="lg:hidden">
-            <p className="text-base font-bold text-foreground">
-              LifeOS
-            </p>
+            <Image
+              src={theme === "dark" ? "/consistfit-wordmark-dark.svg" : "/consistfit-wordmark-light.svg"}
+              alt="ConsistFit — Train consistently. Progress confidently."
+              width={1800}
+              height={615}
+              className="h-auto w-[132px] sm:w-[152px]"
+              priority
+            />
           </div>
 
           {/* ======================================== */}
