@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { LockKeyhole } from "lucide-react";
@@ -58,6 +59,14 @@ export default function ResetPasswordPage() {
     <main className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-4 py-10 sm:px-6">
       <div className="w-full max-w-md">
         <div className="mb-6 text-center">
+          <Image
+            src="/consistfit-wordmark.svg"
+            alt="ConsistFit — Train consistently. Progress confidently."
+            width={1794}
+            height={510}
+            className="mx-auto mb-4 h-auto w-60 max-w-full"
+            priority
+          />
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-white text-slate-600 shadow-md">
             <LockKeyhole size={24} />
           </div>
@@ -65,7 +74,7 @@ export default function ResetPasswordPage() {
             Reset your password
           </h1>
           <p className="mt-1 text-sm text-slate-500">
-            Choose a new password for your LifeOS account.
+            Choose a new password for your ConsistFit account.
           </p>
         </div>
 

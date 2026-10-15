@@ -110,7 +110,7 @@ export default function AppShell({
           <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-primary" />
 
           <p className="mt-3 text-sm text-slate-500">
-            Loading LifeOS...
+            Loading ConsistFit...
           </p>
         </div>
       </div>
@@ -125,7 +125,7 @@ export default function AppShell({
             Unable to verify your session
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            LifeOS could not reach its authentication service. Your session was not changed.
+            ConsistFit could not reach its authentication service. Your session was not changed.
             Check your connection and try again.
           </p>
           <button
@@ -191,7 +191,7 @@ export default function AppShell({
                   </h1>
 
                   <p className="mt-6 max-w-xl text-lg leading-8 text-slate-600">
-                    LifeOS brings workouts, nutrition, habits,
+                    ConsistFit brings workouts, nutrition, habits,
                     hydration, journaling and progress together
                     in one simple place.
                   </p>

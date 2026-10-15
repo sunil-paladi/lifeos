@@ -34,9 +34,9 @@ async function sendPasswordResetEmail({
       body: JSON.stringify({
         from,
         to: [user.email],
-        subject: "Reset your LifeOS password",
+        subject: "Reset your ConsistFit password",
         text: `Use this link to reset your password. It expires in 30 minutes.\n\n${url}`,
-        html: `<p>Use the link below to reset your LifeOS password. It expires in 30 minutes.</p><p><a href="${safeUrl}">Reset password</a></p>`,
+        html: `<p>Use the link below to reset your ConsistFit password. It expires in 30 minutes.</p><p><a href="${safeUrl}">Reset password</a></p>`,
       }),
     });
 

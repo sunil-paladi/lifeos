@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" role="img" aria-labelledby="title">
+  <title id="title">ConsistFit symbol</title>
+  <defs>
+    <linearGradient id="symbol-gradient" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#34d399"/>
+      <stop offset="1" stop-color="#0f9f9a"/>
+    </linearGradient>
+  </defs>
+  <path
+    d="M67 23C56 14 41 13 29 20 14 29 8 45 12 60c4 16 19 25 35 24 9 0 17-4 23-10"
+    fill="none"
+    stroke="url(#symbol-gradient)"
+    stroke-width="8.5"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <path
+    d="m31 49 11 11 19-21"
+    fill="none"
+    stroke="#142b3c"
+    stroke-width="7"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <circle cx="77" cy="34" r="4" fill="#0f9f9a"/>
+</svg>

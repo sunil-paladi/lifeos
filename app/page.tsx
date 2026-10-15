@@ -73,7 +73,7 @@ export default function Home() {
             </h1>
 
             <p className="mt-4 max-w-2xl text-base leading-7 text-slate-600">
-              LifeOS brings your workouts, nutrition, habits, hydration,
+              ConsistFit brings your workouts, nutrition, habits, hydration,
               journaling and progress together in one simple place.
             </p>
 
@@ -144,7 +144,7 @@ export default function Home() {
 
 
       {/* ========================================= */}
-      {/* WHY LIFEOS */}
+      {/* WHY CONSISTFIT */}
       {/* ========================================= */}
 
       <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -152,7 +152,7 @@ export default function Home() {
         <div className="text-center">
 
           <p className="text-xs font-semibold uppercase tracking-wider text-primary">
-            Why LifeOS?
+            Why ConsistFit?
           </p>
 
           <h2 className="mt-2 text-2xl font-bold text-slate-900">
@@ -161,7 +161,7 @@ export default function Home() {
 
           <p className="mx-auto mt-2 max-w-2xl text-sm leading-6 text-slate-500">
             Instead of using different apps for different parts of your
-            life, LifeOS gives you one place to plan, track and improve.
+            life, ConsistFit gives you one place to plan, track and improve.
           </p>
 
         </div>

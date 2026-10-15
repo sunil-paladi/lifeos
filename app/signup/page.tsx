@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
@@ -111,12 +112,17 @@ export default function SignupPage() {
 
         {/* Brand */}
         <div className="mb-6 text-center">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-white text-primary shadow-md">
-            <Sparkles size={26} />
-          </div>
+          <Image
+            src="/consistfit-wordmark.svg"
+            alt="ConsistFit — Train consistently. Progress confidently."
+            width={1794}
+            height={510}
+            className="mx-auto h-auto w-60 max-w-full"
+            priority
+          />
 
           <h1 className="mt-4 text-2xl font-bold tracking-tight text-slate-900">
-            Create your LifeOS account
+            Create your ConsistFit account
           </h1>
 
           <p className="mt-1 text-sm text-slate-500">
@@ -339,7 +345,7 @@ export default function SignupPage() {
 
         {/* Footer */}
         <p className="mt-5 text-center text-xs text-slate-400">
-          LifeOS · Stay consistent
+          ConsistFit · Stay consistent
         </p>
       </div>
     </main>

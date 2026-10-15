@@ -164,7 +164,7 @@ const PROVENANCE_LABELS: Record<RegionalPreferenceSource, string> = {
   user: "Personal override",
   gym: "Inherited from gym",
   browser: "From this device",
-  builtin: "LifeOS default",
+  builtin: "ConsistFit default",
 };
 
 // Shown when the user has multiple active gym memberships: lets the UI
@@ -763,7 +763,7 @@ async function updateSetting(
 
   function resetSettings() {
     const confirmed = window.confirm(
-      "Reset your LifeOS settings to the default values?"
+      "Reset your ConsistFit settings to the default values?"
     );
 
     if (!confirmed) return;
@@ -860,7 +860,7 @@ async function updateSetting(
         </h1>
 
         <p className="mt-1 text-sm text-slate-500">
-          Customize LifeOS for your personal goals,
+          Customize ConsistFit for your personal goals,
           profile, and targets.
         </p>
       </div>
@@ -871,7 +871,7 @@ async function updateSetting(
             Appearance
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Choose how LifeOS looks on this device.
+            Choose how ConsistFit looks on this device.
           </p>
         </div>
 
@@ -908,7 +908,7 @@ async function updateSetting(
           </h2>
           <p className="mt-1 text-sm text-slate-500">
             Values are inherited automatically (your gym&apos;s defaults, then
-            this device, then LifeOS defaults). Set a personal override only
+            this device, then ConsistFit defaults). Set a personal override only
             when you want something different.
           </p>
           {regionalResolved?.gymId ? (
@@ -972,7 +972,7 @@ async function updateSetting(
           </h2>
 
           <p className="mt-1 text-sm text-slate-500">
-            Your personal information used by LifeOS.
+            Your personal information used by ConsistFit.
           </p>
         </div>
 
@@ -1168,7 +1168,7 @@ async function updateSetting(
 
           <p className="mt-1 text-sm text-slate-500">
             Connect a user with a trainer and keep trainer
-            information ready for the future LifeOS portal.
+            information ready for the future ConsistFit portal.
           </p>
         </div>
 
@@ -1423,7 +1423,7 @@ async function updateSetting(
         <p className="text-sm leading-relaxed text-primary">
           💡 Your nutrition targets are shared with the
           Nutrition and Analytics sections. Your water goal
-          is also saved for LifeOS hydration tracking.
+          is also saved for ConsistFit hydration tracking.
           Profile and trainer information are saved locally
           for this prototype.
         </p>

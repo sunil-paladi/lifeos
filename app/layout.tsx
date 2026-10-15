@@ -7,12 +7,12 @@ import { WorkoutProvider } from "./context/WorkoutContext";
 import AppShell from "./components/layout/AppShell";
 
 export const metadata: Metadata = {
-  title: "LifeOS",
-  applicationName: "LifeOS",
+  title: "ConsistFit",
+  applicationName: "ConsistFit",
   description: "Your personal fitness and wellness companion.",
   appleWebApp: {
     capable: true,
-    title: "LifeOS",
+    title: "ConsistFit",
     statusBarStyle: "default",
   },
 };
@@ -20,7 +20,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#7546c8",
+  themeColor: "#0a1a33",
 };
 
 export default function RootLayout({

@@ -148,7 +148,7 @@ export default function AIWorkoutGenerator({ planId }: Props) {
         <h3 className="text-sm font-bold text-slate-900">AI Workout Generator</h3>
       </div>
       <p className="mt-1 text-xs text-slate-600">
-        Create a strength-only weekly template from the LifeOS exercise library.
+        Create a strength-only weekly template from the ConsistFit exercise library.
       </p>
 
       <div className="mt-3 grid gap-3 sm:grid-cols-2">

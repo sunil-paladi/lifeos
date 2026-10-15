@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title">
+  <title id="title">ConsistFit — Train consistently. Progress confidently.</title>
+  <rect width="512" height="512" fill="#0a1a33"/>
+  <rect x="31" y="185" width="450" height="142" rx="18" fill="#fff"/>
+  <image
+    href="/consistfit-logo.png"
+    x="40"
+    y="194"
+    width="432"
+    height="123"
+    preserveAspectRatio="xMidYMid meet"
+  />
+</svg>

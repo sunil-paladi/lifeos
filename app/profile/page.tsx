@@ -412,7 +412,7 @@ export default function ProfilePage() {
               color: colors.navy,
             }}
           >
-            LifeOS Profile
+            ConsistFit Profile
           </h1>
 
           <p
@@ -472,7 +472,7 @@ export default function ProfilePage() {
                     fontSize: "13px",
                   }}
                 >
-                  Your basic LifeOS account information.
+                  Your basic ConsistFit account information.
                 </p>
               </div>
             </div>
@@ -607,7 +607,7 @@ export default function ProfilePage() {
                     fontSize: "13px",
                   }}
                 >
-                  Help LifeOS understand your current
+                  Help ConsistFit understand your current
                   fitness profile.
                 </p>
               </div>

@@ -68,22 +68,16 @@ export default function Sidebar() {
     <aside className="flex min-h-screen w-72 flex-col bg-slate-900 text-white">
       {/* ================= Logo ================= */}
       <div className="flex flex-col items-center border-b border-slate-700 py-8">
-        <Image
-          src="/lifeos-logo.svg"
-          alt="LifeOS Logo"
-          width={60}
-          height={60}
-          priority
-          className="transition-transform duration-300 hover:scale-110"
-        />
-
-        <h1 className="mt-4 text-3xl font-bold tracking-tight text-white">
-          LifeOS
-        </h1>
-
-        <p className="mt-1 text-xs font-medium tracking-wide text-primary">
-          Stay Consistent
-        </p>
+        <div className="mx-4 rounded-xl bg-white p-3 shadow-sm">
+          <Image
+            src="/consistfit-wordmark.svg"
+            alt="ConsistFit — Train consistently. Progress confidently."
+            width={1794}
+            height={510}
+            priority
+            className="h-auto w-full"
+          />
+        </div>
       </div>
 
       {/* ================= Navigation ================= */}
