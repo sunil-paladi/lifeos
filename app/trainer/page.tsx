@@ -1,15 +1,12 @@
 import { headers } from "next/headers";
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { CalendarDays, Mail, UserRound } from "lucide-react";
 import { auth } from "@/app/lib/auth";
-import { getTrustedAppOrigin } from "@/app/lib/trusted-app-origin";
 import { prisma } from "@/lib/prisma";
 
 type AssignedClient = {
   assignmentId: string;
   assignedAt: string;
-  clientMembershipId: string;
   client: {
     id: string;
     username: string | null;
@@ -27,7 +24,13 @@ async function getAssignedClients(
   gymId: string,
   requestHeaders: Headers
 ): Promise<TrainerClientsResponse> {
-  const baseUrl = getTrustedAppOrigin();
+  const host =
+    requestHeaders.get("x-forwarded-host") ??
+    requestHeaders.get("host");
+  const protocol =
+    requestHeaders.get("x-forwarded-proto") ?? "http";
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ??
+    (host ? `${protocol}://${host}` : null);
 
   if (!baseUrl) {
     return { error: "Unable to connect to the trainer clients service" };
@@ -40,7 +43,6 @@ async function getAssignedClients(
         headers: {
           cookie: requestHeaders.get("cookie") ?? "",
         },
-        redirect: "error",
         cache: "no-store",
       }
     );
@@ -89,7 +91,7 @@ export default async function TrainerPage() {
   return (
     <div className="space-y-6 py-2">
       <header>
-        <p className="text-sm font-semibold uppercase tracking-wide text-primary">
+        <p className="text-sm font-semibold uppercase tracking-wide text-green-600">
           Trainer workspace
         </p>
         <h1 className="mt-1 text-3xl font-bold tracking-tight text-slate-900">
@@ -110,7 +112,7 @@ export default async function TrainerPage() {
           <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_16rem] lg:items-stretch">
             <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
               <div className="flex h-full items-center gap-4">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-green-50 text-green-600">
                   <UserRound size={21} strokeWidth={2} />
                 </div>
                 <div>
@@ -124,8 +126,8 @@ export default async function TrainerPage() {
               </div>
             </section>
 
-            <section className="rounded-xl border border-primary/15 bg-primary/5 p-5 shadow-sm">
-              <p className="text-xs font-semibold uppercase tracking-wide text-primary">
+            <section className="rounded-xl border border-green-100 bg-green-50/70 p-5 shadow-sm">
+              <p className="text-xs font-semibold uppercase tracking-wide text-green-700">
                 Workspace
               </p>
               <p className="mt-2 text-sm font-medium text-slate-700">
@@ -157,11 +159,10 @@ export default async function TrainerPage() {
               </div>
             ) : (
               <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                {clients.map(({ assignmentId, assignedAt, clientMembershipId, client }) => (
-                  <Link
+                {clients.map(({ assignmentId, assignedAt, client }) => (
+                  <article
                     key={assignmentId}
-                    href={`/trainer/clients/${encodeURIComponent(clientMembershipId)}`}
-                    className="group rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-colors hover:border-primary/20"
+                    className="group rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-colors hover:border-green-200"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
@@ -172,7 +173,7 @@ export default async function TrainerPage() {
                           @{client.username ?? "username unavailable"}
                         </p>
                       </div>
-                      <span className="shrink-0 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
+                      <span className="shrink-0 rounded-full bg-green-50 px-2.5 py-1 text-xs font-semibold text-green-700">
                         Assigned
                       </span>
                     </div>
@@ -191,7 +192,7 @@ export default async function TrainerPage() {
                         </span>
                       </div>
                     </div>
-                  </Link>
+                  </article>
                 ))}
               </div>
             )}

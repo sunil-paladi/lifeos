@@ -28,6 +28,7 @@ export interface TrainingPlanStructure {
     id: string;
     totalWeeks: number;
     startDate?: string | null;
+    createdAt?: string | null;
   };
   phases: StoredProgramPhase[];
 }

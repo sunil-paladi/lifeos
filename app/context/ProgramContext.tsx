@@ -11,11 +11,18 @@ import {
 
 import { exercises } from "@/app/data/exercises";
 import {
+  copyWorkoutWeek,
+  isValidProgramDuration,
+  parseStoredProgram,
+  serializeStoredProgram,
+} from "@/app/lib/program-builder-state";
+import {
   isCurrentProgramLoad,
   mapTrainingPlanStructureToWeeks,
   verifySavedWorkoutStructure,
 } from "@/app/lib/program-workout-structure";
 import type { GeneratedWorkout } from "@/app/lib/ai-workout-types";
+import { getWorkoutWeekIndex } from "@/app/lib/workout-progress";
 
 /* =========================================================
    TYPES
@@ -55,6 +62,13 @@ type SaveStatus =
   | "error";
 
 const DEFAULT_PROGRAM_WEEKS = 12;
+
+function getLocalCalendarDate(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
 
 /* =========================================================
    DATABASE DAY INFORMATION
@@ -107,30 +121,11 @@ function createInitialWeeks(
 const STORAGE_KEY =
   "lifeos-workout-program";
 
-interface StoredProgram {
-  weeks: DayWorkout[];
-}
-
-function readStoredProgramWeeks(): DayWorkout[] {
-  const saved = localStorage.getItem(STORAGE_KEY);
-  if (!saved) {
-    return [];
-  }
-
-  const parsed = JSON.parse(saved) as Partial<StoredProgram> | null;
-  if (!parsed || !Array.isArray(parsed.weeks)) {
-    return [];
-  }
-
-  return parsed.weeks.map((week) => ({
-    Monday: week?.Monday || [],
-    Tuesday: week?.Tuesday || [],
-    Wednesday: week?.Wednesday || [],
-    Thursday: week?.Thursday || [],
-    Friday: week?.Friday || [],
-    Saturday: week?.Saturday || [],
-    Sunday: week?.Sunday || [],
-  }));
+function readStoredProgram() {
+  return parseStoredProgram(
+    localStorage.getItem(STORAGE_KEY),
+    DEFAULT_PROGRAM_WEEKS,
+  );
 }
 
 /* =========================================================
@@ -141,6 +136,8 @@ interface ProgramContextType {
   workout: DayWorkout;
 
   weeks: DayWorkout[];
+
+  durationWeeks: number;
 
   programStartDate: string | null;
 
@@ -196,6 +193,10 @@ interface ProgramContextType {
 
   saveProgram: () => void;
 
+  updateProgramDuration: (durationWeeks: number) => Promise<void>;
+
+  copyWeek: (sourceWeekIndex: number, destinationWeekIndex: number) => Promise<void>;
+
   refreshProgram: (
     planId: string,
     workout: GeneratedWorkout,
@@ -225,6 +226,12 @@ export function ProgramProvider({
     DayWorkout[]
   >(() => createInitialWeeks());
 
+  const [durationWeeks, setDurationWeeks] =
+    useState(DEFAULT_PROGRAM_WEEKS);
+
+  const [currentCalendarDate, setCurrentCalendarDate] =
+    useState<string | null>(null);
+
   const [trainingPlanId, setTrainingPlanId] =
     useState<string | null>(null);
 
@@ -246,6 +253,20 @@ export function ProgramProvider({
     ((planId?: string, expectedWorkout?: GeneratedWorkout, expectedWeeks?: number) => Promise<boolean>) | null
   >(null);
   const loadRequestVersion = useRef(0);
+
+  useEffect(() => {
+    const updateCalendarDate = () => {
+      setCurrentCalendarDate(getLocalCalendarDate(new Date()));
+    };
+
+    updateCalendarDate();
+    const interval = window.setInterval(
+      updateCalendarDate,
+      60 * 1000,
+    );
+
+    return () => window.clearInterval(interval);
+  }, []);
 
   /* =======================================================
      LOAD PROGRAM
@@ -271,6 +292,15 @@ export function ProgramProvider({
             return false;
           }
           if (planResponse.status === 401) {
+            const storedProgram = readStoredProgram();
+            setWeeks(
+              storedProgram?.weeks.length
+                ? storedProgram.weeks
+                : createInitialWeeks(),
+            );
+            setDurationWeeks(
+              storedProgram?.durationWeeks ?? DEFAULT_PROGRAM_WEEKS,
+            );
             setSaveStatus("saved");
             return true;
           }
@@ -296,11 +326,14 @@ export function ProgramProvider({
             setTrainingPlanId(null);
             setProgramStartDate(null);
             setDbDayMap({});
-            const storedWeeks = readStoredProgramWeeks();
+            const storedProgram = readStoredProgram();
             setWeeks(
-              storedWeeks.length > 0
-                ? storedWeeks
+              storedProgram?.weeks.length
+                ? storedProgram.weeks
                 : createInitialWeeks(),
+            );
+            setDurationWeeks(
+              storedProgram?.durationWeeks ?? DEFAULT_PROGRAM_WEEKS,
             );
             setSaveStatus("saved");
             return true;
@@ -348,10 +381,18 @@ export function ProgramProvider({
           typeof verifiedStructure.plan.startDate === "string"
             ? verifiedStructure.plan.startDate
             : null;
-        const effectiveStartDate = startDate ?? structureStartDate;
-        if (effectiveStartDate !== null) {
-          setProgramStartDate(effectiveStartDate);
+        const structureCreatedAt =
+          "createdAt" in verifiedStructure.plan &&
+          typeof verifiedStructure.plan.createdAt === "string"
+            ? verifiedStructure.plan.createdAt
+            : null;
+        const effectiveStartDate =
+          startDate ?? structureStartDate ?? structureCreatedAt;
+        setProgramStartDate(effectiveStartDate);
+        if (!isValidProgramDuration(verifiedStructure.plan.totalWeeks)) {
+          throw new Error("Loaded training plan has an invalid duration");
         }
+        setDurationWeeks(verifiedStructure.plan.totalWeeks);
 
         const newDbDayMap: DbDayMap = {};
 
@@ -434,7 +475,8 @@ export function ProgramProvider({
           return false;
         }
 
-        const localWeeks = readStoredProgramWeeks();
+        const localProgram = readStoredProgram();
+        const localWeeks = localProgram?.weeks ?? [];
 
         if (hasDbExercises) {
           for (const [weekIndex, dbWeek] of dbWeeks.entries()) {
@@ -510,6 +552,101 @@ export function ProgramProvider({
     if (!load || !(await load(planId, workout, expectedWeeks))) {
       throw new Error("Failed to refresh the saved workout structure");
     }
+  }
+
+  async function updateProgramDuration(nextDurationWeeks: number) {
+    if (!isValidProgramDuration(nextDurationWeeks)) {
+      throw new Error("Program duration must be an integer from 1 to 52 weeks");
+    }
+
+    if (trainingPlanId) {
+      const response = await fetch(`/api/training-plans/${trainingPlanId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ totalWeeks: nextDurationWeeks }),
+      });
+      const data = await response.json().catch(() => null) as
+        | { error?: string; success?: boolean; plan?: { totalWeeks?: number } }
+        | null;
+
+      if (
+        !response.ok ||
+        !data?.success ||
+        data.plan?.totalWeeks !== nextDurationWeeks
+      ) {
+        throw new Error(data?.error || "Unable to save program duration");
+      }
+    }
+
+    setDurationWeeks(nextDurationWeeks);
+    setWeeks((currentWeeks) => {
+      if (currentWeeks.length >= nextDurationWeeks) {
+        return currentWeeks;
+      }
+
+      return [
+        ...currentWeeks,
+        ...createInitialWeeks(nextDurationWeeks - currentWeeks.length),
+      ];
+    });
+
+    if (trainingPlanId && !(await loadProgram(trainingPlanId))) {
+      throw new Error("Program duration was saved, but its workouts could not be reloaded");
+    }
+  }
+
+  async function copyWeek(
+    sourceWeekIndex: number,
+    destinationWeekIndex: number,
+  ) {
+    if (
+      !Number.isInteger(sourceWeekIndex) ||
+      !Number.isInteger(destinationWeekIndex) ||
+      sourceWeekIndex < 0 ||
+      destinationWeekIndex < 0 ||
+      sourceWeekIndex >= durationWeeks ||
+      destinationWeekIndex >= durationWeeks ||
+      sourceWeekIndex === destinationWeekIndex
+    ) {
+      throw new Error("Choose two different weeks within the program duration");
+    }
+
+    const sourceWeek = weeks[sourceWeekIndex];
+    if (!sourceWeek) {
+      throw new Error("The source week is not available");
+    }
+    const copiedWeek = copyWorkoutWeek(sourceWeek);
+
+    if (trainingPlanId) {
+      const response = await fetch(
+        `/api/training-plans/${trainingPlanId}/copy-week`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            sourceWeekNumber: sourceWeekIndex + 1,
+            destinationWeekNumber: destinationWeekIndex + 1,
+            overwrite: true,
+          }),
+        },
+      );
+      const data = await response.json().catch(() => null) as
+        | { error?: string; success?: boolean }
+        | null;
+
+      if (!response.ok || !data?.success) {
+        throw new Error(data?.error || "Unable to copy the selected week");
+      }
+    }
+
+    setWeeks((currentWeeks) => {
+      const updatedWeeks = [...currentWeeks];
+      while (updatedWeeks.length <= destinationWeekIndex) {
+        updatedWeeks.push(createEmptyWeek());
+      }
+      updatedWeeks[destinationWeekIndex] = copiedWeek;
+      return updatedWeeks;
+    });
   }
 
   async function persistDatabaseWrite(
@@ -740,16 +877,9 @@ export function ProgramProvider({
     const timeout =
       setTimeout(() => {
         try {
-          const dataToSave:
-            StoredProgram = {
-            weeks,
-          };
-
           localStorage.setItem(
             STORAGE_KEY,
-            JSON.stringify(
-              dataToSave
-            )
+            serializeStoredProgram(weeks, durationWeeks),
           );
 
           console.log(
@@ -777,7 +907,7 @@ export function ProgramProvider({
     return () => {
       clearTimeout(timeout);
     };
-  }, [weeks, loaded]);
+  }, [weeks, durationWeeks, loaded]);
 
   /* =======================================================
      GET WEEK
@@ -805,16 +935,9 @@ export function ProgramProvider({
 
   function saveProgram() {
     try {
-      const dataToSave:
-        StoredProgram = {
-        weeks,
-      };
-
       localStorage.setItem(
         STORAGE_KEY,
-        JSON.stringify(
-          dataToSave
-        )
+        serializeStoredProgram(weeks, durationWeeks),
       );
 
       setSaveStatus(
@@ -1363,9 +1486,16 @@ export function ProgramProvider({
      WEEK 1 COMPATIBILITY
      ======================================================= */
 
+  const currentWeekIndex = programStartDate
+    ? getWorkoutWeekIndex(
+        programStartDate,
+        currentCalendarDate ?? getLocalCalendarDate(new Date()),
+      )
+    : 0;
   const workout =
-    weeks[0] ||
-    createEmptyWeek();
+    currentWeekIndex !== null && currentWeekIndex < durationWeeks
+      ? weeks[currentWeekIndex] || createEmptyWeek()
+      : createEmptyWeek();
 
   /* =======================================================
      PROVIDER
@@ -1376,6 +1506,7 @@ export function ProgramProvider({
       value={{
         workout,
         weeks,
+        durationWeeks,
 
         programStartDate,
         trainingPlanId,
@@ -1391,6 +1522,8 @@ export function ProgramProvider({
         reorderExercise,
 
         saveProgram,
+        updateProgramDuration,
+        copyWeek,
         refreshProgram,
       }}
     >

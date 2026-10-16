@@ -70,6 +70,34 @@ function shiftCalendarDate(date: string, offset: number) {
   return addCalendarDays(date, offset);
 }
 
+export function isWorkoutForDate(
+  workoutDate: string | null | undefined,
+  currentDate: string,
+) {
+  const savedDate = parseWorkoutCalendarDate(workoutDate);
+  const today = parseWorkoutCalendarDate(currentDate);
+  return savedDate !== null && savedDate === today;
+}
+
+export function getWorkoutWeekIndex(
+  programStartDate: string | null,
+  currentDate: string,
+): number | null {
+  const startDate = parseWorkoutCalendarDate(programStartDate);
+  const date = parseWorkoutCalendarDate(currentDate);
+  if (!startDate || !date) {
+    return null;
+  }
+
+  const elapsedDays = Math.floor(
+    (Date.parse(`${date}T00:00:00.000Z`) -
+      Date.parse(`${startDate}T00:00:00.000Z`)) /
+      (24 * 60 * 60 * 1000),
+  );
+
+  return elapsedDays < 0 ? null : Math.floor(elapsedDays / 7);
+}
+
 export function getWorkoutWeekRange(
   programStartDate: string | null,
   weekIndex: number,

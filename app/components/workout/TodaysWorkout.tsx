@@ -17,6 +17,7 @@ import ExerciseDetails from "@/app/components/ExerciseDetails";
 import type { Exercise } from "@/app/types/exercise";
 import { useProgram } from "@/app/context/ProgramContext";
 import {
+  isWorkoutForDate,
   WORKOUT_HISTORY_KEY,
   WORKOUT_HISTORY_UPDATED_EVENT,
 } from "@/app/lib/workout-progress";
@@ -92,13 +93,20 @@ export default function TodaysWorkout() {
   const { workout } = useProgram();
   const [today, setToday] =
     useState<(typeof weekdays)[number] | null>(null);
+  const [todayDate, setTodayDate] =
+    useState<string | null>(null);
 
   useEffect(() => {
-    const timeout = window.setTimeout(() => {
-      setToday(weekdays[new Date().getDay()]);
-    }, 0);
+    const updateToday = () => {
+      const now = new Date();
+      setToday(weekdays[now.getDay()]);
+      setTodayDate(getLocalCalendarDate(now));
+    };
 
-    return () => window.clearTimeout(timeout);
+    updateToday();
+    const interval = window.setInterval(updateToday, 60 * 1000);
+
+    return () => window.clearInterval(interval);
   }, []);
 
   const todaysMuscles = today ? workout[today] || [] : [];
@@ -203,6 +211,21 @@ export default function TodaysWorkout() {
    */
 
   useEffect(() => {
+    if (!today || !todayDate) {
+      return;
+    }
+
+    setWorkoutLoaded(false);
+    setSetData({});
+    setSessionId(null);
+    setStarted(false);
+    setStartedAt(null);
+    setCompleted(false);
+    setCompletedAt(null);
+    setLastActivityAt(null);
+    setDurationSeconds(0);
+    setSaveStatus("loading");
+
     try {
       const saved =
         localStorage.getItem(
@@ -217,7 +240,8 @@ export default function TodaysWorkout() {
 
         if (
           parsed &&
-          parsed.day === today
+          parsed.day === today &&
+          isWorkoutForDate(parsed.date, todayDate)
         ) {
           if (parsed.setData) {
             setSetData(
@@ -270,7 +294,7 @@ export default function TodaysWorkout() {
     } finally {
       setWorkoutLoaded(true);
     }
-  }, [today]);
+  }, [today, todayDate]);
 
   /*
    * ========================================
@@ -396,7 +420,7 @@ export default function TodaysWorkout() {
    */
 
   useEffect(() => {
-    if (!workoutLoaded || !today) {
+    if (!workoutLoaded || !today || !todayDate) {
       return;
     }
 
@@ -412,10 +436,10 @@ export default function TodaysWorkout() {
           const workoutToSave: SavedWorkout = {
             sessionId:
               sessionId ||
-              `${today}-${Date.now()}`,
+              `${todayDate}-${today}-${Date.now()}`,
             day: today,
 
-            date: getLocalCalendarDate(new Date()),
+            date: todayDate,
 
             setData,
 
@@ -457,6 +481,7 @@ export default function TodaysWorkout() {
   }, [
     workoutLoaded,
     today,
+    todayDate,
     setData,
     sessionId,
     started,
@@ -701,6 +726,7 @@ export default function TodaysWorkout() {
       completed ||
       !sessionId ||
       !today ||
+      !todayDate ||
       totalExercises === 0 ||
       completedSetCount === 0
     ) {
@@ -731,7 +757,7 @@ export default function TodaysWorkout() {
       {
         sessionId,
         day: today,
-        date: getLocalCalendarDate(new Date()),
+        date: todayDate,
         setData,
         started: true,
         startedAt,

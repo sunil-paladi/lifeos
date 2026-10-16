@@ -212,6 +212,7 @@ export async function GET(
         name: completePlan.name,
         totalWeeks: completePlan.totalWeeks,
         startDate: completePlan.startDate?.toISOString() ?? null,
+        createdAt: completePlan.createdAt.toISOString(),
       },
       phases: completePlan.phases,
     });

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { BookOpen, ChevronDown, Loader2 } from "lucide-react";
 import { useProgram } from "@/app/context/ProgramContext";
+import { usePersistentDisclosure } from "@/app/hooks/usePersistentDisclosure";
 import {
   filterWorkoutPlans,
   type WorkoutPlanFilters,
@@ -11,6 +12,11 @@ import {
 
 export default function WorkoutPlanLibrary() {
   const { trainingPlanId, refreshProgram } = useProgram();
+  const {
+    expanded,
+    hydrated: disclosureHydrated,
+    setExpanded,
+  } = usePersistentDisclosure("consistfit-workout-plan-library-expanded", true);
   const [plans, setPlans] = useState<WorkoutPlanPreview[]>([]);
   const [selectedPlan, setSelectedPlan] = useState<WorkoutPlanPreview | null>(null);
   const [loading, setLoading] = useState(true);
@@ -130,16 +136,36 @@ export default function WorkoutPlanLibrary() {
 
   return (
     <section className="w-full min-w-0 max-w-full rounded-xl border border-slate-200 bg-white p-3 shadow-sm sm:p-4">
-      <div className="flex items-center gap-2">
-        <BookOpen size={17} className="text-primary" />
-        <div>
-          <h2 className="text-sm font-bold text-slate-900">Browse Workout Plans</h2>
-          <p className="mt-0.5 text-xs text-slate-500">
-            Preview an approved plan before applying it to your weekly planner.
-          </p>
+      <button
+        type="button"
+        aria-expanded={expanded && disclosureHydrated}
+        aria-controls="workout-plan-library-content"
+        aria-label={
+          !disclosureHydrated || !expanded
+            ? "Expand Browse Workout Plans"
+            : "Collapse Browse Workout Plans"
+        }
+        onClick={() => setExpanded(!expanded)}
+        className="flex min-h-11 w-full items-center justify-between gap-3 rounded-md px-2 py-1 text-left transition hover:bg-slate-50"
+      >
+        <div className="flex min-w-0 items-center gap-2">
+          <BookOpen size={17} className="shrink-0 text-primary" />
+          <div className="min-w-0">
+            <h2 className="text-sm font-bold text-slate-900">Browse Workout Plans</h2>
+            <p className="mt-0.5 text-xs text-slate-500">
+              Preview an approved plan before applying it to your weekly planner.
+            </p>
+          </div>
         </div>
-      </div>
+        <ChevronDown
+          size={20}
+          className={`shrink-0 text-slate-400 transition-transform ${
+            expanded && disclosureHydrated ? "rotate-180" : ""
+          }`}
+        />
+      </button>
 
+      <div id="workout-plan-library-content" hidden={!disclosureHydrated || !expanded}>
       {loading && (
         <p className="mt-4 flex items-center gap-2 text-sm text-slate-500">
           <Loader2 size={14} className="animate-spin" /> Loading workout plans...
@@ -328,6 +354,7 @@ export default function WorkoutPlanLibrary() {
           {message}
         </p>
       )}
+      </div>
     </section>
   );
 }

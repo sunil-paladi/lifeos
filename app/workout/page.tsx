@@ -1,25 +1,45 @@
 "use client";
 
-import { useState } from "react";
 import {
   ChevronDown,
   Dumbbell,
   History,
 } from "lucide-react";
 
+import { usePersistentDisclosure } from "@/app/hooks/usePersistentDisclosure";
 import TodaysWorkout from "@/app/components/workout/TodaysWorkout";
 import ProgramBuilder from "@/app/components/planner/ProgramBuilder";
 import WorkoutPlanLibrary from "@/app/components/planner/WorkoutPlanLibrary";
 import WorkoutHistory from "@/app/components/workout/WorkoutHistory";
 
-type Section = "today" | "history";
-
 export default function WorkoutPage() {
-  const [openSection, setOpenSection] = useState<Section | null>("today");
+  const {
+    expanded: todayExpanded,
+    hydrated: todayStateHydrated,
+    setExpanded: setTodayExpanded,
+  } = usePersistentDisclosure("consistfit-workout-today-expanded", true);
+  const {
+    expanded: historyExpanded,
+    hydrated: historyStateHydrated,
+    setExpanded: setHistoryExpanded,
+  } = usePersistentDisclosure("consistfit-workout-history-expanded", false);
 
-  const toggleSection = (section: Section) => {
-    setOpenSection((current) => (current === section ? null : section));
-  };
+  function toggleToday() {
+    if (!todayExpanded) {
+      setHistoryExpanded(false);
+    }
+    setTodayExpanded(!todayExpanded);
+  }
+
+  function toggleHistory() {
+    if (historyExpanded) {
+      setHistoryExpanded(false);
+      return;
+    }
+
+    setTodayExpanded(false);
+    setHistoryExpanded(true);
+  }
 
   return (
     <div className="min-w-0 space-y-5">
@@ -38,9 +58,9 @@ export default function WorkoutPage() {
       <section id="todays-workout" className="min-w-0 scroll-mt-20 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         <button
           type="button"
-          onClick={() => toggleSection("today")}
-          aria-expanded={openSection === "today"}
-          aria-controls={openSection === "today" ? "today-workout-panel" : undefined}
+          onClick={toggleToday}
+          aria-expanded={todayExpanded && todayStateHydrated}
+          aria-controls={todayExpanded && todayStateHydrated ? "today-workout-panel" : undefined}
           className="flex w-full items-center justify-between px-5 py-4 text-left transition hover:bg-slate-50"
         >
           <div className="flex min-w-0 items-center gap-3">
@@ -59,11 +79,11 @@ export default function WorkoutPage() {
           <ChevronDown
             size={20}
             className={`text-slate-400 transition-transform ${
-              openSection === "today" ? "rotate-180" : ""
+              todayExpanded && todayStateHydrated ? "rotate-180" : ""
             }`}
           />
         </button>
-        {openSection === "today" && (
+        {todayExpanded && todayStateHydrated && (
           <div id="today-workout-panel" className="min-w-0 border-t border-slate-200 p-3 sm:p-6">
             <TodaysWorkout />
           </div>
@@ -76,9 +96,13 @@ export default function WorkoutPage() {
       <section className="min-w-0 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         <button
           type="button"
-          onClick={() => toggleSection("history")}
-          aria-expanded={openSection === "history"}
-          aria-controls={openSection === "history" ? "workout-history-panel" : undefined}
+          onClick={toggleHistory}
+          aria-expanded={historyExpanded && historyStateHydrated}
+          aria-controls={
+            historyExpanded && historyStateHydrated
+              ? "workout-history-panel"
+              : undefined
+          }
           className="flex w-full items-center justify-between px-5 py-4 text-left transition hover:bg-slate-50"
         >
           <div className="flex min-w-0 items-center gap-3">
@@ -97,11 +121,11 @@ export default function WorkoutPage() {
           <ChevronDown
             size={20}
             className={`text-slate-400 transition-transform ${
-              openSection === "history" ? "rotate-180" : ""
+              historyExpanded && historyStateHydrated ? "rotate-180" : ""
             }`}
           />
         </button>
-        {openSection === "history" && (
+        {historyExpanded && historyStateHydrated && (
           <div id="workout-history-panel" className="min-w-0 border-t border-slate-200 p-3 sm:p-6">
             <WorkoutHistory />
           </div>

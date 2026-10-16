@@ -7,15 +7,21 @@ import {
   ChevronLeft,
   ChevronRight,
   Cloud,
+  Copy,
   Library,
   Loader2,
 } from "lucide-react";
 
 import { useProgram } from "@/app/context/ProgramContext";
+import { usePersistentDisclosure } from "@/app/hooks/usePersistentDisclosure";
 import {
   formatWorkoutWeekRange,
+  getWorkoutWeekIndex,
   getWorkoutWeekRange,
 } from "@/app/lib/workout-progress";
+import {
+  isWorkoutWeekEmpty,
+} from "@/app/lib/program-builder-state";
 import AIWorkoutGenerator from "./AIWorkoutGenerator";
 import ExerciseLibrary from "./ExerciseLibrary";
 import WeeklyWorkoutProgress from "./WeeklyWorkoutProgress";
@@ -40,39 +46,16 @@ function getWeekContainingToday(
   programStartDate: string | null,
   durationWeeks: number,
 ) {
-  const startDate = programStartDate?.slice(0, 10);
-  const match = startDate?.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-
-  if (!match) {
-    return 0;
-  }
-
-  const [, year, month, day] = match;
-  const startDay = Date.UTC(
-    Number(year),
-    Number(month) - 1,
-    Number(day),
-  );
-  const parsedStart = new Date(startDay);
-
-  if (
-    parsedStart.getUTCFullYear() !== Number(year) ||
-    parsedStart.getUTCMonth() !== Number(month) - 1 ||
-    parsedStart.getUTCDate() !== Number(day)
-  ) {
-    return 0;
-  }
-
   const now = new Date();
-  const today = Date.UTC(
-    now.getFullYear(),
-    now.getMonth(),
-    now.getDate(),
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  const weekIndex = getWorkoutWeekIndex(
+    programStartDate,
+    today,
   );
-  const elapsedDays = Math.floor(
-    (today - startDay) / (24 * 60 * 60 * 1000),
-  );
-  const weekIndex = Math.floor(elapsedDays / 7);
+
+  if (weekIndex === null) {
+    return 0;
+  }
 
   return Math.min(
     Math.max(weekIndex, 0),
@@ -81,13 +64,24 @@ function getWeekContainingToday(
 }
 
 export default function ProgramBuilder() {
-  const [durationWeeks, setDurationWeeks] = useState(12);
   const [selectedWeek, setSelectedWeek] = useState(0);
   const initialWeekSelected = useRef(false);
   const [showDurationMenu, setShowDurationMenu] =
     useState(false);
   const [showExerciseLibrary, setShowExerciseLibrary] =
     useState(false);
+  const {
+    expanded,
+    hydrated: disclosureHydrated,
+    setExpanded,
+  } = usePersistentDisclosure("consistfit-workout-program-builder-expanded", true);
+  const collapsed = !expanded;
+  const [showCopyWeek, setShowCopyWeek] = useState(false);
+  const [copySourceWeek, setCopySourceWeek] = useState(0);
+  const [copyDestinationWeek, setCopyDestinationWeek] = useState(1);
+  const [copyError, setCopyError] = useState("");
+  const [copyingWeek, setCopyingWeek] = useState(false);
+  const [durationError, setDurationError] = useState("");
   const [gymMemberships, setGymMemberships] = useState<GymMembershipOption[]>([]);
   const [selectedGymId, setSelectedGymId] = useState("");
   const [membershipsLoading, setMembershipsLoading] = useState(false);
@@ -98,11 +92,14 @@ export default function ProgramBuilder() {
 
   const {
     saveStatus,
+    durationWeeks,
     programStartDate,
     trainingPlanId,
     programLoaded,
     weeks,
     getWorkoutForWeek,
+    updateProgramDuration,
+    copyWeek,
     refreshProgram,
   } = useProgram();
 
@@ -169,13 +166,9 @@ export default function ProgramBuilder() {
       return;
     }
 
-    const initialDuration = trainingPlanId ? weeks.length : durationWeeks;
     const timeoutId = window.setTimeout(() => {
-      if (trainingPlanId) {
-        setDurationWeeks(initialDuration);
-      }
       setSelectedWeek(
-        getWeekContainingToday(programStartDate, initialDuration),
+        getWeekContainingToday(programStartDate, durationWeeks),
       );
       initialWeekSelected.current = true;
     }, 0);
@@ -185,8 +178,6 @@ export default function ProgramBuilder() {
     durationWeeks,
     programLoaded,
     programStartDate,
-    trainingPlanId,
-    weeks.length,
   ]);
 
   const currentWeekNumber = selectedWeek + 1;
@@ -195,26 +186,85 @@ export default function ProgramBuilder() {
     selectedWeek,
   );
 
-  function handleDurationChange(weeks: number) {
-    setDurationWeeks(weeks);
-
-    setSelectedWeek((current) =>
-      Math.min(current, weeks - 1)
-    );
-
-    setShowDurationMenu(false);
-  }
-
   function goToPreviousWeek() {
-    setSelectedWeek((current) =>
-      Math.max(current - 1, 0)
-    );
+    setSelectedWeek((current) => Math.max(current - 1, 0));
   }
 
   function goToNextWeek() {
     setSelectedWeek((current) =>
-      Math.min(current + 1, durationWeeks - 1)
+      Math.min(current + 1, durationWeeks - 1),
     );
+  }
+
+  async function handleDurationChange(nextDurationWeeks: number) {
+    setDurationError("");
+    try {
+      await updateProgramDuration(nextDurationWeeks);
+      setSelectedWeek((current) =>
+        Math.min(current, nextDurationWeeks - 1),
+      );
+      setShowDurationMenu(false);
+    } catch (error) {
+      setDurationError(
+        error instanceof Error
+          ? error.message
+          : "Unable to save program duration.",
+      );
+    }
+  }
+
+  function toggleCopyWeek() {
+    if (!showCopyWeek) {
+      setCopySourceWeek(selectedWeek);
+      setCopyDestinationWeek(
+        selectedWeek === durationWeeks - 1 ? 0 : selectedWeek + 1,
+      );
+    }
+    setCopyError("");
+    setShowCopyWeek((current) => !current);
+  }
+
+  async function handleCopyWeek() {
+    if (
+      copySourceWeek < 0 ||
+      copyDestinationWeek < 0 ||
+      copySourceWeek >= durationWeeks ||
+      copyDestinationWeek >= durationWeeks ||
+      copySourceWeek === copyDestinationWeek
+    ) {
+      setCopyError("Choose two different weeks within the program duration.");
+      return;
+    }
+
+    if (!weeks[copySourceWeek] || !weeks[copyDestinationWeek]) {
+      setCopyError("The selected week is not available.");
+      return;
+    }
+
+    if (!isWorkoutWeekEmpty(weeks[copyDestinationWeek])) {
+      const confirmed = window.confirm(
+        `Week ${copyDestinationWeek + 1} already has workouts. Replace them with Week ${copySourceWeek + 1}?`,
+      );
+      if (!confirmed) {
+        return;
+      }
+    }
+
+    setCopyingWeek(true);
+    setCopyError("");
+    try {
+      await copyWeek(copySourceWeek, copyDestinationWeek);
+      setSelectedWeek(copyDestinationWeek);
+      setShowCopyWeek(false);
+    } catch (error) {
+      setCopyError(
+        error instanceof Error
+          ? error.message
+          : "Unable to copy the selected week.",
+      );
+    } finally {
+      setCopyingWeek(false);
+    }
   }
 
   async function createProgram() {
@@ -267,74 +317,56 @@ export default function ProgramBuilder() {
     <section id="program-builder" className="min-w-0 rounded-xl border border-slate-200 bg-white p-3 shadow-sm sm:p-4">
 
       {/* Header */}
-      <div className="flex min-w-0 flex-wrap items-center justify-between gap-3">
+      <button
+        type="button"
+        aria-expanded={expanded && disclosureHydrated}
+        aria-controls="program-builder-content"
+        aria-label={
+          !disclosureHydrated || collapsed
+            ? "Expand Program Builder"
+            : "Collapse Program Builder"
+        }
+        onClick={() => setExpanded(!expanded)}
+        className="flex w-full min-w-0 flex-col gap-2 rounded-md px-2 py-1 text-left transition hover:bg-slate-50"
+      >
 
-        <div className="flex min-w-0 items-center gap-2.5">
+        <div className="flex min-h-11 w-full min-w-0 items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-2.5">
 
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
-            <span className="text-base">📅</span>
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+              <span className="text-base">📅</span>
+            </div>
+
+            <div className="min-w-0">
+              <h2 className="text-sm font-bold text-slate-900">
+                Program Builder
+              </h2>
+
+              <p className="text-[11px] font-medium text-slate-500">
+                Build your workout program
+              </p>
+            </div>
           </div>
 
-          <div className="min-w-0">
-            <h2 className="text-sm font-bold text-slate-900">
-              Program Builder
-            </h2>
-
-            <p className="text-[11px] font-medium text-slate-500">
-              Build your workout program
-            </p>
-          </div>
-
+          <ChevronDown
+            size={20}
+            className={`shrink-0 text-slate-400 transition-transform ${
+              expanded && disclosureHydrated ? "rotate-180" : ""
+            }`}
+          />
         </div>
 
-        {/* Save Status */}
-        <div className="flex shrink-0 items-center gap-1 text-[11px]">
+        {disclosureHydrated && (
+          <p className="w-full pl-[42px] text-xs font-medium text-slate-600">
+            {durationWeeks}-week program · Week {currentWeekNumber}
+            {weekRange && (
+              <> · {formatWorkoutWeekRange(weekRange.start, weekRange.end)}</>
+            )}
+          </p>
+        )}
+      </button>
 
-          {saveStatus === "loading" && (
-            <>
-              <Loader2
-                size={12}
-                className="animate-spin text-slate-500"
-              />
-              <span className="font-medium text-slate-500">
-                Loading...
-              </span>
-            </>
-          )}
-
-          {saveStatus === "saving" && (
-            <>
-              <Cloud
-                size={12}
-                className="text-slate-500"
-              />
-              <span className="font-medium text-slate-500">
-                Saving...
-              </span>
-            </>
-          )}
-
-          {saveStatus === "saved" && (
-            <>
-              <Check
-                size={12}
-                className="text-primary"
-              />
-              <span className="font-semibold text-primary">
-                Saved
-              </span>
-            </>
-          )}
-
-          {saveStatus === "error" && (
-            <span className="font-semibold text-red-600">
-              Save failed
-            </span>
-          )}
-
-        </div>
-      </div>
-
+      <div id="program-builder-content" hidden={!disclosureHydrated || collapsed}>
       {programLoaded && !trainingPlanId && saveStatus === "saved" && (
         <div className="mt-4 rounded-lg border border-primary/20 bg-primary/5 p-3">
           <h3 className="text-sm font-semibold text-slate-900">
@@ -415,8 +447,37 @@ export default function ProgramBuilder() {
           </p>
         </div>
 
-        {/* Duration Dropdown */}
-        <div className="relative">
+        <div className="flex flex-wrap items-center justify-end gap-3">
+          {/* Save Status */}
+          <div className="flex items-center gap-1 text-[11px]">
+            {saveStatus === "loading" && (
+              <>
+                <Loader2 size={12} className="animate-spin text-slate-500" />
+                <span className="font-medium text-slate-500">Loading...</span>
+              </>
+            )}
+
+            {saveStatus === "saving" && (
+              <>
+                <Cloud size={12} className="text-slate-500" />
+                <span className="font-medium text-slate-500">Saving...</span>
+              </>
+            )}
+
+            {saveStatus === "saved" && (
+              <>
+                <Check size={12} className="text-primary" />
+                <span className="font-semibold text-primary">Saved</span>
+              </>
+            )}
+
+            {saveStatus === "error" && (
+              <span className="font-semibold text-red-600">Save failed</span>
+            )}
+          </div>
+
+          {/* Duration Dropdown */}
+          <div className="relative">
 
           <button
             type="button"
@@ -446,10 +507,11 @@ export default function ProgramBuilder() {
                 <button
                   key={weeks}
                   type="button"
+                  disabled={saveStatus === "saving"}
                   onClick={() =>
-                    handleDurationChange(weeks)
+                    void handleDurationChange(weeks)
                   }
-                  className={`flex min-h-11 w-full items-center justify-between rounded-md px-2.5 py-1.5 text-xs transition ${
+                  className={`flex min-h-11 w-full items-center justify-between rounded-md px-2.5 py-1.5 text-xs transition disabled:opacity-50 ${
                     durationWeeks === weeks
                       ? "bg-primary/10 font-semibold text-primary"
                       : "text-slate-700 hover:bg-slate-50"
@@ -481,8 +543,14 @@ export default function ProgramBuilder() {
             </div>
           )}
 
+          </div>
         </div>
       </div>
+      {durationError && (
+        <p role="alert" className="mt-2 text-xs text-red-600">
+          {durationError}
+        </p>
+      )}
 
       {/* Compact Week Navigation */}
       <div className="mt-3 min-w-0 rounded-lg border border-slate-200 bg-slate-50/60 px-2.5 py-2">
@@ -591,11 +659,80 @@ export default function ProgramBuilder() {
             </p>
           </div>
 
-          <span className="rounded-full bg-slate-100 px-2 py-1 text-[9px] font-semibold text-slate-600">
-            {durationWeeks}-week program
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="rounded-full bg-slate-100 px-2 py-1 text-[9px] font-semibold text-slate-600">
+              {durationWeeks}-week program
+            </span>
+            <button
+              type="button"
+              onClick={toggleCopyWeek}
+              disabled={durationWeeks < 2 || copyingWeek}
+              className="flex min-h-11 items-center gap-1.5 rounded-md border border-slate-200 bg-white px-2.5 text-xs font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <Copy size={13} />
+              Copy Week
+            </button>
+          </div>
 
         </div>
+
+        {showCopyWeek && (
+          <div className="mb-3 rounded-lg border border-slate-200 bg-slate-50/60 p-3">
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label className="text-xs font-medium text-slate-600">
+                Source week
+                <select
+                  value={copySourceWeek}
+                  onChange={(event) => setCopySourceWeek(Number(event.target.value))}
+                  className="mt-1 min-h-11 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-800"
+                >
+                  {Array.from({ length: durationWeeks }, (_, index) => (
+                    <option key={index} value={index}>Week {index + 1}</option>
+                  ))}
+                </select>
+              </label>
+              <label className="text-xs font-medium text-slate-600">
+                Destination week
+                <select
+                  value={copyDestinationWeek}
+                  onChange={(event) => setCopyDestinationWeek(Number(event.target.value))}
+                  className="mt-1 min-h-11 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-800"
+                >
+                  {Array.from({ length: durationWeeks }, (_, index) => (
+                    <option key={index} value={index}>Week {index + 1}</option>
+                  ))}
+                </select>
+              </label>
+            </div>
+            {copyError && (
+              <p role="alert" className="mt-2 text-xs text-red-600">
+                {copyError}
+              </p>
+            )}
+            <div className="mt-3 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setShowCopyWeek(false)}
+                className="min-h-11 rounded-md px-3 text-xs font-semibold text-slate-600 hover:bg-white"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleCopyWeek()}
+                disabled={
+                  copyingWeek ||
+                  copySourceWeek === copyDestinationWeek ||
+                  durationWeeks < 2
+                }
+                className="flex min-h-11 items-center gap-1.5 rounded-md bg-primary px-3 text-xs font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {copyingWeek && <Loader2 size={13} className="animate-spin" />}
+                {copyingWeek ? "Copying..." : "Copy workouts"}
+              </button>
+            </div>
+          </div>
+        )}
 
         <WeeklyWorkoutProgress
           week={getWorkoutForWeek(selectedWeek)}
@@ -630,6 +767,7 @@ export default function ProgramBuilder() {
           </div>
         )}
 
+      </div>
       </div>
 
     </section>
