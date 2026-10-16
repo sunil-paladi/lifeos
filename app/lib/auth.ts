@@ -1,7 +1,55 @@
 import { betterAuth } from "better-auth";
+import { APIError, createAuthMiddleware } from "better-auth/api";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { username } from "better-auth/plugins";
 import { prisma } from "@/lib/prisma";
+
+const caseInsensitiveUsernameMiddleware = createAuthMiddleware(async (ctx) => {
+  if (ctx.path === "/sign-in/username") {
+    const username = ctx.body.username;
+    if (typeof username !== "string") return;
+
+    const user = await prisma.user.findFirst({
+      where: {
+        username: {
+          equals: username,
+          mode: "insensitive",
+        },
+      },
+      select: {
+        username: true,
+      },
+    });
+
+    if (user) {
+      ctx.body.username = user.username;
+    }
+  }
+
+  if (ctx.path === "/sign-up/email") {
+    const username = ctx.body.username;
+    if (typeof username !== "string") return;
+
+    const existingUser = await prisma.user.findFirst({
+      where: {
+        username: {
+          equals: username,
+          mode: "insensitive",
+        },
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (existingUser) {
+      throw APIError.from("BAD_REQUEST", {
+        code: "USERNAME_IS_ALREADY_TAKEN",
+        message: "Username is already in use",
+      });
+    }
+  }
+});
 
 async function sendPasswordResetEmail({
   user,
@@ -85,10 +133,15 @@ export const auth = betterAuth({
     },
   },
 
+  hooks: {
+    before: caseInsensitiveUsernameMiddleware,
+  },
+
   plugins: [
     username({
       displayUsername: false,
       immutableUsername: true,
+      usernameNormalization: false,
     }),
   ],
 });

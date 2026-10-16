@@ -66,13 +66,29 @@ export default function SignupPage() {
     try {
       const { error } = await authClient.signUp.email({
         name,
-        username,
-        email,
+        username: username.trim().toLowerCase(),
+        email: email.trim().toLowerCase(),
         password,
       });
 
       if (error) {
-        setMessage("Could not create an account with those details.");
+        const errorCode = typeof error.code === "string" ? error.code : "";
+        const errorMessage =
+          typeof error.message === "string" ? error.message : "";
+
+        if (
+          errorCode === "USERNAME_IS_ALREADY_TAKEN" ||
+          /username is already in use|username is already taken/i.test(errorMessage)
+        ) {
+          setMessage("Username already exists. Please choose another username.");
+        } else if (
+          errorCode === "USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL" ||
+          /email.*already exists|already exists.*email/i.test(errorMessage)
+        ) {
+          setMessage("An account with that email already exists. Please use another email.");
+        } else {
+          setMessage("Could not create an account with those details.");
+        }
         return;
       }
 
@@ -206,7 +222,7 @@ export default function SignupPage() {
                   placeholder="Choose a username"
                   value={username}
                   onChange={(e) =>
-                    setUsername(e.target.value)
+                    setUsername(e.target.value.toLowerCase())
                   }
                   required
                   autoComplete="username"
@@ -240,7 +256,7 @@ export default function SignupPage() {
                   placeholder="you@example.com"
                   value={email}
                   onChange={(e) =>
-                    setEmail(e.target.value)
+                    setEmail(e.target.value.toLowerCase())
                   }
                   required
                   autoComplete="email"
@@ -312,7 +328,11 @@ export default function SignupPage() {
 
             {/* Error */}
             {message && (
-              <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              <div
+                role="alert"
+                aria-live="assertive"
+                className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+              >
                 {message}
               </div>
             )}

@@ -140,9 +140,12 @@ export async function POST(
     return NextResponse.json({ error: "Password must contain 8 to 128 characters" }, { status: 400 });
   }
 
-  const existingUsername = await prisma.user.findUnique({
+  const existingUsername = await prisma.user.findFirst({
     where: {
-      username,
+      username: {
+        equals: username,
+        mode: "insensitive",
+      },
     },
     select: {
       id: true,
