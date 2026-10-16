@@ -13,11 +13,10 @@ import {
   Dumbbell,
   FileText,
   LayoutDashboard,
-  Salad,
   Settings,
   ShieldCheck,
-  Users,
   UserCog,
+  Users,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useTheme } from "@/app/components/theme/ThemeProvider";
@@ -27,7 +26,7 @@ const mainMenu = [
   {
     label: "Dashboard",
     icon: LayoutDashboard,
-    path: "/dashboard",
+    path: "/",
   },
   {
     label: "Workout",
@@ -35,13 +34,8 @@ const mainMenu = [
     path: "/workout",
   },
   {
-    label: "Attendance",
-    icon: ClipboardCheck,
-    path: "/attendance",
-  },
-  {
     label: "Nutrition",
-    icon: Salad,
+    icon: "🍽️",
     path: "/nutrition",
   },
   {
@@ -72,6 +66,16 @@ const insightMenu = [
     icon: FileText,
     path: "/reports",
   },
+];
+
+const ownerMenu = [
+  { label: "Members", icon: Users, path: "/owner/members" },
+  { label: "Attendance", icon: ClipboardCheck, path: "/owner/attendance" },
+  { label: "PT Sessions", icon: CalendarDays, path: "/owner/pt-sessions" },
+  { label: "Owner Statistics", icon: BarChart3, path: "/owner/statistics" },
+  { label: "Billing", icon: CreditCard, path: "/owner/billing" },
+  { label: "Gym Settings", icon: Settings, path: "/owner/settings" },
+  { label: "Staff / Trainers", icon: UserCog, path: "/owner/staff" },
 ];
 
 interface SidebarProps {
@@ -117,20 +121,18 @@ export default function Sidebar({
 
       <div className="flex h-20 shrink-0 items-center border-b border-border px-6">
         <Link
-          href="/dashboard"
+          href="/"
           onClick={onNavigate}
           className="flex w-full items-center justify-center rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
         >
-          <div className="flex w-full flex-col items-center gap-0.5">
-            <Image
-              src={theme === "dark" ? "/consistfit-wordmark-dark.svg" : "/consistfit-wordmark-light.svg"}
-              alt="ConsistFit"
-              width={1800}
-              height={615}
-              className="h-auto w-full max-w-[208px] object-contain"
-              priority
-            />
-          </div>
+          <Image
+            src={theme === "dark" ? "/consistfit-wordmark-dark.svg" : "/consistfit-wordmark-light.svg"}
+            alt="ConsistFit"
+            width={1800}
+            height={615}
+            className="h-auto w-full max-w-[208px] object-contain"
+            priority
+          />
         </Link>
       </div>
 
@@ -138,7 +140,7 @@ export default function Sidebar({
       {/* NAVIGATION */}
       {/* ======================================== */}
 
-      <nav className="flex-1 overflow-y-auto px-3 py-5 [&_a:focus-visible]:outline-none [&_a:focus-visible]:ring-2 [&_a:focus-visible]:ring-primary [&_a:focus-visible]:ring-offset-2">
+      <nav className="flex-1 overflow-y-auto px-3 py-5">
         {/* Main */}
         <div>
           <p className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
@@ -155,7 +157,7 @@ export default function Sidebar({
                   key={item.label}
                   href={item.path}
                   onClick={onNavigate}
-                  className={`group flex min-h-11 w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
+                  className={`group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
                     active
                       ? "bg-primary text-primary-foreground shadow-sm"
                       : "text-slate-600 hover:bg-primary/10 hover:text-slate-900"
@@ -200,7 +202,7 @@ export default function Sidebar({
                   key={item.label}
                   href={item.path}
                   onClick={onNavigate}
-                  className={`group flex min-h-11 w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
+                  className={`group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
                     active
                       ? "bg-primary text-primary-foreground shadow-sm"
                       : "text-slate-600 hover:bg-primary/10 hover:text-slate-900"
@@ -232,7 +234,7 @@ export default function Sidebar({
             <Link
               href="/trainer"
               onClick={onNavigate}
-              className={`group flex min-h-11 w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
+              className={`group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
                 isActive("/trainer")
                   ? "bg-primary text-primary-foreground shadow-sm"
                   : "text-slate-600 hover:bg-primary/10 hover:text-slate-900"
@@ -252,30 +254,9 @@ export default function Sidebar({
             </Link>
 
             <Link
-              href="/trainer/sessions"
-              onClick={onNavigate}
-              className={`group mt-1 flex min-h-11 w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
-                isActive("/trainer/sessions")
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "text-slate-600 hover:bg-primary/10 hover:text-slate-900"
-              }`}
-            >
-              <CalendarDays
-                size={18}
-                strokeWidth={isActive("/trainer/sessions") ? 2.2 : 1.8}
-                className={
-                  isActive("/trainer/sessions")
-                    ? "text-primary-foreground"
-                    : "text-slate-500 transition-colors group-hover:text-slate-900"
-                }
-              />
-              <span>PT Sessions</span>
-            </Link>
-
-            <Link
               href="/trainer/attendance"
               onClick={onNavigate}
-              className={`group mt-1 flex min-h-11 w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
+              className={`group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
                 isActive("/trainer/attendance")
                   ? "bg-primary text-primary-foreground shadow-sm"
                   : "text-slate-600 hover:bg-primary/10 hover:text-slate-900"
@@ -292,6 +273,27 @@ export default function Sidebar({
               />
               <span>Client Attendance</span>
             </Link>
+
+            <Link
+              href="/trainer/sessions"
+              onClick={onNavigate}
+              className={`group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
+                isActive("/trainer/sessions")
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-slate-600 hover:bg-primary/10 hover:text-slate-900"
+              }`}
+            >
+              <CalendarDays
+                size={18}
+                strokeWidth={isActive("/trainer/sessions") ? 2.2 : 1.8}
+                className={
+                  isActive("/trainer/sessions")
+                    ? "text-primary-foreground"
+                    : "text-slate-500 transition-colors group-hover:text-slate-900"
+                }
+              />
+              <span>PT Sessions</span>
+            </Link>
           </div>
         ) : null}
 
@@ -300,156 +302,34 @@ export default function Sidebar({
             <p className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
               Owner
             </p>
-
-            <Link
-              href="/owner/members"
-              onClick={onNavigate}
-              className={`group flex min-h-11 w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
-                isActive("/owner/members")
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "text-slate-600 hover:bg-primary/10 hover:text-slate-900"
-              }`}
-            >
-              <Users
-                size={18}
-                strokeWidth={isActive("/owner/members") ? 2.2 : 1.8}
-                className={
-                  isActive("/owner/members")
-                    ? "text-primary-foreground"
-                    : "text-slate-500 transition-colors group-hover:text-slate-900"
-                }
-              />
-
-              <span>Members</span>
-            </Link>
-
-            <Link
-              href="/owner/attendance"
-              onClick={onNavigate}
-              className={`group mt-1 flex min-h-11 w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
-                isActive("/owner/attendance")
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "text-slate-600 hover:bg-primary/10 hover:text-slate-900"
-              }`}
-            >
-              <ClipboardCheck
-                size={18}
-                strokeWidth={isActive("/owner/attendance") ? 2.2 : 1.8}
-                className={
-                  isActive("/owner/attendance")
-                    ? "text-primary-foreground"
-                    : "text-slate-500 transition-colors group-hover:text-slate-900"
-                }
-              />
-              <span>Attendance</span>
-            </Link>
-
-            <Link
-              href="/owner/pt-sessions"
-              onClick={onNavigate}
-              className={`group mt-1 flex min-h-11 w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
-                isActive("/owner/pt-sessions")
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "text-slate-600 hover:bg-primary/10 hover:text-slate-900"
-              }`}
-            >
-              <CalendarDays
-                size={18}
-                strokeWidth={isActive("/owner/pt-sessions") ? 2.2 : 1.8}
-                className={
-                  isActive("/owner/pt-sessions")
-                    ? "text-primary-foreground"
-                    : "text-slate-500 transition-colors group-hover:text-slate-900"
-                }
-              />
-              <span>PT Sessions</span>
-            </Link>
-
-            <Link
-              href="/owner/statistics"
-              onClick={onNavigate}
-              className={`group mt-1 flex min-h-11 w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
-                isActive("/owner/statistics")
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "text-slate-600 hover:bg-primary/10 hover:text-slate-900"
-              }`}
-            >
-              <BarChart3
-                size={18}
-                strokeWidth={isActive("/owner/statistics") ? 2.2 : 1.8}
-                className={
-                  isActive("/owner/statistics")
-                    ? "text-primary-foreground"
-                    : "text-slate-500 transition-colors group-hover:text-slate-900"
-                }
-              />
-              <span>Owner Statistics</span>
-            </Link>
-
-            <Link
-              href="/owner/billing"
-              onClick={onNavigate}
-              className={`group mt-1 flex min-h-11 w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
-                isActive("/owner/billing")
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "text-slate-600 hover:bg-primary/10 hover:text-slate-900"
-              }`}
-            >
-              <CreditCard
-                size={18}
-                strokeWidth={isActive("/owner/billing") ? 2.2 : 1.8}
-                className={
-                  isActive("/owner/billing")
-                    ? "text-primary-foreground"
-                    : "text-slate-500 transition-colors group-hover:text-slate-900"
-                }
-              />
-              <span>Billing</span>
-            </Link>
-
-            <Link
-              href="/owner/settings"
-              onClick={onNavigate}
-              className={`group mt-1 flex min-h-11 w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
-                isActive("/owner/settings")
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "text-slate-600 hover:bg-primary/10 hover:text-slate-900"
-              }`}
-            >
-              <Settings
-                size={18}
-                strokeWidth={isActive("/owner/settings") ? 2.2 : 1.8}
-                className={
-                  isActive("/owner/settings")
-                    ? "text-primary-foreground"
-                    : "text-slate-500 transition-colors group-hover:text-slate-900"
-                }
-              />
-
-              <span>Gym Settings</span>
-            </Link>
-
-            <Link
-              href="/owner/staff"
-              onClick={onNavigate}
-              className={`group flex min-h-11 w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
-                isActive("/owner/staff")
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "text-slate-600 hover:bg-primary/10 hover:text-slate-900"
-              }`}
-            >
-              <UserCog
-                size={18}
-                strokeWidth={isActive("/owner/staff") ? 2.2 : 1.8}
-                className={
-                  isActive("/owner/staff")
-                    ? "text-primary-foreground"
-                    : "text-slate-500 transition-colors group-hover:text-slate-900"
-                }
-              />
-
-              <span>Staff / Trainers</span>
-            </Link>
+            <div className="space-y-1">
+              {ownerMenu.map(({ label, icon: Icon, path }) => {
+                const active = isActive(path);
+                return (
+                  <Link
+                    key={path}
+                    href={path}
+                    onClick={onNavigate}
+                    className={`group flex min-h-11 w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
+                      active
+                        ? "bg-primary text-primary-foreground shadow-sm"
+                        : "text-slate-600 hover:bg-primary/10 hover:text-slate-900"
+                    }`}
+                  >
+                    <Icon
+                      size={18}
+                      strokeWidth={active ? 2.2 : 1.8}
+                      className={
+                        active
+                          ? "text-primary-foreground"
+                          : "text-slate-500 transition-colors group-hover:text-slate-900"
+                      }
+                    />
+                    <span>{label}</span>
+                  </Link>
+                );
+              })}
+            </div>
           </div>
         ) : null}
 
@@ -480,7 +360,7 @@ export default function Sidebar({
               }
             />
 
-            <span>Account &amp; Preferences</span>
+            <span>Settings</span>
           </Link>
         </div>
       </nav>
@@ -504,7 +384,7 @@ export default function Sidebar({
 
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5">
-                <span className="h-2 w-2 rounded-full bg-primary" />
+                <span className="h-2 w-2 rounded-full bg-green-500" />
 
                 <p className="truncate text-sm font-semibold text-foreground">
                   {user.name}
@@ -520,17 +400,17 @@ export default function Sidebar({
           </div>
 
           <div className="mt-3 grid grid-cols-2 gap-2 border-t border-border pt-3">
-            <div className="rounded-lg bg-card px-2 py-2 text-center">
+            <div className="rounded-lg bg-muted px-2 py-2 text-center">
               <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
                 Streak
               </p>
 
-              <p className="mt-0.5 text-xs font-bold text-orange-400">
+              <p className="mt-0.5 text-xs font-bold text-secondary">
                 🔥 5 Days
               </p>
             </div>
 
-            <div className="rounded-lg bg-card px-2 py-2 text-center">
+            <div className="rounded-lg bg-muted px-2 py-2 text-center">
               <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
                 Status
               </p>

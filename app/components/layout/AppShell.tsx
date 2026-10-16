@@ -36,15 +36,23 @@ export default function AppShell({
   const [hasOwnerMembership, setHasOwnerMembership] =
     useState(false);
   const [loading, setLoading] = useState(true);
-  const [sessionError, setSessionError] = useState(false);
+  const [sessionVerificationFailed, setSessionVerificationFailed] =
+    useState(false);
+  const [sessionRetryCount, setSessionRetryCount] = useState(0);
 
   const isPublicRoute = publicRoutes.includes(pathname);
 
   useEffect(() => {
+    let active = true;
+
     async function checkSession() {
-      setSessionError(false);
+      setLoading(true);
+
       try {
         const session = await authClient.getSession();
+        if (session.error) {
+          throw new Error("Session verification failed");
+        }
 
         if (session.data?.user) {
           let trainerMembership = false;
@@ -71,7 +79,10 @@ export default function AppShell({
             }
           } catch {
             trainerMembership = false;
+            ownerMembership = false;
           }
+
+          if (!active) return;
 
           setUser({
             id: session.data.user.id,
@@ -82,60 +93,73 @@ export default function AppShell({
           setHasTrainerMembership(trainerMembership);
           setHasOwnerMembership(ownerMembership);
         } else {
+          if (!active) return;
+
           setUser(null);
           setHasTrainerMembership(false);
           setHasOwnerMembership(false);
 
           // Root "/" is our public landing page.
-          // Login and signup are also public.
+          // Login, signup, and password recovery are also public.
           if (pathname !== "/" && !isPublicRoute) {
             router.replace("/login");
           }
         }
-      } catch (error) {
-        console.error("Failed to verify the LifeOS session:", error);
-        setSessionError(true);
+      } catch {
+        if (active) {
+          setSessionVerificationFailed(true);
+        }
       } finally {
-        setLoading(false);
+        if (active) {
+          setLoading(false);
+        }
       }
     }
 
     void checkSession();
-  }, [pathname, router, isPublicRoute]);
+    return () => {
+      active = false;
+    };
+  }, [pathname, router, isPublicRoute, sessionRetryCount]);
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
+      <div className="flex min-h-screen items-center justify-center bg-slate-100">
         <div className="text-center">
-          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-primary" />
+          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-green-600" />
 
           <p className="mt-3 text-sm text-slate-500">
-            Loading ConsistFit...
+            Loading LifeOS...
           </p>
         </div>
       </div>
     );
   }
 
-  if (sessionError) {
+  if (sessionVerificationFailed) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background px-4">
-        <div className="max-w-md rounded-xl border border-border bg-card p-6 text-center">
-          <h1 className="text-lg font-semibold text-foreground">
+      <div className="flex min-h-screen items-center justify-center bg-slate-100 px-4">
+        <section
+          role="alert"
+          className="w-full max-w-md rounded-xl border border-red-200 bg-white p-6 text-center shadow-sm"
+        >
+          <h1 className="text-lg font-semibold text-slate-900">
             Unable to verify your session
           </h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            ConsistFit could not reach its authentication service. Your session was not changed.
-            Check your connection and try again.
+          <p className="mt-2 text-sm text-slate-600">
+            Please check your connection and try again. You have not been signed out.
           </p>
           <button
             type="button"
-            onClick={() => window.location.reload()}
-            className="mt-4 min-h-11 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
+            onClick={() => {
+              setSessionVerificationFailed(false);
+              setSessionRetryCount((count) => count + 1);
+            }}
+            className="mt-5 rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-green-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-600 focus-visible:ring-offset-2"
           >
             Retry
           </button>
-        </div>
+        </section>
       </div>
     );
   }
@@ -148,7 +172,7 @@ export default function AppShell({
     // Login / Signup pages
     if (isPublicRoute) {
       return (
-        <div className="min-h-screen bg-background">
+        <div className="min-h-screen bg-slate-100">
           <TopBar
             authenticated={false}
             user={null}
@@ -166,7 +190,7 @@ export default function AppShell({
     // Public landing page at "/"
     if (pathname === "/") {
       return (
-        <div className="min-h-screen bg-background">
+        <div className="min-h-screen bg-slate-100">
           <TopBar
             authenticated={false}
             user={null}
@@ -179,19 +203,19 @@ export default function AppShell({
               <div className="grid items-center gap-12 lg:grid-cols-2">
 
                 <div>
-                  <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-4 py-2 text-sm font-semibold text-primary">
+                  <div className="inline-flex items-center gap-2 rounded-full border border-green-200 bg-green-50 px-4 py-2 text-sm font-semibold text-green-700">
                     🌱 Your Personal Operating System
                   </div>
 
                   <h1 className="mt-6 text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl lg:text-6xl">
                     Build a better life,
-                    <span className="text-primary">
+                    <span className="text-green-600">
                       {" "}one day at a time.
                     </span>
                   </h1>
 
                   <p className="mt-6 max-w-xl text-lg leading-8 text-slate-600">
-                    ConsistFit brings workouts, nutrition, habits,
+                    LifeOS brings workouts, nutrition, habits,
                     hydration, journaling and progress together
                     in one simple place.
                   </p>
@@ -200,7 +224,7 @@ export default function AppShell({
                     <button
                       type="button"
                       onClick={() => router.push("/signup")}
-                      className="rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-primary/90"
+                      className="rounded-xl bg-green-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-green-700"
                     >
                       Get Started
                     </button>
@@ -217,9 +241,9 @@ export default function AppShell({
 
                 <div className="flex justify-center">
                   <div className="relative flex h-72 w-72 items-center justify-center">
-                    <div className="absolute inset-0 rounded-full bg-primary/10" />
+                    <div className="absolute inset-0 rounded-full bg-green-100" />
 
-                    <div className="absolute inset-6 rounded-full bg-primary/10" />
+                    <div className="absolute inset-6 rounded-full bg-green-200/60" />
 
                     <div className="relative flex h-56 w-56 flex-col items-center justify-center rounded-full border border-white bg-white shadow-xl">
                       <div className="text-7xl">
@@ -304,7 +328,7 @@ export default function AppShell({
   // ========================================
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-slate-100">
 
       {/* Authenticated Sidebar */}
       <div className="relative z-50">
@@ -329,8 +353,8 @@ export default function AppShell({
         </div>
 
         {/* Page Content */}
-        <main className="relative z-0 min-w-0 px-3 py-4 sm:px-6 sm:py-5 lg:px-8">
-          <div className="mx-auto w-full min-w-0 max-w-[1600px]">
+        <main className="relative z-0 px-4 py-5 sm:px-6 lg:px-8">
+          <div className="mx-auto w-full max-w-[1600px]">
             {children}
           </div>
         </main>
