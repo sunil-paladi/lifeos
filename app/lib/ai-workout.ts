@@ -655,7 +655,17 @@ export async function persistGeneratedWorkout(
   planId: string,
   totalWeeks: number,
   workout: GeneratedWorkout,
+  targetWeekNumber?: number,
 ) {
+  if (
+    targetWeekNumber !== undefined &&
+    (!Number.isInteger(targetWeekNumber) ||
+      targetWeekNumber < 1 ||
+      targetWeekNumber > totalWeeks)
+  ) {
+    throw new Error("Target week must be an integer within the training plan");
+  }
+
   const weeks = await tx.programWeek.findMany({
     where: { phase: { trainingPlanId: planId, phaseOrder: 1 } },
     orderBy: { weekNumber: "asc" },
@@ -664,14 +674,20 @@ export async function persistGeneratedWorkout(
   if (weeks.length !== totalWeeks) {
     throw new Error("Training plan structure is incomplete");
   }
+  const weeksToSave = targetWeekNumber === undefined
+    ? weeks
+    : weeks.filter(({ weekNumber }) => weekNumber === targetWeekNumber);
+  if (weeksToSave.length === 0) {
+    throw new Error("Training plan is missing the selected week");
+  }
 
   const dayNames = new Set(workout.days.map(({ day }) => day));
-  const weekDayIds = weeks.flatMap((week) =>
+  const weekDayIds = weeksToSave.flatMap((week) =>
     week.workoutDays
       .filter((day) => dayNames.has(day.name as WorkoutDayName))
       .map((day) => day.id),
   );
-  if (weekDayIds.length !== totalWeeks * dayNames.size) {
+  if (weekDayIds.length !== weeksToSave.length * dayNames.size) {
     throw new Error("Training plan is missing selected workout days");
   }
 
@@ -693,7 +709,7 @@ export async function persistGeneratedWorkout(
   const exercisesByDay = new Map(
     workout.days.map(({ day, exercises: dayExercises }) => [day, dayExercises]),
   );
-  const rows = weeks.flatMap((week) =>
+  const rows = weeksToSave.flatMap((week) =>
     week.workoutDays.flatMap((day) =>
       (exercisesByDay.get(day.name as WorkoutDayName) ?? []).map((exercise) => ({
         workoutDayId: day.id,
@@ -714,7 +730,8 @@ export async function persistGeneratedWorkout(
   return {
     trainingPlanId: planId,
     savedDays: [...dayNames],
-    savedWeeks: weeks.length,
+    savedWeeks: weeksToSave.length,
+    savedWeekNumbers: weeksToSave.map(({ weekNumber }) => weekNumber),
     savedExercises: rows.length,
   };
 }

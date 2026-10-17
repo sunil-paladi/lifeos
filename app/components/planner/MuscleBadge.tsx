@@ -196,12 +196,12 @@ export default function MuscleBadge({
                     {/* Exercise Info */}
                     <div className="flex-1">
 
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold text-slate-400">
+                      <div className="flex min-w-0 items-start gap-2">
+                        <span className="shrink-0 text-xs font-bold text-slate-400">
                           #{index + 1}
                         </span>
 
-                        <p className="font-medium text-slate-800">
+                        <p className="min-w-0 flex-1 break-words text-sm leading-5 font-medium text-slate-800 [overflow-wrap:anywhere]">
                           {exercise.name}
                         </p>
                       </div>

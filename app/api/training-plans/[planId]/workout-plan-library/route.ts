@@ -39,6 +39,15 @@ export async function POST(
     if (!body || typeof body.planTemplateId !== "string") {
       return jsonError("A valid workout plan selection is required", 400);
     }
+    const targetWeekNumber = body.targetWeekNumber;
+    if (
+      typeof targetWeekNumber !== "number" ||
+      !Number.isInteger(targetWeekNumber) ||
+      targetWeekNumber < 1 ||
+      targetWeekNumber > access.plan.totalWeeks
+    ) {
+      return jsonError("A valid target week is required", 400);
+    }
 
     const template = getWorkoutPlanById(body.planTemplateId);
     if (!template) {
@@ -51,6 +60,7 @@ export async function POST(
         planId,
         access.plan.totalWeeks,
         template.workout,
+        targetWeekNumber,
       ),
     );
 

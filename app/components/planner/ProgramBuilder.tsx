@@ -1,6 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type Dispatch,
+  type SetStateAction,
+} from "react";
 import {
   Check,
   ChevronDown,
@@ -13,7 +19,6 @@ import {
 } from "lucide-react";
 
 import { useProgram } from "@/app/context/ProgramContext";
-import { usePersistentDisclosure } from "@/app/hooks/usePersistentDisclosure";
 import {
   formatWorkoutWeekRange,
   getWorkoutWeekIndex,
@@ -30,6 +35,13 @@ import WeekPlanner from "./WeekPlanner";
 interface GymMembershipOption {
   gymId: string;
   gymName: string;
+}
+
+interface Props {
+  selectedWeek: number;
+  setSelectedWeek: Dispatch<SetStateAction<number>>;
+  disclosureExpanded: boolean;
+  onDisclosureToggle: () => void;
 }
 
 const durationOptions = [
@@ -63,19 +75,18 @@ function getWeekContainingToday(
   );
 }
 
-export default function ProgramBuilder() {
-  const [selectedWeek, setSelectedWeek] = useState(0);
+export default function ProgramBuilder({
+  selectedWeek,
+  setSelectedWeek,
+  disclosureExpanded,
+  onDisclosureToggle,
+}: Props) {
   const initialWeekSelected = useRef(false);
   const [showDurationMenu, setShowDurationMenu] =
     useState(false);
   const [showExerciseLibrary, setShowExerciseLibrary] =
     useState(false);
-  const {
-    expanded,
-    hydrated: disclosureHydrated,
-    setExpanded,
-  } = usePersistentDisclosure("consistfit-workout-program-builder-expanded", true);
-  const collapsed = !expanded;
+  const collapsed = !disclosureExpanded;
   const [showCopyWeek, setShowCopyWeek] = useState(false);
   const [copySourceWeek, setCopySourceWeek] = useState(0);
   const [copyDestinationWeek, setCopyDestinationWeek] = useState(1);
@@ -319,14 +330,14 @@ export default function ProgramBuilder() {
       {/* Header */}
       <button
         type="button"
-        aria-expanded={expanded && disclosureHydrated}
+        aria-expanded={disclosureExpanded}
         aria-controls="program-builder-content"
         aria-label={
-          !disclosureHydrated || collapsed
+          collapsed
             ? "Expand Program Builder"
             : "Collapse Program Builder"
         }
-        onClick={() => setExpanded(!expanded)}
+        onClick={onDisclosureToggle}
         className="flex w-full min-w-0 flex-col gap-2 rounded-md px-2 py-1 text-left transition hover:bg-slate-50"
       >
 
@@ -351,22 +362,20 @@ export default function ProgramBuilder() {
           <ChevronDown
             size={20}
             className={`shrink-0 text-slate-400 transition-transform ${
-              expanded && disclosureHydrated ? "rotate-180" : ""
+              disclosureExpanded ? "rotate-180" : ""
             }`}
           />
         </div>
 
-        {disclosureHydrated && (
-          <p className="w-full pl-[42px] text-xs font-medium text-slate-600">
-            {durationWeeks}-week program · Week {currentWeekNumber}
-            {weekRange && (
-              <> · {formatWorkoutWeekRange(weekRange.start, weekRange.end)}</>
-            )}
-          </p>
-        )}
+        <p className="w-full pl-[42px] text-xs font-medium text-slate-600">
+          {durationWeeks}-week program · Week {currentWeekNumber}
+          {weekRange && (
+            <> · {formatWorkoutWeekRange(weekRange.start, weekRange.end)}</>
+          )}
+        </p>
       </button>
 
-      <div id="program-builder-content" hidden={!disclosureHydrated || collapsed}>
+      <div id="program-builder-content" hidden={collapsed}>
       {programLoaded && !trainingPlanId && saveStatus === "saved" && (
         <div className="mt-4 rounded-lg border border-primary/20 bg-primary/5 p-3">
           <h3 className="text-sm font-semibold text-slate-900">

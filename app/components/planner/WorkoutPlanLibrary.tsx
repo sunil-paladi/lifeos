@@ -3,22 +3,29 @@
 import { useEffect, useState } from "react";
 import { BookOpen, ChevronDown, Loader2 } from "lucide-react";
 import { useProgram } from "@/app/context/ProgramContext";
-import { usePersistentDisclosure } from "@/app/hooks/usePersistentDisclosure";
 import {
   filterWorkoutPlans,
   type WorkoutPlanFilters,
   type WorkoutPlanPreview,
 } from "@/app/lib/workout-plan-library";
 
-export default function WorkoutPlanLibrary() {
-  const { trainingPlanId, refreshProgram } = useProgram();
-  const {
-    expanded,
-    hydrated: disclosureHydrated,
-    setExpanded,
-  } = usePersistentDisclosure("consistfit-workout-plan-library-expanded", true);
+interface Props {
+  selectedWeek: number;
+  onSelectedWeekChange: (weekIndex: number) => void;
+  disclosureExpanded: boolean;
+  onDisclosureToggle: () => void;
+}
+
+export default function WorkoutPlanLibrary({
+  selectedWeek,
+  onSelectedWeekChange,
+  disclosureExpanded,
+  onDisclosureToggle,
+}: Props) {
+  const { trainingPlanId, durationWeeks, refreshProgram } = useProgram();
   const [plans, setPlans] = useState<WorkoutPlanPreview[]>([]);
   const [selectedPlan, setSelectedPlan] = useState<WorkoutPlanPreview | null>(null);
+  const [targetWeek, setTargetWeek] = useState(selectedWeek);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -31,6 +38,10 @@ export default function WorkoutPlanLibrary() {
     WorkoutPlanFilters["location"] | ""
   >("");
   const [daysFilter, setDaysFilter] = useState<number | "">("");
+
+  useEffect(() => {
+    setTargetWeek(selectedWeek);
+  }, [selectedWeek]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -76,7 +87,10 @@ export default function WorkoutPlanLibrary() {
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ planTemplateId: selectedPlan.id }),
+          body: JSON.stringify({
+            planTemplateId: selectedPlan.id,
+            targetWeekNumber: targetWeek + 1,
+          }),
         },
       );
       const data = await response.json().catch(() => null) as
@@ -87,6 +101,7 @@ export default function WorkoutPlanLibrary() {
             trainingPlanId?: string;
             savedDays?: string[];
             savedWeeks?: number;
+            savedWeekNumbers?: number[];
             savedExercises?: number;
             workout?: WorkoutPlanPreview["workout"];
           }
@@ -99,7 +114,7 @@ export default function WorkoutPlanLibrary() {
         selectedPlan.workout.days.reduce(
           (count, day) => count + day.exercises.length,
           0,
-        ) * (typeof data?.savedWeeks === "number" ? data.savedWeeks : 0);
+        );
       const expectedDays = selectedPlan.workout.days.map(({ day }) => day);
       if (
         !data?.success ||
@@ -108,9 +123,10 @@ export default function WorkoutPlanLibrary() {
         !Array.isArray(data.savedDays) ||
         expectedDays.some((day) => !data.savedDays?.includes(day)) ||
         data.savedDays.length !== expectedDays.length ||
-        typeof data.savedWeeks !== "number" ||
-        !Number.isInteger(data.savedWeeks) ||
-        data.savedWeeks < 1 ||
+        data.savedWeeks !== 1 ||
+        !Array.isArray(data.savedWeekNumbers) ||
+        data.savedWeekNumbers.length !== 1 ||
+        data.savedWeekNumbers[0] !== targetWeek + 1 ||
         data.savedExercises !== expectedExerciseCount ||
         !data.workout ||
         JSON.stringify(data.workout) !== JSON.stringify(selectedPlan.workout)
@@ -118,8 +134,14 @@ export default function WorkoutPlanLibrary() {
         throw new Error("The applied plan could not be confirmed. Reload and check the workout plan.");
       }
 
-      await refreshProgram(trainingPlanId, selectedPlan.workout, data.savedWeeks);
-      setMessage("Workout plan applied and the planner was refreshed.");
+      await refreshProgram(
+        trainingPlanId,
+        selectedPlan.workout,
+        durationWeeks,
+        targetWeek + 1,
+      );
+      onSelectedWeekChange(targetWeek);
+      setMessage(`Workout plan applied to Week ${targetWeek + 1} and the planner was refreshed.`);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Failed to apply workout plan.");
     } finally {
@@ -138,14 +160,14 @@ export default function WorkoutPlanLibrary() {
     <section className="w-full min-w-0 max-w-full rounded-xl border border-slate-200 bg-white p-3 shadow-sm sm:p-4">
       <button
         type="button"
-        aria-expanded={expanded && disclosureHydrated}
+        aria-expanded={disclosureExpanded}
         aria-controls="workout-plan-library-content"
         aria-label={
-          !disclosureHydrated || !expanded
+          !disclosureExpanded
             ? "Expand Browse Workout Plans"
             : "Collapse Browse Workout Plans"
         }
-        onClick={() => setExpanded(!expanded)}
+        onClick={onDisclosureToggle}
         className="flex min-h-11 w-full items-center justify-between gap-3 rounded-md px-2 py-1 text-left transition hover:bg-slate-50"
       >
         <div className="flex min-w-0 items-center gap-2">
@@ -160,12 +182,12 @@ export default function WorkoutPlanLibrary() {
         <ChevronDown
           size={20}
           className={`shrink-0 text-slate-400 transition-transform ${
-            expanded && disclosureHydrated ? "rotate-180" : ""
+            disclosureExpanded ? "rotate-180" : ""
           }`}
         />
       </button>
 
-      <div id="workout-plan-library-content" hidden={!disclosureHydrated || !expanded}>
+      <div id="workout-plan-library-content" hidden={!disclosureExpanded}>
       {loading && (
         <p className="mt-4 flex items-center gap-2 text-sm text-slate-500">
           <Loader2 size={14} className="animate-spin" /> Loading workout plans...
@@ -264,7 +286,14 @@ export default function WorkoutPlanLibrary() {
           {filteredPlans.length > 0 ? (
             <div className="mt-3 grid min-w-0 grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
               {filteredPlans.map((plan) => (
-                <article key={plan.id} className="min-w-0 rounded-lg border border-slate-200 p-3">
+                <article
+                  key={plan.id}
+                  className={`min-w-0 rounded-lg border p-3 ${
+                    selectedPlan?.id === plan.id
+                      ? "border-primary/30 bg-primary/[0.02]"
+                      : "border-slate-200"
+                  }`}
+                >
                   <h3 className="break-words text-sm font-semibold text-slate-900">{plan.name}</h3>
                   <p className="mt-1 text-xs font-medium text-primary">{plan.focus}</p>
                   <p className="mt-1 text-xs text-slate-600">{plan.description}</p>
@@ -278,12 +307,74 @@ export default function WorkoutPlanLibrary() {
                     type="button"
                     onClick={() => {
                       setSelectedPlan(plan);
+                      setTargetWeek(selectedWeek);
                       setMessage(null);
                     }}
                     className="mt-3 min-h-11 w-full rounded-md border border-primary/30 px-3 py-2 text-xs font-semibold text-primary transition hover:bg-primary/5 sm:w-auto"
                   >
                     Preview plan
                   </button>
+                  {selectedPlan?.id === plan.id && (
+                    <div className="mt-3 min-w-0 rounded-lg border border-primary/20 bg-primary/5 p-3">
+                      <div className="flex flex-wrap items-start justify-between gap-2">
+                        <div>
+                          <h4 className="break-words text-sm font-bold text-slate-900">
+                            Preview: {selectedPlan.name}
+                          </h4>
+                          <p className="mt-1 max-w-prose text-xs text-slate-600">
+                            Applying replaces workouts only on the listed days in the selected week. Other weeks stay unchanged.
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedPlan(null)}
+                          className="min-h-11 min-w-11 rounded-md px-2 text-xs font-medium text-slate-500 hover:text-slate-800"
+                        >
+                          Close preview
+                        </button>
+                      </div>
+
+                      <label className="mt-3 block max-w-xs text-xs font-medium text-slate-600">
+                        Apply to week
+                        <select
+                          value={targetWeek}
+                          onChange={(event) => setTargetWeek(Number(event.target.value))}
+                          className="mt-1 min-h-11 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-800"
+                        >
+                          {Array.from({ length: durationWeeks }, (_, index) => (
+                            <option key={index} value={index}>Week {index + 1}</option>
+                          ))}
+                        </select>
+                      </label>
+
+                      <div className="mt-3 grid min-w-0 grid-cols-1 gap-3 md:grid-cols-2">
+                        {selectedPlan.days.map(({ day, exercises }) => (
+                          <div key={day} className="min-w-0 rounded-md border border-slate-200 bg-white p-3">
+                            <h5 className="text-sm font-bold text-slate-800">{day}</h5>
+                            <ul className="mt-2 space-y-2 text-sm text-slate-600">
+                              {exercises.map(({ exerciseId, name, sets, reps, restSeconds }) => (
+                                <li key={`${day}-${exerciseId}`} className="min-w-0 break-words">
+                                  <span>{name}</span>
+                                  <span className="block text-xs text-slate-500">
+                                    {sets} × {reps} · {restSeconds}s rest
+                                  </span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        ))}
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => void applySelectedPlan()}
+                        disabled={!trainingPlanId || busy}
+                        className="mt-3 min-h-11 w-full rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+                      >
+                        {busy ? "Applying plan..." : `Apply to Week ${targetWeek + 1}`}
+                      </button>
+                    </div>
+                  )}
                 </article>
               ))}
             </div>
@@ -292,55 +383,6 @@ export default function WorkoutPlanLibrary() {
               No plans match these filters. Try a different combination.
             </p>
           )}
-        </div>
-      )}
-
-      {selectedPlan && (
-        <div className="mt-4 min-w-0 rounded-lg border border-primary/20 bg-primary/5 p-3">
-          <div className="flex flex-wrap items-start justify-between gap-2">
-            <div>
-              <h3 className="break-words text-sm font-bold text-slate-900">
-                Preview: {selectedPlan.name}
-              </h3>
-              <p className="mt-1 max-w-prose text-xs text-slate-600">
-                Applying replaces workouts only on the listed days across your program. Other days stay unchanged.
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => setSelectedPlan(null)}
-              className="min-h-11 min-w-11 rounded-md px-2 text-xs font-medium text-slate-500 hover:text-slate-800"
-            >
-              Close preview
-            </button>
-          </div>
-
-          <div className="mt-3 grid min-w-0 grid-cols-1 gap-3 md:grid-cols-2">
-            {selectedPlan.days.map(({ day, exercises }) => (
-              <div key={day} className="min-w-0 rounded-md border border-slate-200 bg-white p-3">
-                <h4 className="text-sm font-bold text-slate-800">{day}</h4>
-                <ul className="mt-2 space-y-2 text-sm text-slate-600">
-                  {exercises.map(({ exerciseId, name, sets, reps, restSeconds }) => (
-                    <li key={`${day}-${exerciseId}`} className="min-w-0 break-words">
-                      <span>{name}</span>
-                      <span className="block text-xs text-slate-500">
-                        {sets} × {reps} · {restSeconds}s rest
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-
-          <button
-            type="button"
-            onClick={() => void applySelectedPlan()}
-            disabled={!trainingPlanId || busy}
-            className="mt-3 min-h-11 w-full rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
-          >
-            {busy ? "Applying plan..." : "Confirm and apply this plan"}
-          </button>
         </div>
       )}
 

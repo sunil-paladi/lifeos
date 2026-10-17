@@ -224,3 +224,66 @@ test("applying a library plan replaces only its scheduled weekdays", async () =>
     deletedDayIds.includes(dayId),
   ));
 });
+
+test("applying a five-day library plan changes only the selected program week", async () => {
+  const plan = getWorkoutPlanById("upper-lower-five-day");
+  assert.ok(plan);
+
+  let deletedDayIds: string[] = [];
+  let createdRows: { workoutDayId: string; exerciseId: string }[] = [];
+  const weekdays = [
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+    "Sunday",
+  ];
+  const tx: AiWorkoutTransaction = {
+    exercise: {
+      findMany: async ({ where }) => where.id.in.map((id) => ({ id })),
+    },
+    programWeek: {
+      findMany: async () => [1, 2].map((weekNumber) => ({
+        weekNumber,
+        workoutDays: weekdays.map((name, index) => ({
+          id: `week-${weekNumber}-${name.toLowerCase()}`,
+          name,
+        })),
+      })),
+    },
+    programExercise: {
+      deleteMany: async ({ where }) => {
+        deletedDayIds = where.workoutDayId.in;
+      },
+      createMany: async ({ data }) => {
+        createdRows = data.map(({ workoutDayId, exerciseId }) => ({
+          workoutDayId,
+          exerciseId,
+        }));
+      },
+    },
+  };
+
+  const result = await persistGeneratedWorkout(
+    tx,
+    "plan-1",
+    2,
+    plan.workout,
+    2,
+  );
+  const expectedWeekDayIds = plan.workout.days.map(
+    ({ day }) => `week-2-${day.toLowerCase()}`,
+  );
+
+  assert.deepEqual(result.savedDays, plan.workout.days.map(({ day }) => day));
+  assert.equal(result.savedWeeks, 1);
+  assert.deepEqual(result.savedWeekNumbers, [2]);
+  assert.deepEqual(deletedDayIds, expectedWeekDayIds);
+  assert.ok(createdRows.length > 0);
+  assert.ok(createdRows.every(({ workoutDayId }) =>
+    expectedWeekDayIds.includes(workoutDayId),
+  ));
+  assert.ok(!deletedDayIds.some((dayId) => dayId.startsWith("week-1-")));
+});

@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import {
   ChevronDown,
   Dumbbell,
@@ -13,33 +14,75 @@ import WorkoutPlanLibrary from "@/app/components/planner/WorkoutPlanLibrary";
 import WorkoutHistory from "@/app/components/workout/WorkoutHistory";
 
 export default function WorkoutPage() {
-  const {
-    expanded: todayExpanded,
-    hydrated: todayStateHydrated,
-    setExpanded: setTodayExpanded,
-  } = usePersistentDisclosure("consistfit-workout-today-expanded", true);
-  const {
-    expanded: historyExpanded,
-    hydrated: historyStateHydrated,
-    setExpanded: setHistoryExpanded,
-  } = usePersistentDisclosure("consistfit-workout-history-expanded", false);
+  const todayDisclosure = usePersistentDisclosure(
+    "consistfit-workout-today-expanded",
+    true,
+  );
+  const historyDisclosure = usePersistentDisclosure(
+    "consistfit-workout-history-expanded",
+    false,
+  );
+  const programDisclosure = usePersistentDisclosure(
+    "consistfit-workout-program-builder-expanded",
+    true,
+  );
+  const libraryDisclosure = usePersistentDisclosure(
+    "consistfit-workout-plan-library-expanded",
+    true,
+  );
+  const [activeSection, setActiveSection] = useState<
+    "today" | "history" | "program" | "library" | null
+  >(null);
+  const [disclosuresInitialized, setDisclosuresInitialized] = useState(false);
+  const [selectedWeek, setSelectedWeek] = useState(0);
+  const disclosuresHydrated = [
+    todayDisclosure.hydrated,
+    historyDisclosure.hydrated,
+    programDisclosure.hydrated,
+    libraryDisclosure.hydrated,
+  ].every(Boolean);
 
-  function toggleToday() {
-    if (!todayExpanded) {
-      setHistoryExpanded(false);
-    }
-    setTodayExpanded(!todayExpanded);
-  }
-
-  function toggleHistory() {
-    if (historyExpanded) {
-      setHistoryExpanded(false);
+  useEffect(() => {
+    if (!disclosuresHydrated || disclosuresInitialized) {
       return;
     }
 
-    setTodayExpanded(false);
-    setHistoryExpanded(true);
+    const savedSection = todayDisclosure.expanded
+      ? "today"
+      : programDisclosure.expanded
+        ? "program"
+        : libraryDisclosure.expanded
+          ? "library"
+          : historyDisclosure.expanded
+            ? "history"
+            : null;
+    setActiveSection(savedSection);
+    setDisclosuresInitialized(true);
+  }, [
+    disclosuresHydrated,
+    disclosuresInitialized,
+    historyDisclosure.expanded,
+    libraryDisclosure.expanded,
+    programDisclosure.expanded,
+    todayDisclosure.expanded,
+  ]);
+
+  function toggleSection(
+    section: "today" | "history" | "program" | "library",
+  ) {
+    const nextSection = activeSection === section ? null : section;
+    todayDisclosure.setExpanded(nextSection === "today");
+    historyDisclosure.setExpanded(nextSection === "history");
+    programDisclosure.setExpanded(nextSection === "program");
+    libraryDisclosure.setExpanded(nextSection === "library");
+    setActiveSection(nextSection);
+    setDisclosuresInitialized(true);
   }
+
+  const todayExpanded = disclosuresInitialized && activeSection === "today";
+  const historyExpanded = disclosuresInitialized && activeSection === "history";
+  const programExpanded = disclosuresInitialized && activeSection === "program";
+  const libraryExpanded = disclosuresInitialized && activeSection === "library";
 
   return (
     <div className="min-w-0 space-y-5">
@@ -58,9 +101,9 @@ export default function WorkoutPage() {
       <section id="todays-workout" className="min-w-0 scroll-mt-20 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         <button
           type="button"
-          onClick={toggleToday}
-          aria-expanded={todayExpanded && todayStateHydrated}
-          aria-controls={todayExpanded && todayStateHydrated ? "today-workout-panel" : undefined}
+          onClick={() => toggleSection("today")}
+          aria-expanded={todayExpanded}
+          aria-controls={todayExpanded ? "today-workout-panel" : undefined}
           className="flex w-full items-center justify-between px-5 py-4 text-left transition hover:bg-slate-50"
         >
           <div className="flex min-w-0 items-center gap-3">
@@ -79,27 +122,37 @@ export default function WorkoutPage() {
           <ChevronDown
             size={20}
             className={`text-slate-400 transition-transform ${
-              todayExpanded && todayStateHydrated ? "rotate-180" : ""
+              todayExpanded && todayDisclosure.hydrated ? "rotate-180" : ""
             }`}
           />
         </button>
-        {todayExpanded && todayStateHydrated && (
+        {todayExpanded && (
           <div id="today-workout-panel" className="min-w-0 border-t border-slate-200 p-3 sm:p-6">
             <TodaysWorkout />
           </div>
         )}
       </section>
 
-      <ProgramBuilder />
-      <WorkoutPlanLibrary />
+      <ProgramBuilder
+        selectedWeek={selectedWeek}
+        setSelectedWeek={setSelectedWeek}
+        disclosureExpanded={programExpanded}
+        onDisclosureToggle={() => toggleSection("program")}
+      />
+      <WorkoutPlanLibrary
+        selectedWeek={selectedWeek}
+        onSelectedWeekChange={setSelectedWeek}
+        disclosureExpanded={libraryExpanded}
+        onDisclosureToggle={() => toggleSection("library")}
+      />
 
       <section className="min-w-0 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         <button
           type="button"
-          onClick={toggleHistory}
-          aria-expanded={historyExpanded && historyStateHydrated}
+          onClick={() => toggleSection("history")}
+          aria-expanded={historyExpanded}
           aria-controls={
-            historyExpanded && historyStateHydrated
+            historyExpanded
               ? "workout-history-panel"
               : undefined
           }
@@ -121,11 +174,11 @@ export default function WorkoutPage() {
           <ChevronDown
             size={20}
             className={`text-slate-400 transition-transform ${
-              historyExpanded && historyStateHydrated ? "rotate-180" : ""
+              historyExpanded && historyDisclosure.hydrated ? "rotate-180" : ""
             }`}
           />
         </button>
-        {historyExpanded && historyStateHydrated && (
+        {historyExpanded && (
           <div id="workout-history-panel" className="min-w-0 border-t border-slate-200 p-3 sm:p-6">
             <WorkoutHistory />
           </div>

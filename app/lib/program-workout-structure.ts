@@ -175,6 +175,7 @@ export function verifySavedWorkoutStructure(
   expectedPlanId: string,
   workout: GeneratedWorkout,
   expectedWeeks: number,
+  targetWeekNumber?: number,
 ): TrainingPlanStructure {
   if (
     typeof input !== "object" ||
@@ -197,9 +198,21 @@ export function verifySavedWorkoutStructure(
   if (!phase || phase.weeks.length !== expectedWeeks) {
     throw new Error("Saved workout structure is missing plan weeks");
   }
+  const weeksToVerify = targetWeekNumber === undefined
+    ? phase.weeks
+    : phase.weeks.filter(({ weekNumber }) => weekNumber === targetWeekNumber);
+  if (
+    targetWeekNumber !== undefined &&
+    (!Number.isInteger(targetWeekNumber) ||
+      targetWeekNumber < 1 ||
+      targetWeekNumber > expectedWeeks ||
+      weeksToVerify.length !== 1)
+  ) {
+    throw new Error("Saved workout structure is missing the selected week");
+  }
 
   for (const expectedDay of workout.days) {
-    for (const week of phase.weeks) {
+    for (const week of weeksToVerify) {
       if (week.phaseId !== phase.id) {
         throw new Error("Saved workout week belongs to a different phase");
       }

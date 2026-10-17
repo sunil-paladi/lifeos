@@ -201,6 +201,7 @@ interface ProgramContextType {
     planId: string,
     workout: GeneratedWorkout,
     expectedWeeks: number,
+    targetWeekNumber?: number,
   ) => Promise<void>;
 }
 
@@ -250,7 +251,12 @@ export function ProgramProvider({
   const databaseWritesInFlight = useRef(0);
   const databaseWriteFailed = useRef(false);
   const loadProgramRef = useRef<
-    ((planId?: string, expectedWorkout?: GeneratedWorkout, expectedWeeks?: number) => Promise<boolean>) | null
+    ((
+      planId?: string,
+      expectedWorkout?: GeneratedWorkout,
+      expectedWeeks?: number,
+      targetWeekNumber?: number,
+    ) => Promise<boolean>) | null
   >(null);
   const loadRequestVersion = useRef(0);
 
@@ -276,6 +282,7 @@ export function ProgramProvider({
     requestedPlanId?: string,
     expectedWorkout?: GeneratedWorkout,
     expectedWeeks?: number,
+    targetWeekNumber?: number,
   ): Promise<boolean> {
     const requestVersion = ++loadRequestVersion.current;
     setSaveStatus("loading");
@@ -369,6 +376,7 @@ export function ProgramProvider({
               requestedPlanId,
               expectedWorkout,
               expectedWeeks,
+              targetWeekNumber,
             )
           : structure;
         if (verifiedStructure.plan.id !== planId) {
@@ -547,9 +555,10 @@ export function ProgramProvider({
     planId: string,
     workout: GeneratedWorkout,
     expectedWeeks: number,
+    targetWeekNumber?: number,
   ) {
     const load = loadProgramRef.current;
-    if (!load || !(await load(planId, workout, expectedWeeks))) {
+    if (!load || !(await load(planId, workout, expectedWeeks, targetWeekNumber))) {
       throw new Error("Failed to refresh the saved workout structure");
     }
   }

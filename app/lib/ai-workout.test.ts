@@ -560,6 +560,7 @@ test("persists generated days in planner structure and hydrates workout-card gro
     trainingPlanId: "target-plan",
     savedDays: ["Monday", "Thursday"],
     savedWeeks: 2,
+    savedWeekNumbers: [1, 2],
     savedExercises: 8,
   });
   assert.equal(createdRows.length, 8);
