@@ -136,7 +136,7 @@ export async function POST(
   if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return NextResponse.json({ error: "Email must be a valid email address" }, { status: 400 });
   }
-  if (password.length < 8 || password.length > 128) {
+  if (password.length < 12 || password.length > 128) {
     return NextResponse.json({ error: "Password must contain 8 to 128 characters" }, { status: 400 });
   }
 

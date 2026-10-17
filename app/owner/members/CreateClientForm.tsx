@@ -24,6 +24,12 @@ export default function CreateClientForm({
     event.preventDefault();
     setMessage("");
     setSuccess(false);
+
+    if (password.length < 12) {
+      setMessage("Password must be at least 12 characters.");
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -151,6 +157,7 @@ export default function CreateClientForm({
               <input
                 id="client-password"
                 type={showPassword ? "text" : "password"}
+                minLength={12}
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
                 required

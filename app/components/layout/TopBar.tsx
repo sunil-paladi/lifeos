@@ -11,7 +11,7 @@ import {
   Shield,
   User,
 } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Sidebar from "./Sidebar";
 import { useTheme } from "@/app/components/theme/ThemeProvider";
 import type { AppUser } from "./AppShell";
@@ -66,6 +66,7 @@ export default function TopBar({
   const [unreadCount, setUnreadCount] = useState(0);
   const [notificationsLoading, setNotificationsLoading] = useState(false);
   const [notificationsError, setNotificationsError] = useState("");
+  const notificationsPanelRef = useRef<HTMLElement>(null);
 
   const loadNotifications = useCallback(async () => {
     setNotificationsLoading(true);
@@ -103,6 +104,24 @@ export default function TopBar({
 
     return () => window.clearTimeout(timeoutId);
   }, [authenticated, loadNotifications]);
+
+  useEffect(() => {
+    if (!notificationsOpen) return;
+
+    function closeOnOutsidePointerDown(event: PointerEvent) {
+      if (
+        event.target instanceof Node &&
+        !notificationsPanelRef.current?.contains(event.target)
+      ) {
+        setNotificationsOpen(false);
+      }
+    }
+
+    document.addEventListener("pointerdown", closeOnOutsidePointerDown);
+    return () => {
+      document.removeEventListener("pointerdown", closeOnOutsidePointerDown);
+    };
+  }, [notificationsOpen]);
 
   async function markNotificationRead(notificationId: string) {
     try {
@@ -255,15 +274,17 @@ export default function TopBar({
           {/* ======================================== */}
 
           <div className="lg:hidden">
-            <Image
-              src={theme === "dark" ? "/consistfit-wordmark-dark.svg" : "/consistfit-wordmark-light.svg"}
-              alt="ConsistFit — Train consistently. Progress confidently."
-              width={1800}
-              height={615}
-              className="h-auto w-[132px] sm:w-[152px]"
-              priority
-            />
-          </div>
+            <Link href={authenticated ? "/dashboard" : "/"} aria-label="Go to home" className="inline-flex">
+              <Image
+                src={theme === "dark" ? "/consistfit-wordmark-dark.svg" : "/consistfit-wordmark-light.svg"}
+                alt="ConsistFit — Train consistently. Progress confidently."
+                width={1800}
+                height={615}
+                className="h-auto w-[132px] sm:w-[152px]"
+                priority
+              />
+              </Link>
+            </div>
 
           {/* ======================================== */}
           {/* RIGHT SIDE */}
@@ -331,13 +352,8 @@ export default function TopBar({
 
                   {notificationsOpen ? (
                     <>
-                      <button
-                        type="button"
-                        aria-label="Close notifications"
-                        onClick={() => setNotificationsOpen(false)}
-                        className="fixed inset-0 z-40 cursor-default"
-                      />
                       <section
+                        ref={notificationsPanelRef}
                         id="notifications-panel"
                         aria-label="Recent notifications"
                           className="absolute right-0 top-12 z-50 max-h-[calc(100dvh-5rem)] w-80 max-w-[calc(100vw-1.5rem)] overflow-y-auto overscroll-contain rounded-xl border border-border bg-popover text-popover-foreground shadow-xl sm:w-96"

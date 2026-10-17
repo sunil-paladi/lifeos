@@ -2,9 +2,9 @@ import { headers } from "next/headers";
 import Link from "next/link";
 import {
   ArrowUpRight,
+  BarChart3,
   BookOpen,
   CheckSquare,
-  ClipboardCheck,
   Droplets,
   Dumbbell,
   Salad,
@@ -20,7 +20,7 @@ const dailyActions = [
   {
     title: "Workout",
     description: "Plan a session or pick up where you left off.",
-    href: "/workout#todays-workout",
+    href: "/workout",
     icon: Dumbbell,
     accent: "bg-primary/10 text-primary",
   },
@@ -32,10 +32,10 @@ const dailyActions = [
     accent: "bg-secondary/20 text-orange-700",
   },
   {
-    title: "Attendance",
-    description: "Check in for your gym visit or review attendance.",
-    href: "/attendance",
-    icon: ClipboardCheck,
+    title: "Analytics",
+    description: "Review your progress and trends over time.",
+    href: "/analytics",
+    icon: BarChart3,
     accent: "bg-primary/10 text-primary",
   },
   {
@@ -135,9 +135,9 @@ export default async function DashboardPage() {
               <Link
                 key={action.title}
                 href={action.href}
-                className="group rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                className="group block h-full cursor-pointer rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               >
-                <Card className="flex min-h-36 items-start gap-4 p-5 transition group-hover:-translate-y-0.5 group-hover:border-primary/30 group-hover:shadow-md">
+                <Card className="flex h-full min-h-36 items-start gap-4 p-5 transition group-hover:-translate-y-0.5 group-hover:border-primary/30 group-hover:shadow-md">
                   <span
                     className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${action.accent}`}
                   >

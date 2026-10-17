@@ -1,3 +1,6 @@
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
+import { auth } from "@/app/lib/auth";
 import StatCard from "./components/StatCard";
 import WeeklyProgress from "./components/analytics/WeeklyProgress";
 import { health } from "./data/health";
@@ -41,7 +44,15 @@ const features = [
   },
 ];
 
-export default function Home() {
+export default async function Home() {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  if (session) {
+    redirect("/dashboard");
+  }
+
   return (
     <main className="w-full space-y-5">
 
