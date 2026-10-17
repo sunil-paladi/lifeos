@@ -283,7 +283,7 @@ export default function TopBar({
                 className="h-auto w-[132px] sm:w-[152px]"
                 priority
               />
-              </Link>
+            </Link>
             </div>
 
           {/* ======================================== */}

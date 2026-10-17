@@ -137,7 +137,7 @@ export async function POST(
     return NextResponse.json({ error: "Email must be a valid email address" }, { status: 400 });
   }
   if (password.length < 12 || password.length > 128) {
-    return NextResponse.json({ error: "Password must contain 8 to 128 characters" }, { status: 400 });
+    return NextResponse.json({ error: "Password must contain 12 to 128 characters" }, { status: 400 });
   }
 
   const existingUsername = await prisma.user.findFirst({
